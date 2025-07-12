@@ -1,23 +1,23 @@
 Installation
 ============
 
-**my-package** supports Python >= 3.8.
+**mlp-adsorption** supports Python >= 3.8.
 
 ## Installing with `pip`
 
-**my-package** is available [on PyPI](https://pypi.org/project/my-package/). Just run
+**mlp-adsorption** is available [on PyPI](https://pypi.org/project/mlp-adsorption/). Just run
 
 ```bash
-pip install my-package
+pip install mlp-adsorption
 ```
 
 ## Installing from source
 
-To install **my-package** from source, first clone [the repository](https://github.com/allenai/python-package-template):
+To install **mlp-adsorption** from source, first clone [the repository](https://github.com/lipelopesoliveira/mlp_adsorption):
 
 ```bash
-git clone https://github.com/allenai/python-package-template.git
-cd python-package-template
+git clone https://github.com/lipelopesoliveira/mlp_adsorption.git
+cd mlp_adsorption
 ```
 
 Then run
