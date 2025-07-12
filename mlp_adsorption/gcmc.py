@@ -71,12 +71,12 @@ class GCMC():
         os.makedirs(f'results_{temperature:.2f}_{pressure:.2f}', exist_ok=True)
         os.makedirs(f'results_{temperature:.2f}_{pressure:.2f}/Movies', exist_ok=True)
 
+        self.out_file = None
+
         if output_to_file:
             self.out_file: Optional[TextIO] = open(f'results_{temperature:.2f}_{pressure:.2f}/GCMC_Output.out',
                                                    'a',
                                                    encoding='utf-8')
-        else:
-            self.out_file: Optional[TextIO] = None
 
         # Framework setup
         self.framework = framework_atoms

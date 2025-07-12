@@ -58,12 +58,12 @@ class Widom():
         os.makedirs(f'results_{temperature:.2f}_0.0', exist_ok=True)
         os.makedirs(f'results_{temperature:.2f}_0.0/Movies', exist_ok=True)
 
+        self.out_file = None
+
         if output_to_file:
             self.out_file: Optional[TextIO] = open(f'results_{temperature:.2f}_0.0/Widom_Output.out',
                                                    'a',
                                                    encoding='utf-8')
-        else:
-            self.out_file: Optional[TextIO] = None
 
         self.debug: bool = debug
         self.save_every: int = save_frequency
