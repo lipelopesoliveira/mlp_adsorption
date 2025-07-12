@@ -27,7 +27,7 @@ dependencies = [
   "pandas",
   "ase",
   "gemmi",
-  "pymatgen',
+  "pymatgen",
   "tqdm",
   "simplejson",
   "pymser",
