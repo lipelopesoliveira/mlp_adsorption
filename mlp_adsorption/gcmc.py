@@ -132,15 +132,15 @@ class GCMC():
         self.vdw = vdw_radii * 0.6  # Adjust van der Waals radii to avoid overlap
 
         # Define the current state of the system that will be updated during the simulation
-        self.current_system = self.framework.copy()
+        self.current_system: ase.Atoms = self.framework.copy()
         self.current_system.calc = self.model
-        self.current_total_energy = self.current_system.get_potential_energy()
-        self.N_ads = 0
+        self.current_total_energy: float = self.current_system.get_potential_energy()
+        self.N_ads: int = 0
 
         # Store the main results during the simulation
-        self.uptake_list = []
-        self.total_energy_list = []
-        self.total_ads_list = []
+        self.uptake_list: list[int] = []
+        self.total_energy_list: list[float] = []
+        self.total_ads_list: list[float] = []
 
     def load_state(self, state_file: str):
         """
@@ -152,7 +152,7 @@ class GCMC():
             Path to the file containing the saved state of the simulation.
         """
         print(f"Loading state from {state_file}...")
-        state = read(state_file)
+        state: ase.Atoms = read(state_file)  # type: ignore
 
         self.current_system = state.copy()
         self.current_system.calc = self.model  # type: ignore
@@ -621,7 +621,7 @@ Accepted: {rnd_number < acc}
 
     def run(self, N):
 
-        moviments_dict = {
+        moviments_dict: dict = {
             'insertion': [],
             'deletion': [],
             'translation': [],
