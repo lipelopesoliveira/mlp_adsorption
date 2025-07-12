@@ -3,7 +3,7 @@ import itertools
 import os
 import platform
 import sys
-from typing import Optional, TextIO
+from typing import TextIO, Union
 
 import ase
 import numpy as np
@@ -58,12 +58,10 @@ class Widom():
         os.makedirs(f'results_{temperature:.2f}_0.0', exist_ok=True)
         os.makedirs(f'results_{temperature:.2f}_0.0/Movies', exist_ok=True)
 
-        self.out_file = None
+        self.out_file: Union[TextIO, None] = None
 
         if output_to_file:
-            self.out_file: Optional[TextIO] = open(f'results_{temperature:.2f}_0.0/Widom_Output.out',
-                                                   'a',
-                                                   encoding='utf-8')
+            self.out_file: Union[TextIO, None] = open(f'results_{temperature:.2f}_0.0/Widom_Output.out', 'a')
 
         self.debug: bool = debug
         self.save_every: int = save_frequency
