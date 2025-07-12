@@ -3,17 +3,17 @@ import itertools
 import os
 import platform
 import sys
-import ase
 
+import ase
 import numpy as np
 from ase import units
 from ase.calculators import calculator
 from ase.io import write
 from ase.io.proteindatabank import write_proteindatabank
 from tqdm import tqdm
+from utilities import random_position, vdw_overlap2
 
 from mlp_adsorption import VERSION
-from utilities import random_position,  vdw_overlap2
 
 
 class Widom():

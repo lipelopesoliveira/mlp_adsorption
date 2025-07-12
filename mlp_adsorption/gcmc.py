@@ -1,16 +1,16 @@
-import os
-import sys
-import platform
-import numpy as np
-import ase
 import datetime
 import itertools
+import os
+import platform
+import sys
 
-from ase.io import read, write
-from ase.calculators import calculator
+import ase
+import numpy as np
 from ase import units
-from utilities import random_rotation, random_position, vdw_overlap, enthalpy_of_adsorption
+from ase.calculators import calculator
+from ase.io import read, write
 from tqdm import tqdm
+from utilities import enthalpy_of_adsorption, random_position, random_rotation, vdw_overlap
 
 from mlp_adsorption import VERSION
 
