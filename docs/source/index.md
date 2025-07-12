@@ -1,4 +1,4 @@
-# **my-package**
+# **mlp-adsorption**
 
 ```{toctree}
 :maxdepth: 2
@@ -15,8 +15,8 @@ overview
 
 CHANGELOG
 CONTRIBUTING
-License <https://raw.githubusercontent.com/allenai/python-package-template/main/LICENSE>
-GitHub Repository <https://github.com/allenai/python-package-template>
+License <https://raw.githubusercontent.com/allenai/mlp_adsorption/main/LICENSE>
+GitHub Repository <https://github.com/lipelopesoliveira/mlp_adsorption>
 ```
 
 ## Indices and tables
