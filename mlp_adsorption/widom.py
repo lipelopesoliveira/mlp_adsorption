@@ -1,21 +1,19 @@
-
-import os
-import sys
-import platform
 import datetime
 import itertools
-import numpy as np
-from tqdm import tqdm
-
+import os
+import platform
+import sys
 import ase
+
+import numpy as np
 from ase import units
 from ase.calculators import calculator
 from ase.io import write
 from ase.io.proteindatabank import write_proteindatabank
-
-from utilities import random_position, vdw_overlap2
+from tqdm import tqdm
 
 from mlp_adsorption import VERSION
+from utilities import random_position,  vdw_overlap2
 
 
 class Widom():
