@@ -5,15 +5,15 @@ import platform
 import sys
 from typing import TextIO, Union
 
-import ase
 import numpy as np
 from ase import units
 from ase.calculators import calculator
 from ase.io import read, write
+import ase
 from tqdm import tqdm
-from utilities import enthalpy_of_adsorption, random_position, random_rotation, vdw_overlap
 
 from mlp_adsorption import VERSION
+from utilities import enthalpy_of_adsorption, random_position, random_rotation, vdw_overlap
 
 
 class GCMC():
