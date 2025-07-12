@@ -6,6 +6,7 @@ import sys
 
 import ase
 import numpy as np
+from typing import Optional, TextIO
 from ase import units
 from ase.calculators import calculator
 from ase.io import write
@@ -58,23 +59,25 @@ class Widom():
         os.makedirs(f'results_{temperature:.2f}_0.0/Movies', exist_ok=True)
 
         if output_to_file:
-            self.out_file = open(f'results_{temperature:.2f}_0.0/Widom_Output.out', 'a', encoding='utf-8')
+            self.out_file: Optional[TextIO] = open(f'results_{temperature:.2f}_0.0/Widom_Output.out',
+                                                   'a',
+                                                   encoding='utf-8')
         else:
-            self.out_file = None
+            self.out_file: Optional[TextIO] = None
 
-        self.debug = debug
-        self.save_every = save_frequency
+        self.debug: bool = debug
+        self.save_every: int = save_frequency
 
         # Framework setup
         self.framework = framework_atoms
         self.framework.calc = model
         self.framework_energy = self.framework.get_potential_energy()
         self.n_atoms_framework = len(self.framework)
-        self.cell = np.array(self.framework.get_cell())
-        self.V = np.linalg.det(self.cell) / units.m ** 3  # Convert to m^3
-        self.framework_mass = np.sum(self.framework.get_masses()) / units.kg
+        self.cell: np.ndarray = np.array(self.framework.get_cell())
+        self.V: float = np.linalg.det(self.cell) / units.m ** 3  # Convert to m^3
+        self.framework_mass: float = np.sum(self.framework.get_masses()) / units.kg
 
-        self.density = self.framework_mass / self.V  # kg/m^3
+        self.density: float = self.framework_mass / self.V  # kg/m^3
 
         # Adsorbate setup
         self.adsorbate = adsorbate_atoms
@@ -82,18 +85,18 @@ class Widom():
         self.adsorbate.calc = model
         self.adsorbate_energy = self.adsorbate.get_potential_energy()
 
-        self.n_ads = len(self.adsorbate)
-        self.adsorbate_mass = np.sum(self.adsorbate.get_masses()) / units.kg
+        self.n_ads: int = len(self.adsorbate)
+        self.adsorbate_mass: float = np.sum(self.adsorbate.get_masses()) / units.kg
 
-        self.T = temperature
+        self.T: float = temperature
         self.model = model
-        self.beta = 1 / (units.kB * temperature)
+        self.beta: float = 1 / (units.kB * temperature)
         self.device = device
-        self.vdw = vdw_radii * 0.6  # Adjust van der Waals radii to avoid overlap
-        self.trajectory = []
+        self.vdw: np.ndarray = vdw_radii * 0.6  # Adjust van der Waals radii to avoid overlap
+        self.trajectory: list[ase.Atoms] = []
 
-        self.minimum_configuration = self.framework.copy()
-        self.minimum_energy = 0
+        self.minimum_configuration: ase.Atoms = self.framework.copy()
+        self.minimum_energy: float = 0
 
     def print_introduction(self):
         """

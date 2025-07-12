@@ -6,6 +6,7 @@ import sys
 
 import ase
 import numpy as np
+from typing import Optional, TextIO
 from ase import units
 from ase.calculators import calculator
 from ase.io import read, write
@@ -71,9 +72,11 @@ class GCMC():
         os.makedirs(f'results_{temperature:.2f}_{pressure:.2f}/Movies', exist_ok=True)
 
         if output_to_file:
-            self.out_file = open(f'results_{temperature:.2f}_{pressure:.2f}/GCMC_Output.out', 'a', encoding='utf-8')
+            self.out_file: Optional[TextIO] = open(f'results_{temperature:.2f}_{pressure:.2f}/GCMC_Output.out',
+                                                   'a',
+                                                   encoding='utf-8')
         else:
-            self.out_file = None
+            self.out_file: Optional[TextIO] = None
 
         # Framework setup
         self.framework = framework_atoms
@@ -94,14 +97,14 @@ class GCMC():
         self.adsorbate_mass = np.sum(self.adsorbate.get_masses()) / units.kg
 
         # Simulation parameters
-        self.T = temperature
-        self.P = pressure
-        self.fugacity_coeff = fugacity_coeff
-        self.fugacity = pressure * fugacity_coeff * units.J  # Convert fugacity from Pa (J/m^3) to eV / m^3
+        self.T: float = temperature
+        self.P: float = pressure
+        self.fugacity_coeff: float = fugacity_coeff
+        self.fugacity: float = pressure * fugacity_coeff * units.J  # Convert fugacity from Pa (J/m^3) to eV / m^3
 
         self.model = model
         self.device = device
-        self.beta = 1 / (units.kB * temperature)  # Boltzmann weight, 1 / [eV/K * K]
+        self.beta: float = 1 / (units.kB * temperature)  # Boltzmann weight, 1 / [eV/K * K]
 
         kB = 1.380649e-23  # m2 kg s-2 K-1 = J K-1
         h = 6.62607015e-34  # m2 kg / s = J s
@@ -129,7 +132,7 @@ class GCMC():
 
         print(self.V * self.beta * self.fugacity)
 
-        self.vdw = vdw_radii * 0.6  # Adjust van der Waals radii to avoid overlap
+        self.vdw: np.ndarray = vdw_radii * 0.6  # Adjust van der Waals radii to avoid overlap
 
         # Define the current state of the system that will be updated during the simulation
         self.current_system: ase.Atoms = self.framework.copy()
