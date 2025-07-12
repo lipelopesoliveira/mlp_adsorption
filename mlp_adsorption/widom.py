@@ -13,7 +13,7 @@ from ase.calculators import calculator
 from ase.io import write
 from ase.io.proteindatabank import write_proteindatabank
 
-from utilities import _random_position, vdw_overlap2
+from utilities import random_position, vdw_overlap2
 
 from mlp_adsorption import VERSION
 
@@ -215,7 +215,7 @@ Accepted: {rnd_number < acc}
         atoms_trial.calc = self.model
 
         pos = atoms_trial.get_positions()
-        pos[-self.n_ads:] = _random_position(pos[-self.n_ads:], atoms_trial.get_cell())
+        pos[-self.n_ads:] = random_position(pos[-self.n_ads:], atoms_trial.get_cell())
         atoms_trial.set_positions(pos)
         atoms_trial.wrap()
 

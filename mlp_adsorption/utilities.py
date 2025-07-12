@@ -49,7 +49,7 @@ def enthalpy_of_adsorption(energy, number_of_molecules, temperature):
     return H
 
 
-def _random_rotation(original_position: np.ndarray) -> np.ndarray:
+def random_rotation(original_position: np.ndarray) -> np.ndarray:
     """
     Generates a random rotation of the original position vector.
     Parameters
@@ -80,7 +80,7 @@ def _random_rotation(original_position: np.ndarray) -> np.ndarray:
     return rotated_points
 
 
-def _random_translation(original_position: np.ndarray, lattice_vectors: np.ndarray) -> np.ndarray:
+def random_translation(original_position: np.ndarray, lattice_vectors: np.ndarray) -> np.ndarray:
     """
     Generates a random translation vector within the parallelepiped
     defined by the lattice vectors.
@@ -110,9 +110,9 @@ def _random_translation(original_position: np.ndarray, lattice_vectors: np.ndarr
     return original_position + translation_vector
 
 
-def _random_position(pos, rvecs):
-    pos = _random_rotation(pos)
-    pos = _random_translation(pos, rvecs)
+def random_position(pos, rvecs):
+    pos = random_rotation(pos)
+    pos = random_translation(pos, rvecs)
     return pos
 
 

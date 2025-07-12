@@ -9,7 +9,7 @@ import itertools
 from ase.io import read, write
 from ase.calculators import calculator
 from ase import units
-from utilities import _random_rotation, _random_position, vdw_overlap, enthalpy_of_adsorption
+from utilities import random_rotation, random_position, vdw_overlap, enthalpy_of_adsorption
 from tqdm import tqdm
 
 from mlp_adsorption import VERSION
@@ -497,7 +497,7 @@ Accepted: {rnd_number < acc}
         atoms_trial.calc = self.model
 
         pos = atoms_trial.get_positions()
-        pos[-self.n_ads:] = _random_position(pos[-self.n_ads:], atoms_trial.get_cell())
+        pos[-self.n_ads:] = random_position(pos[-self.n_ads:], atoms_trial.get_cell())
         atoms_trial.set_positions(pos)
         atoms_trial.wrap()
 
@@ -602,7 +602,7 @@ Accepted: {rnd_number < acc}
         i_start = self.n_atoms_framework + self.n_ads * i_ads
         i_end = self.n_atoms_framework + self.n_ads * (i_ads + 1)
 
-        pos[i_start: i_end] = _random_rotation(pos[i_start: i_end])
+        pos[i_start: i_end] = random_rotation(pos[i_start: i_end])
         atoms_trial.set_positions(pos)  # type: ignore
 
         if vdw_overlap(atoms_trial, self.vdw, self.n_atoms_framework, self.n_ads, i_ads):
