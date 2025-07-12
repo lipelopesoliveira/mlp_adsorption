@@ -3,10 +3,10 @@ import itertools
 import os
 import platform
 import sys
+from typing import Optional, TextIO
 
 import ase
 import numpy as np
-from typing import Optional, TextIO
 from ase import units
 from ase.calculators import calculator
 from ase.io import read, write
