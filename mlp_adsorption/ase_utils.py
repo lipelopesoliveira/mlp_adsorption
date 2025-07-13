@@ -24,6 +24,7 @@ def crystalOptmization(
         atoms_in: Atoms,
         calculator: Calculator,
         optimizer: Optimizer,
+        out_file: TextIO,
         fmax: float = 0.005,
         opt_cell: bool = True,
         fix_symmetry: bool = False,
@@ -33,7 +34,8 @@ def crystalOptmization(
         max_steps: int = 1000,
         trajectory: bool | str = "opt.traj",
         verbose: bool = True,
-        symm_tol=1e-3) -> tuple[dict, Atoms]:
+        symm_tol=1e-3
+        ) -> tuple[dict, Atoms]:
     """
     Optimize the cell and positions of the atoms with the given calculator.
     If fix_symmetry is True, the symmetry of the cell is fixed during the optimization.
@@ -113,8 +115,13 @@ def crystalOptmization(
     def custom_ase_log():
 
         e_tot = atoms.get_potential_energy()
-        stress = atoms.get_stress(voigt=False)
-        pressure = -1/3 * np.trace(stress)
+        if opt_cell:
+            stress = atoms.get_stress(voigt=False)
+            pressure = -1/3 * np.trace(stress)
+        else:
+            pressure = 0.0
+            stress = np.zeros(6)
+
         forces = atoms.get_forces()
         max_force = np.linalg.norm(forces, axis=1).max()
         sum_force = np.sum(np.linalg.norm(forces, axis=1))
@@ -131,18 +138,19 @@ def crystalOptmization(
             }
         )
 
-        if verbose:
-            line_txt = "{:5} {:>18.8f}    {:>15.8f}    {:>15.8f}     {:>15.8f}    {:>18.8f}   {:>18.8f} {:>12.2f}"
+        line_txt = "{:5} {:>18.8f}    {:>15.8f}    {:>15.8f}     {:>15.8f}    {:>18.8f}   {:>18.8f} {:>12.2f}"
 
-            print(line_txt.format(
-                len(opt_history),
-                e_tot,
-                max_force,
-                sum_force,
-                rmsd_force,
-                pressure*1e5,
-                atoms.get_volume(),
-                (datetime.datetime.now() - start_time).total_seconds()/60))
+        print(line_txt.format(
+            len(opt_history),
+            e_tot,
+            max_force,
+            sum_force,
+            rmsd_force,
+            pressure*1e5,
+            atoms.get_volume(),
+            (datetime.datetime.now() - start_time).total_seconds()/60),
+            file=out_file
+            )
 
     opt.attach(custom_ase_log, interval=1)
 
@@ -150,13 +158,10 @@ def crystalOptmization(
     if trajectory:
         opt.attach(traj)
 
-    if verbose:
-        print("""===========================================================================
-  Starting cell optimization
-===========================================================================""")
-        headers = ["Step", "Energy (eV)", "Max Force (eV/A)", "Sum Force (eV/A)",
-                   "RMSD Force (eV/A)", "Pressure (bar)", "Volume (A3)", "Time (min)"]
-        print("{:^5} {:^18}    {:^15}    {:^15}     {:^15}    {:^15}     {:^15}    {:^14}".format(*headers))
+    headers = ["Step", "Energy (eV)", "Max Force (eV/A)", "Sum Force (eV/A)",
+               "RMSD Force (eV/A)", "Pressure (bar)", "Volume (A3)", "Time (min)"]
+    print("{:^5} {:^18}    {:^15}    {:^15}     {:^15}    {:^15}     {:^15}    {:^14}".format(*headers),
+          file=out_file)
 
     opt.run(fmax=fmax, steps=max_steps)
 
@@ -164,7 +169,8 @@ def crystalOptmization(
         traj.close()
 
     print("Optimization finished. Total time: {:.2f} minutes".format(
-        (datetime.datetime.now() - start_time).total_seconds()/60)
+        (datetime.datetime.now() - start_time).total_seconds()/60),
+        file=out_file
         )
 
     print(f"Optimization {'' if opt.converged() else 'did not '}converged.")
@@ -173,10 +179,10 @@ def crystalOptmization(
     symm = check_symmetry(atoms, symprec=symm_tol, verbose=False)
 
     if symm is not None:
-        print("Symmetry information:")
-        print("no      : ", symm.number)
-        print("symbol  : ", symm.international)
-        print("lattice : ", atoms.cell.get_bravais_lattice().longname)
+        print("Symmetry information:", file=out_file)
+        print("no      : ", symm.number, file=out_file)
+        print("symbol  : ", symm.international, file=out_file)
+        print("lattice : ", atoms.cell.get_bravais_lattice().longname, file=out_file)
 
     resultsDict = {
         'status': 'Finished',
@@ -199,7 +205,7 @@ def crystalOptmization(
     return resultsDict, atoms
 
 
-def nVT_md(
+def nVT_Berendsen(
         atoms: ase.Atoms,
         temperature: float,
         pressure: float = 0.0,
@@ -319,7 +325,7 @@ def nVT_md(
     return atoms
 
 
-def nPT_md(
+def nPT_Berendsen(
         atoms: ase.Atoms,
         temperature: float,
         pressure: float = 0.0,

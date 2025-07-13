@@ -8,6 +8,7 @@ from typing import TextIO, Union
 import numpy as np
 from ase import units
 from ase.calculators import calculator
+from ase.optimize import LBFGS
 from ase.io import read, write
 import ase
 from tqdm import tqdm
@@ -17,6 +18,10 @@ from mlp_adsorption.utilities import (enthalpy_of_adsorption,
                                       random_position,
                                       random_rotation,
                                       vdw_overlap)
+
+from mlp_adsorption.ase_utils import (crystalOptmization,
+                                      nVT_Berendsen,
+                                      nPT_Berendsen)
 
 
 class GCMC():
@@ -90,7 +95,7 @@ class GCMC():
 
         # Adsorbate setup
         self.adsorbate = adsorbate_atoms
-        # self.adsorbate.set_cell(self.cell, scale_atoms=False)
+        self.adsorbate.set_cell(self.cell, scale_atoms=False)
         self.adsorbate.calc = model
         self.adsorbate_energy = self.adsorbate.get_potential_energy()
 
@@ -361,6 +366,107 @@ Random number:          {rnd_number:.3f}
 Accepted: {rnd_number < acc}
 =======================================================================================================
 """, file=self.out_file)
+
+    def optimize_framework(self,
+                           max_steps: int = 1000,
+                           opt_cell: bool = True,
+                           fix_symmetry: bool = True,
+                           hydrostatic_strain: bool = True,
+                           symm_tol: float = 1e-3,
+                           max_force: float = 0.05) -> None:
+        """
+        Optimize the framework structure using the provided calculator.
+
+        Parameters
+        ----------
+        max_steps : int, optional
+            Maximum number of optimization steps (default is 1000).
+        tol : float, optional
+            Tolerance for convergence (default is 1e-5).
+
+        Returns
+        -------
+        ase.Atoms
+            The optimized framework structure.
+        """
+
+        print("""
+=======================================================================================================
+Start optimizing framework structure...
+=======================================================================================================
+              """,
+              file=self.out_file)
+
+        resultsDict, optFramework = crystalOptmization(
+            atoms_in=self.framework,
+            calculator=self.model,
+            optimizer=LBFGS,
+            fmax=max_force,
+            opt_cell=opt_cell,
+            fix_symmetry=fix_symmetry,
+            hydrostatic_strain=hydrostatic_strain,
+            constant_volume=False,
+            scalar_pressure=self.P,
+            max_steps=max_steps,
+            trajectory="Optimization.traj",
+            verbose=True,
+            symm_tol=symm_tol,
+            out_file=self.out_file
+        )
+
+        self.framework = optFramework.copy()
+        self.framework.calc = self.model
+        self.framework_energy = self.framework.get_potential_energy()
+        self.current_system = self.framework.copy()
+
+    def optimize_adsorbate(self,
+                           max_steps: int = 1000,
+                           max_force: float = 0.05) -> None:
+        """
+        Optimize the adsorbate structure using the provided calculator.
+
+        Parameters
+        ----------
+        max_steps : int, optional
+            Maximum number of optimization steps (default is 1000).
+        symm_tol : float, optional
+            Tolerance for symmetry (default is 1e-3).
+        max_force : float, optional
+            Maximum force tolerance for convergence (default is 0.05 eV/Å).
+
+        Returns
+        -------
+        ase.Atoms
+            The optimized adsorbate structure.
+        """
+
+        print("""
+=======================================================================================================
+Start optimizing adsorbate structure...
+=======================================================================================================
+              """,
+              file=self.out_file)
+
+        resultsDict, optAdsorbate = crystalOptmization(
+            atoms_in=self.adsorbate,
+            calculator=self.model,
+            optimizer=LBFGS,
+            fmax=max_force,
+            opt_cell=False,
+            fix_symmetry=False,
+            hydrostatic_strain=True,
+            constant_volume=True,
+            scalar_pressure=self.P,
+            max_steps=max_steps,
+            trajectory="Adsorbate_Optimization.traj",
+            verbose=True,
+            symm_tol=1e3,
+            out_file=self.out_file
+        )
+
+        self.adsorbate = optAdsorbate.copy()
+        self.adsorbate.calc = self.model
+        self.adsorbate_energy = self.adsorbate.get_potential_energy()
 
     def get_ideal_chemical_potential(self) -> float:
         """
