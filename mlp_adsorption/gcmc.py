@@ -13,7 +13,10 @@ import ase
 from tqdm import tqdm
 
 from mlp_adsorption import VERSION
-from utilities import enthalpy_of_adsorption, random_position, random_rotation, vdw_overlap
+from mlp_adsorption.utilities import (enthalpy_of_adsorption,
+                                      random_position,
+                                      random_rotation,
+                                      vdw_overlap)
 
 
 class GCMC():
@@ -74,7 +77,7 @@ class GCMC():
         self.out_file: Union[TextIO, None] = None
 
         if output_to_file:
-            self.out_file: Union[TextIO, None] = open(f'results_{temperature:.2f}_0.0/Widom_Output.out', 'a')
+            self.out_file: Union[TextIO, None] = open(f'results_{temperature:.2f}_{pressure:.2f}/GCMC_Output.out', 'a')
 
         # Framework setup
         self.framework = framework_atoms
