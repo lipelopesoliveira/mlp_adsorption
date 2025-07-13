@@ -1,8 +1,9 @@
 import os
+import sys
 import datetime
 import numpy as np
 
-from typing import TextIO, Union
+from typing import TextIO
 
 import ase
 from ase import units
@@ -208,6 +209,7 @@ def crystalOptmization(
 
 def nVT_Berendsen(
         atoms: ase.Atoms,
+        model: Calculator,
         temperature: float,
         pressure: float = 0.0,
         time_step: float = 0.5,
@@ -215,7 +217,7 @@ def nVT_Berendsen(
         output_interval: int = 100,
         movie_interval: int = 1,
         taut: float = 1.0,
-        output_to_file: bool = False
+        out_file: TextIO = sys.stdout
         ) -> ase.Atoms:
     """
     Run NVT molecular dynamics simulation using the Berendsen thermostat.
@@ -249,10 +251,7 @@ def nVT_Berendsen(
         The final atomic structure after the MD simulation.
     """
 
-    out_file: Union[TextIO, None] = None
-
-    if output_to_file:
-        out_file: Union[TextIO, None] = open(f'results_{temperature:.2f}_{pressure:.2f}/GCMC_Output.out', 'a')
+    atoms.calc = model
 
     print("""
 ===========================================================================
@@ -328,6 +327,7 @@ def nVT_Berendsen(
 
 def nPT_Berendsen(
         atoms: ase.Atoms,
+        model: Calculator,
         temperature: float,
         pressure: float = 0.0,
         compressibility: float = 1e-3,
@@ -337,7 +337,7 @@ def nPT_Berendsen(
         movie_interval: int = 1,
         taut: float = 10.0,
         taup: float = 500.0,
-        output_to_file: bool = False
+        out_file: TextIO = sys.stdout
         ) -> ase.Atoms:
     """
     Run NPT molecular dynamics simulation using the Berendsen thermostat and barostat.
@@ -371,10 +371,7 @@ def nPT_Berendsen(
         The final atomic structure after the MD simulation.
     """
 
-    out_file: Union[TextIO, None] = None
-
-    if output_to_file:
-        out_file: Union[TextIO, None] = open(f'results_{temperature:.2f}_{pressure:.2f}/GCMC_Output.out', 'a')
+    atoms.calc = model
 
     print("""===========================================================================
     Starting NPT Molecular Dynamics Simulation using Berendsen Thermostat/Barostat
@@ -406,7 +403,7 @@ def nPT_Berendsen(
         compressibility_au=compressibility / (1e5 * units.Pascal),
         taut=taut * units.fs,
         taup=taup * units.fs,
-        loginterval=output_interval,
+        loginterval=movie_interval,
         trajectory=traj_filename
         )
 

@@ -126,8 +126,6 @@ class GCMC():
             'cm^3 STP/cm^3': 1e6 * mol2cm3 / units.mol / (self.framework.get_volume() * (1e-8 ** 3))
         }
 
-        print(self.V * self.beta * self.fugacity)
-
         self.vdw: np.ndarray = vdw_radii * 0.6  # Adjust van der Waals radii to avoid overlap
 
         # Define the current state of the system that will be updated during the simulation
@@ -140,6 +138,13 @@ class GCMC():
         self.uptake_list: list[int] = []
         self.total_energy_list: list[float] = []
         self.total_ads_list: list[float] = []
+
+        self.moviments_dict: dict = {
+            'insertion': [],
+            'deletion': [],
+            'translation': [],
+            'rotation': []
+        }
 
     def set_framework(self, framework_atoms: ase.Atoms) -> None:
         """
@@ -173,6 +178,19 @@ class GCMC():
         self.n_ads = len(self.adsorbate)
         self.adsorbate_mass = np.sum(self.adsorbate.get_masses()) / units.kg
 
+    def set_state(self, state: ase.Atoms) -> None:
+        """
+        Set the current state of the simulation.
+
+        Parameters
+        ----------
+        state : ase.Atoms
+            The current state of the simulation as an ASE Atoms object.
+        """
+        self.current_system = state.copy()
+        self.current_system.calc = self.model
+        self.current_total_energy = self.current_system.get_potential_energy()
+
     def load_state(self, state_file: str):
         """
         Load the state of the simulation from a file.
@@ -185,9 +203,8 @@ class GCMC():
         print(f"Loading state from {state_file}...")
         state: ase.Atoms = read(state_file)  # type: ignore
 
-        self.current_system = state.copy()
-        self.current_system.calc = self.model  # type: ignore
-        self.current_total_energy = self.current_system.get_potential_energy()  # type: ignore
+        self.set_state(state)
+
         self.N_ads = int((len(state) - self.n_atoms_framework) / len(self.adsorbate))
         average_binding_energy = (
             self.current_total_energy - self.framework_energy - self.N_ads * self.adsorbate_energy
@@ -487,6 +504,32 @@ Start optimizing adsorbate structure...
         self.adsorbate.calc = self.model
         self.adsorbate_energy = self.adsorbate.get_potential_energy()
 
+    def npt(self, nsteps, time_step=0.5):
+        """
+        Run a NPT simulation using the Berendsen thermostat and barostat.
+
+        Parameters
+        ----------
+        nsteps : int
+            Number of steps to run the NPT simulation.
+        """
+
+        new_state = nPT_Berendsen(
+            atoms=self.current_system,
+            model=self.model,
+            temperature=self.T,
+            pressure=self.P*1e-5,
+            compressibility=1e-4,
+            time_step=time_step,
+            num_md_steps=nsteps,
+            out_file=self.out_file,
+            
+        )
+
+        self.set_state(new_state)
+
+        self.set_framework(new_state[:self.n_atoms_framework].copy())
+
     def get_ideal_chemical_potential(self) -> float:
         """
         Calculate the ideal chemical potential for the adsorbate at the given
@@ -748,14 +791,9 @@ Start optimizing adsorbate structure...
         else:
             return False
 
-    def run(self, N):
-
-        moviments_dict: dict = {
-            'insertion': [],
-            'deletion': [],
-            'translation': [],
-            'rotation': []
-        }
+    def run(self, N) -> None:
+        """ Run the Grand Canonical Monte Carlo simulation for N iterations.
+        """
 
         header = """
  Iteration |  Number of  |  Uptake  |    Tot En.   |Av. Ads. En.|  Pacc  |  Pdel  |  Ptra  |  Prot  |  Time
@@ -772,21 +810,21 @@ Start optimizing adsorbate structure...
 
             if switch < 0.25:
                 accepted = self.try_insertion()
-                moviments_dict['insertion'].append(1 if accepted else 0)
+                self.moviments_dict['insertion'].append(1 if accepted else 0)
 
             elif switch < 0.5:
                 accepted = self.try_deletion()
-                moviments_dict['deletion'].append(1 if accepted else 0)
+                self.moviments_dict['deletion'].append(1 if accepted else 0)
 
             # Translation
             elif switch < 0.75:
                 accepted = self.try_translation()
-                moviments_dict['translation'].append(1 if accepted else 0)
+                self.moviments_dict['translation'].append(1 if accepted else 0)
 
             # Rotation
             elif switch >= 0.75:
                 accepted = self.try_rotation()
-                moviments_dict['rotation'].append(1 if accepted else 0)
+                self.moviments_dict['rotation'].append(1 if accepted else 0)
 
             self.uptake_list.append(self.N_ads)
             self.total_energy_list.append(self.current_total_energy)
@@ -808,17 +846,17 @@ Start optimizing adsorbate structure...
                 self.N_ads * self.conv_factors['mol/kg'],
                 self.current_total_energy,
                 average_ads_energy,
-                np.average(moviments_dict['insertion'])*100 if len(moviments_dict['insertion']) > 0 else 0,
-                np.average(moviments_dict['deletion'])*100 if len(moviments_dict['deletion']) > 0 else 0,
-                np.average(moviments_dict['translation'])*100 if len(moviments_dict['translation']) > 0 else 0,
-                np.average(moviments_dict['rotation'])*100 if len(moviments_dict['rotation']) > 0 else 0,
+                np.average(self.moviments_dict['insertion'])*100 if len(self.moviments_dict['insertion']) > 0 else 0,
+                np.average(self.moviments_dict['deletion'])*100 if len(self.moviments_dict['deletion']) > 0 else 0,
+                np.average(self.moviments_dict['translation'])*100 if len(self.moviments_dict['translation']) > 0 else 0,
+                np.average(self.moviments_dict['rotation'])*100 if len(self.moviments_dict['rotation']) > 0 else 0,
                 (datetime.datetime.now() - step_time_start).total_seconds()),
                 file=self.out_file)
 
             if iteration % self.save_every == 0 and self.N_ads > 0:
                 write('results_{:.2f}_{:.2f}/Movies/snapshot_{}_{:.2f}_{:.2f}.xyz'.format(self.T,
                                                                                           self.P,
-                                                                                          iteration,
+                                                                                          len(self.uptake_list),
                                                                                           self.P,
                                                                                           self.T),
                       self.current_system,
