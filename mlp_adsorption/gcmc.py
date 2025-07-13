@@ -139,7 +139,7 @@ class GCMC():
         self.total_energy_list: list[float] = []
         self.total_ads_list: list[float] = []
 
-        self.moviments_dict: dict = {
+        self.mov_dict: dict = {
             'insertion': [],
             'deletion': [],
             'translation': [],
@@ -523,7 +523,6 @@ Start optimizing adsorbate structure...
             time_step=time_step,
             num_md_steps=nsteps,
             out_file=self.out_file,
-            
         )
 
         self.set_state(new_state)
@@ -810,21 +809,21 @@ Start optimizing adsorbate structure...
 
             if switch < 0.25:
                 accepted = self.try_insertion()
-                self.moviments_dict['insertion'].append(1 if accepted else 0)
+                self.mov_dict['insertion'].append(1 if accepted else 0)
 
             elif switch < 0.5:
                 accepted = self.try_deletion()
-                self.moviments_dict['deletion'].append(1 if accepted else 0)
+                self.mov_dict['deletion'].append(1 if accepted else 0)
 
             # Translation
             elif switch < 0.75:
                 accepted = self.try_translation()
-                self.moviments_dict['translation'].append(1 if accepted else 0)
+                self.mov_dict['translation'].append(1 if accepted else 0)
 
             # Rotation
             elif switch >= 0.75:
                 accepted = self.try_rotation()
-                self.moviments_dict['rotation'].append(1 if accepted else 0)
+                self.mov_dict['rotation'].append(1 if accepted else 0)
 
             self.uptake_list.append(self.N_ads)
             self.total_energy_list.append(self.current_total_energy)
@@ -846,10 +845,10 @@ Start optimizing adsorbate structure...
                 self.N_ads * self.conv_factors['mol/kg'],
                 self.current_total_energy,
                 average_ads_energy,
-                np.average(self.moviments_dict['insertion'])*100 if len(self.moviments_dict['insertion']) > 0 else 0,
-                np.average(self.moviments_dict['deletion'])*100 if len(self.moviments_dict['deletion']) > 0 else 0,
-                np.average(self.moviments_dict['translation'])*100 if len(self.moviments_dict['translation']) > 0 else 0,
-                np.average(self.moviments_dict['rotation'])*100 if len(self.moviments_dict['rotation']) > 0 else 0,
+                np.average(self.mov_dict['insertion'])*100 if len(self.mov_dict['insertion']) > 0 else 0,
+                np.average(self.mov_dict['deletion'])*100 if len(self.mov_dict['deletion']) > 0 else 0,
+                np.average(self.mov_dict['translation'])*100 if len(self.mov_dict['translation']) > 0 else 0,
+                np.average(self.mov_dict['rotation'])*100 if len(self.mov_dict['rotation']) > 0 else 0,
                 (datetime.datetime.now() - step_time_start).total_seconds()),
                 file=self.out_file)
 
