@@ -147,7 +147,7 @@ def crystalOptmization(
             sum_force,
             rmsd_force,
             pressure*1e5,
-            atoms.get_volume(),
+            atoms.get_volume() if opt_cell else 0.0,
             (datetime.datetime.now() - start_time).total_seconds()/60),
             file=out_file
             )
@@ -175,15 +175,6 @@ def crystalOptmization(
 
     print(f"Optimization {'' if opt.converged() else 'did not '}converged.")
 
-    # Print final information about the symmetry of the cell
-    symm = check_symmetry(atoms, symprec=symm_tol, verbose=False)
-
-    if symm is not None:
-        print("Symmetry information:", file=out_file)
-        print("no      : ", symm.number, file=out_file)
-        print("symbol  : ", symm.international, file=out_file)
-        print("lattice : ", atoms.cell.get_bravais_lattice().longname, file=out_file)
-
     resultsDict = {
         'status': 'Finished',
         'optConverged': 'Yes' if opt.converged() else 'No',
@@ -194,13 +185,23 @@ def crystalOptmization(
         },
         'startTime': start_time.isoformat(),
         'endTime': datetime.datetime.now().isoformat(),
-        'calculationResults': opt_history,
-        'symmetryInformation': {
-            'number': symm.number if symm else None,
-            'international': symm.international if symm else None,
-            'bravaisLattice': atoms.cell.get_bravais_lattice().longname
-        }
-    }
+        'calculationResults': opt_history}
+
+    # Print final information about the symmetry of the cell
+    if opt_cell:
+        symm = check_symmetry(atoms, symprec=symm_tol, verbose=False)
+
+        if symm is not None:
+            print("Symmetry information:", file=out_file)
+            print("no      : ", symm.number, file=out_file)
+            print("symbol  : ", symm.international, file=out_file)
+            print("lattice : ", atoms.cell.get_bravais_lattice().longname, file=out_file)
+
+        resultsDict['symmetryInformation'] = {
+                'number': symm.number if symm else None,
+                'international': symm.international if symm else None,
+                'bravaisLattice': atoms.cell.get_bravais_lattice().longname
+            }
 
     return resultsDict, atoms
 

@@ -84,23 +84,13 @@ class GCMC():
         if output_to_file:
             self.out_file: Union[TextIO, None] = open(f'results_{temperature:.2f}_{pressure:.2f}/GCMC_Output.out', 'a')
 
+        self.model = model
+
         # Framework setup
-        self.framework = framework_atoms
-        self.framework.calc = model
-        self.framework_energy = self.framework.get_potential_energy()
-        self.n_atoms_framework = len(self.framework)
-        self.cell = np.array(self.framework.get_cell())
-        self.V = np.linalg.det(self.cell) / units.m ** 3  # Convert to m^3
-        self.framework_mass = np.sum(self.framework.get_masses()) / units.kg
+        self.set_framework(framework_atoms)
 
         # Adsorbate setup
-        self.adsorbate = adsorbate_atoms
-        self.adsorbate.set_cell(self.cell, scale_atoms=False)
-        self.adsorbate.calc = model
-        self.adsorbate_energy = self.adsorbate.get_potential_energy()
-
-        self.n_ads = len(self.adsorbate)
-        self.adsorbate_mass = np.sum(self.adsorbate.get_masses()) / units.kg
+        self.set_adsorbate(adsorbate_atoms)
 
         # Simulation parameters
         self.T: float = temperature
@@ -150,6 +140,38 @@ class GCMC():
         self.uptake_list: list[int] = []
         self.total_energy_list: list[float] = []
         self.total_ads_list: list[float] = []
+
+    def set_framework(self, framework_atoms: ase.Atoms) -> None:
+        """
+        Set the framework structure for the simulation.
+
+        Parameters
+        ----------
+        framework_atoms : ase.Atoms
+            The new framework structure as an ASE Atoms object.
+        """
+        self.framework = framework_atoms
+        self.framework.calc = self.model
+        self.framework_energy = self.framework.get_potential_energy()
+        self.n_atoms_framework = len(self.framework)
+        self.cell = np.array(self.framework.get_cell())
+        self.V = np.linalg.det(self.cell) / units.m ** 3
+        self.framework_mass = np.sum(self.framework.get_masses()) / units.kg
+
+    def set_adsorbate(self, adsorbate_atoms: ase.Atoms) -> None:
+        """
+        Set the adsorbate structure for the simulation.
+
+        Parameters
+        ----------
+        adsorbate_atoms : ase.Atoms
+            The new adsorbate structure as an ASE Atoms object.
+        """
+        self.adsorbate = adsorbate_atoms
+        self.adsorbate.calc = self.model
+        self.adsorbate_energy = self.adsorbate.get_potential_energy()
+        self.n_ads = len(self.adsorbate)
+        self.adsorbate_mass = np.sum(self.adsorbate.get_masses()) / units.kg
 
     def load_state(self, state_file: str):
         """
@@ -406,7 +428,7 @@ Start optimizing framework structure...
             fix_symmetry=fix_symmetry,
             hydrostatic_strain=hydrostatic_strain,
             constant_volume=False,
-            scalar_pressure=self.P,
+            scalar_pressure=0,
             max_steps=max_steps,
             trajectory="Optimization.traj",
             verbose=True,
@@ -414,10 +436,7 @@ Start optimizing framework structure...
             out_file=self.out_file
         )
 
-        self.framework = optFramework.copy()
-        self.framework.calc = self.model
-        self.framework_energy = self.framework.get_potential_energy()
-        self.current_system = self.framework.copy()
+        self.set_framework(optFramework.copy())
 
     def optimize_adsorbate(self,
                            max_steps: int = 1000,
