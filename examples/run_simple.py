@@ -1,0 +1,114 @@
+import os
+import numpy as np
+import torch
+import sys
+import ase
+from ase.io import read
+from ase.data import vdw_radii
+from ase.optimize import LBFGS
+from mace.calculators import mace_mp
+
+from mlp_adsorption.ase_utils import crystalOptmization
+from mlp_adsorption.gcmc import GCMC
+
+# Hide UserWarning and RuntimeWarning messages
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning)
+warnings.filterwarnings("ignore", category=RuntimeWarning)
+
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+
+sys.path.append("C:\\Users\\flopes\\Documents\\PRs\\mlp_adsorption")
+
+
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
+
+FrameworkPath = ''
+AdsorbatePath = ''
+
+model = mace_mp(model="mace-dac-1.model",
+                dispersion=True,
+                damping='zero',
+                dispersion_xc='pbe',
+                default_dtype="float32",
+                device=device)
+
+# Load the framework structure
+framework: ase.Atoms = read(FrameworkPath)  # type: ignore
+
+
+resultsDict, frameworkOpt = crystalOptmization(
+    atoms_in=framework,
+    calculator=model,
+    optimizer=LBFGS,
+    out_file=sys.stdout,
+    fmax=0.001,
+    opt_cell=True,
+    fix_symmetry=True,
+    hydrostatic_strain=True,
+    constant_volume=False,
+    scalar_pressure=0.0,
+    max_steps=1000,
+    trajectory="FrameworkOpt.traj",
+    verbose=False
+)
+
+# Load the adsorbate structure
+adsorbate: ase.Atoms = read(AdsorbatePath)  # type: ignore
+
+resultsDict, frameworkOpt = crystalOptmization(
+    atoms_in=adsorbate,
+    calculator=model,
+    optimizer=LBFGS,
+    out_file=sys.stdout,
+    fmax=0.001,
+    opt_cell=False,
+    fix_symmetry=False,
+    hydrostatic_strain=False,
+    constant_volume=False,
+    scalar_pressure=0.0,
+    max_steps=1000,
+    trajectory="AdsorbateOpt.traj",
+    verbose=False
+)
+
+Temperature = 298.0
+pressure_list = np.arange(10, 5000, 200)  # Example pressure list in Pa
+MCSteps = 30000
+MDSteps = 30000
+
+for i, pressure in enumerate(pressure_list):
+
+    Pressure = pressure_list[i]
+
+    print(f"Running GCMC simulation for pressure: {Pressure:.2f} Pa at temperature: {Temperature:.2f} K")
+
+    gcmc = GCMC(model=model,
+                framework_atoms=framework,
+                adsorbate_atoms=adsorbate,
+                temperature=Temperature,
+                pressure=Pressure,
+                fugacity_coeff=1,
+                device=device,
+                vdw_radii=vdw_radii,
+                debug=True,
+                output_to_file=True)
+
+    gcmc.print_introduction()
+
+    if Pressure > 10:
+        print("Loading previous state for continuation...")
+        snapshots = os.listdir(f'results_{Temperature:.2f}_{pressure_list[i-1]:.2f}/Movies/')
+        last_snapshot = max(int(float(s.split('_')[1])) for s in snapshots if s.startswith('snapshot_') and s.endswith('.xyz'))
+        print(f"Last snapshot found: {last_snapshot} for pressure {pressure_list[i-1]:.2f} Pa")
+
+        # Load the previous state if not the first iteration
+        gcmc.load_state(f'results_{Temperature:.2f}_{pressure_list[i-1]:.2f}/Movies/snapshot_{last_snapshot}_{pressure_list[i-1]:.2f}_{Temperature:.2f}.xyz')
+
+    for j in range(5):
+        gcmc.run(MCSteps)
+        gcmc.npt(nsteps=MDSteps, time_step=0.5)
+
+    gcmc.run(MCSteps)
+    gcmc.print_finish()

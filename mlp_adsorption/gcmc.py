@@ -827,9 +827,9 @@ Start optimizing adsorbate structure...
 
             self.uptake_list.append(self.N_ads)
             self.total_energy_list.append(self.current_total_energy)
-            self.total_ads_list.append(self.current_total_energy -
-                                       (self.N_ads * self.adsorbate_energy) -
-                                       self.framework_energy)
+            self.total_ads_list.append(
+                self.current_total_energy - (self.N_ads * self.adsorbate_energy) - self.framework_energy
+                )
 
             average_ads_energy = (
                 self.current_total_energy - (self.N_ads * self.adsorbate_energy) - self.framework_energy
