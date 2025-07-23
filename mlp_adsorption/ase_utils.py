@@ -337,6 +337,7 @@ def nPT_Berendsen(
         movie_interval: int = 1,
         taut: float = 10.0,
         taup: float = 500.0,
+        out_folder: str = ".",
         out_file: TextIO = sys.stdout
         ) -> ase.Atoms:
     """
@@ -385,9 +386,9 @@ def nPT_Berendsen(
 ===========================================================================""".format(
         temperature, pressure, time_step, num_md_steps, output_interval, movie_interval, taut), file=out_file)
 
-    existing_md_traj = [i for i in os.listdir('.') if i.startswith("NPT-Berendsen") and i.endswith(".traj")]
-    traj_filename = f"NPT-Berendsen_{temperature:.2f}K_{len(existing_md_traj)}.traj"
-    log_filename = f"NPT-Berendsen_{temperature:.2f}K_{len(existing_md_traj)}.log"
+    existing_md_traj = [i for i in os.listdir(out_folder) if i.startswith("NPT-Berendsen") and i.endswith(".traj")]
+    traj_filename = os.path.join(out_folder, f"NPT-Berendsen_{temperature:.2f}K_{len(existing_md_traj)}.traj")
+    log_filename = os.path.join(out_folder, f"NPT-Berendsen_{temperature:.2f}K_{len(existing_md_traj)}.log")
 
     # Set the momenta corresponding to the given "temperature"
     MaxwellBoltzmannDistribution(atoms, temperature_K=temperature, force_temp=True)

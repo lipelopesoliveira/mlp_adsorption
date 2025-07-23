@@ -76,13 +76,14 @@ class GCMC():
 
         self.start_time = datetime.datetime.now()
 
-        os.makedirs(f'results_{temperature:.2f}_{pressure:.2f}', exist_ok=True)
-        os.makedirs(f'results_{temperature:.2f}_{pressure:.2f}/Movies', exist_ok=True)
+        self.out_folder = f'results_{temperature:.2f}_{pressure:.2f}'
+        os.makedirs(self.out_folder, exist_ok=True)
+        os.makedirs(os.path.join(self.out_folder, "Movies"), exist_ok=True)
 
         self.out_file: Union[TextIO, None] = None
 
         if output_to_file:
-            self.out_file: Union[TextIO, None] = open(f'results_{temperature:.2f}_{pressure:.2f}/GCMC_Output.out', 'a')
+            self.out_file: Union[TextIO, None] = open(os.path.join(self.out_folder, 'GCMC_Output.out'), 'a')
 
         self.model = model
 
@@ -174,6 +175,8 @@ class GCMC():
         """
         self.adsorbate = adsorbate_atoms
         self.adsorbate.calc = self.model
+        self.adsorbate.set_cell(self.framework.get_cell())
+
         self.adsorbate_energy = self.adsorbate.get_potential_energy()
         self.n_ads = len(self.adsorbate)
         self.adsorbate_mass = np.sum(self.adsorbate.get_masses()) / units.kg
@@ -522,6 +525,7 @@ Start optimizing adsorbate structure...
             compressibility=1e-4,
             time_step=time_step,
             num_md_steps=nsteps,
+            out_folder=self.out_folder,
             out_file=self.out_file,
         )
 
@@ -574,8 +578,8 @@ Start optimizing adsorbate structure...
         # Pacc (N -> N + 1) = min(1, β * V * f * exp(-β ΔE) / (N + 1))
         """
 
-        if deltaE / (units.kJ / units.mol) < 100:
-            return True  # Always accept if the energy change is too high
+        #if deltaE / (units.kJ / units.mol) < 100:
+        #    return True  # Always accept if the energy change is too high
 
         exp_value = np.exp(-self.beta * deltaE)
 
@@ -604,8 +608,8 @@ Start optimizing adsorbate structure...
         Pdel (N -> N - 1 ) = min(1, N / (β * V * f) * exp(-β ΔE) )
         """
 
-        if deltaE / (units.kJ / units.mol) > 100:
-            return True  # Always accept if the energy change is too high
+        #if deltaE / (units.kJ / units.mol) > 100:
+        #    return True  # Always accept if the energy change is too high
 
         exp_value = np.exp(-self.beta * deltaE)
 
@@ -853,22 +857,18 @@ Start optimizing adsorbate structure...
                 file=self.out_file)
 
             if iteration % self.save_every == 0 and self.N_ads > 0:
-                write('results_{:.2f}_{:.2f}/Movies/snapshot_{}_{:.2f}_{:.2f}.xyz'.format(self.T,
-                                                                                          self.P,
-                                                                                          len(self.uptake_list),
-                                                                                          self.P,
-                                                                                          self.T),
+                write(os.path.join(self.out_folder, f'Movies/snapshot_{len(self.uptake_list)}_{self.P:.2f}_{self.T:.2f}.xyz'),
                       self.current_system,
                       format='extxyz')
 
-                np.save('results_{:.2f}_{:.2f}/uptake_{:.5f}.npy'.format(self.T, self.P, self.P),
+                np.save(os.path.join(self.out_folder, f'uptake_{self.P:.5f}.npy'),
                         np.array(self.uptake_list)
                         )
 
-                np.save('results_{:.2f}_{:.2f}/total_energy{:.5f}.npy'.format(self.T, self.P, self.P),
+                np.save(os.path.join(self.out_folder, f'total_energy_{self.P:.5f}.npy'),
                         np.array(self.total_energy_list)
                         )
 
-                np.save('results_{:.2f}_{:.2f}/total_ads{:.5f}.npy'.format(self.T, self.P, self.P),
+                np.save(os.path.join(self.out_folder, f'total_ads_{self.P:.5f}.npy'),
                         np.array(self.total_ads_list)
                         )
