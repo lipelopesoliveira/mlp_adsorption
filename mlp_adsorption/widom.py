@@ -9,7 +9,7 @@ import ase
 import numpy as np
 from ase import units
 from ase.calculators import calculator
-from ase.io import write
+from ase.io import write, Trajectory
 from ase.io.proteindatabank import write_proteindatabank
 from tqdm import tqdm
 from mlp_adsorption import VERSION
@@ -60,8 +60,12 @@ class Widom():
 
         self.out_file: Union[TextIO, None] = None
 
+        self.out_folder = f'results_{temperature:.2f}_0.0'
+
         if output_to_file:
-            self.out_file: Union[TextIO, None] = open(f'results_{temperature:.2f}_0.0/Widom_Output.out', 'a')
+            self.out_file: Union[TextIO, None] = open(os.path.join(self.out_folder, 'Widom_Output.out'), 'a')
+
+        self.trajectory= Trajectory(os.path.join(self.out_folder, 'Widom_Trajectory.traj'), 'a')
 
         self.debug: bool = debug
         self.save_every: int = save_frequency
@@ -279,7 +283,8 @@ Iteration  |  ΔE (eV)  |  ΔE (kJ/mol)  | kH [mol kg-1 bar-1] |  ΔH (kJ/mol) |
 
             if i % self.save_every == 0:
                 # write(f'results_{self.T:.2f}_{0.0:.2f}/Movies/widom_{i:04d}.traj', atoms_trial)
-                write_proteindatabank(f'results_{self.T:.2f}_0.0/Movies/widom.pdb', self.trajectory)
+                # write_proteindatabank(f'results_{self.T:.2f}_0.0/Movies/widom.pdb', self.trajectory)
+                self.trajectory.write(atoms_trial)
 
             print('{:^10} | {:^9.6f} | {:>13.2f} | {:>19.3e} | {:12.2f} | {:8.2f}'.format(
                 i,
