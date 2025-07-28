@@ -1,24 +1,21 @@
+import datetime
 import os
 import sys
-import datetime
-import numpy as np
-
 from typing import TextIO
 
 import ase
-from ase import units
-from ase import Atoms
-from ase.optimize.optimize import Optimizer
+import numpy as np
+from ase import Atoms, units
 from ase.calculators.calculator import Calculator
 from ase.constraints import FixSymmetry
 from ase.filters import FrechetCellFilter
 from ase.io.trajectory import Trajectory
-from ase.spacegroup.symmetrize import check_symmetry
-
-from ase.md.velocitydistribution import MaxwellBoltzmannDistribution, Stationary
-from ase.md.nvtberendsen import NVTBerendsen
-from ase.md.nptberendsen import NPTBerendsen
 from ase.md import MDLogger
+from ase.md.nptberendsen import NPTBerendsen
+from ase.md.nvtberendsen import NVTBerendsen
+from ase.md.velocitydistribution import MaxwellBoltzmannDistribution, Stationary
+from ase.optimize.optimize import Optimizer
+from ase.spacegroup.symmetrize import check_symmetry
 
 
 def crystalOptmization(
