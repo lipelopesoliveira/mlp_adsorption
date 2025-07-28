@@ -3,7 +3,7 @@ import numpy as np
 import torch
 import sys
 import ase
-from ase.io import read
+from ase.io import read, Trajectory
 from ase.data import vdw_radii
 from ase.optimize import LBFGS
 from mace.calculators import mace_mp
@@ -41,7 +41,7 @@ framework: ase.Atoms = read(FrameworkPath)  # type: ignore
 resultsDict, frameworkOpt = crystalOptmization(
     atoms_in=framework,
     calculator=model,
-    optimizer=LBFGS,
+    optimizer=LBFGS,  # type: ignore
     out_file=sys.stdout,
     fmax=0.001,
     opt_cell=True,
@@ -60,7 +60,7 @@ adsorbate: ase.Atoms = read(AdsorbatePath)  # type: ignore
 resultsDict, frameworkOpt = crystalOptmization(
     atoms_in=adsorbate,
     calculator=model,
-    optimizer=LBFGS,
+    optimizer=LBFGS,  # type: ignore
     out_file=sys.stdout,
     fmax=0.001,
     opt_cell=False,
@@ -97,14 +97,14 @@ for i, pressure in enumerate(pressure_list):
 
     gcmc.print_introduction()
 
-    if Pressure > 10:
+    if pressure > 10:
         print("Loading previous state for continuation...")
-        snapshots = os.listdir(f'results_{Temperature:.2f}_{pressure_list[i-1]:.2f}/Movies/')
-        last_snapshot = max(int(float(s.split('_')[1])) for s in snapshots if s.startswith('snapshot_') and s.endswith('.xyz'))
-        print(f"Last snapshot found: {last_snapshot} for pressure {pressure_list[i-1]:.2f} Pa")
-
-        # Load the previous state if not the first iteration
-        gcmc.load_state(f'results_{Temperature:.2f}_{pressure_list[i-1]:.2f}/Movies/snapshot_{last_snapshot}_{pressure_list[i-1]:.2f}_{Temperature:.2f}.xyz')
+        output_dir = f'results_{Temperature:.2f}_{pressure_list[i-1]:.2f}'
+        if os.path.exists(os.path.join(output_dir, 'GCMC_Trajectory.traj')):
+            traj = Trajectory(os.path.join(output_dir, 'GCMC_Trajectory.traj'))
+            if len(traj) > 0:
+                gcmc.load_state(traj[-1])  # type: ignore
+                print(f"Loaded last snapshot from {output_dir}/GCMC_Trajectory.traj")
 
     for j in range(5):
         gcmc.run(MCSteps)

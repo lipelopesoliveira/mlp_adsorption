@@ -3,10 +3,12 @@ import argparse
 import torch
 import sys
 import ase
-from ase.io import read
+from ase.io import read, Trajectory
 from ase.data import vdw_radii
 
 from mace.calculators import mace_mp
+
+from mlp_adsorption.gcmc import GCMC
 
 # Hide UserWarning and RuntimeWarning messages
 import warnings
@@ -73,7 +75,8 @@ adsorbate: ase.Atoms = read(args.AdsorbatePath)  # type: ignore
 
 # eos = PREOS.from_name('carbondioxide')
 # fugacity = eos.calculate_fugacity(T, P)
-pressure_list = [10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 30000, 40000, 50000, 60000, 70000, 80000, 90000, 100000, 200000, 500000, 750000, 1000000]
+pressure_list = [10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 30000,
+                 40000, 50000, 60000, 70000, 80000, 90000, 100000, 200000, 500000, 750000, 1000000]
 
 for i, pressure in enumerate(pressure_list):
 
@@ -83,26 +86,27 @@ for i, pressure in enumerate(pressure_list):
 
     print(f"Running GCMC simulation for pressure: {args.Pressure:.2f} Pa at temperature: {args.Temperature:.2f} K")
 
-    gcmc = GCMC_ase(model=model,
-                    framework_atoms=framework,
-                    adsorbate_atoms=adsorbate,
-                    temperature=args.Temperature,
-                    pressure=args.Pressure,
-                    fugacity_coeff=1,
-                    device=device,
-                    vdw_radii=vdw_radii,
-                    debug=True,
-                    output_to_file=True)
+    gcmc = GCMC(model=model,
+                framework_atoms=framework,
+                adsorbate_atoms=adsorbate,
+                temperature=args.Temperature,
+                pressure=args.Pressure,
+                fugacity_coeff=1,
+                device=device,
+                vdw_radii=vdw_radii,
+                debug=True,
+                output_to_file=True)
 
     gcmc.print_introduction()
 
     if args.Pressure > 10:
         print("Loading previous state for continuation...")
-        snapshots = os.listdir(f'results_{args.Temperature:.2f}_{pressure_list[i-1]:.2f}/Movies/')
-        last_snapshot = max(int(float(s.split('_')[1])) for s in snapshots if s.startswith('snapshot_') and s.endswith('.xyz'))
-        print(f"Last snapshot found: {last_snapshot} for pressure {pressure_list[i-1]:.2f} Pa")
-        # Load the previous state if not the first iteration
-        gcmc.load_state(f'results_{args.Temperature:.2f}_{pressure_list[i-1]:.2f}/Movies/snapshot_{last_snapshot}_{pressure_list[i-1]:.2f}_{args.Temperature:.2f}.xyz')
+        output_dir = f'results_{args.Temperature:.2f}_{pressure_list[i-1]:.2f}'
+        if os.path.exists(os.path.join(output_dir, 'GCMC_Trajectory.traj')):
+            traj = Trajectory(os.path.join(output_dir, 'GCMC_Trajectory.traj'))
+            if len(traj) > 0:
+                gcmc.load_state(traj[-1])  # type: ignore
+                print(f"Loaded last snapshot from {output_dir}/GCMC_Trajectory.traj")
 
     gcmc.run(args.MCSteps)
     gcmc.print_finish()
