@@ -3,7 +3,6 @@
 import numpy as np
 import json
 
-import ase
 from ase.calculators.calculator import Calculator, all_changes
 from ase import units
 
@@ -172,8 +171,12 @@ class CustomLennardJones(Calculator):
         sigmas = np.empty((nAtoms, nAtoms))
         epsilons = np.empty((nAtoms, nAtoms))
 
-        sigma_vec = np.array([self.lj_params[s]['sigma'] for s in self.atoms.get_chemical_symbols()])  # type: ignore
-        epsilon_vec = np.array([self.lj_params[s]['epsilon'] for s in self.atoms.get_chemical_symbols()])  # type: ignore
+        sigma_vec = np.array(
+            [self.lj_params[s]['sigma'] for s in self.atoms.get_chemical_symbols()]  # type: ignore
+            )  
+        epsilon_vec = np.array(
+            [self.lj_params[s]['epsilon'] for s in self.atoms.get_chemical_symbols()]  # type: ignore
+            )  
 
         # Use broadcasting instead of loops
         sigmas = (sigma_vec[:, None] + sigma_vec[None, :]) / 2

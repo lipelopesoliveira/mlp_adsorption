@@ -16,10 +16,8 @@
 
 - Updated the `gcmc.py` file to use the `Trajectory.write` method instead of `write_proteindatabank`.
 - Updated the `ase_utils.py` file to accept a `trajectory` parameter in the `npt_md` function.
-- Updated the `widom.py` file to use the `Trajectory.write` method for writing trajectories.
+- Replaces PDB output with ASE Trajectory for snapshot saving in `widom.py`.
 - Removed the unused import of `write_proteindatabank` in `widom.py`.
-- Updated the `widom.py` file to remove the commented-out code related to `write_proteindatabank`.
-- Updated the `widom.py` file to ensure that the trajectory is written correctly during the Widom simulation.
 
 ### Removed
 
