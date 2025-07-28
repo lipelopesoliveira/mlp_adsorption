@@ -336,7 +336,7 @@ def nPT_Berendsen(
         taup: float = 500.0,
         out_folder: str = ".",
         out_file: TextIO = sys.stdout,
-        trajectory= None,
+        trajectory=None,
         ) -> ase.Atoms:
     """
     Run NPT molecular dynamics simulation using the Berendsen thermostat and barostat.
