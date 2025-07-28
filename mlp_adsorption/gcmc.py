@@ -456,6 +456,9 @@ Start optimizing framework structure...
             out_file=self.out_file
         )
 
+        # Remove any constraints from the optimized framework
+        optFramework.set_constraint(None)
+
         self.set_framework(optFramework.copy())
 
     def optimize_adsorbate(self,
@@ -504,6 +507,8 @@ Start optimizing adsorbate structure...
         )
 
         self.adsorbate = optAdsorbate.copy()
+        self.adsorbate.set_constraint(None)
+        self.adsorbate.set_cell(self.framework.get_cell())
         self.adsorbate.calc = self.model
         self.adsorbate_energy = self.adsorbate.get_potential_energy()
 
