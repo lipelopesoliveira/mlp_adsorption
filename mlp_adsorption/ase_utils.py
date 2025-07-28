@@ -334,11 +334,12 @@ def nPT_Berendsen(
         time_step: float = 0.5,
         num_md_steps: int = 1000000,
         output_interval: int = 100,
-        movie_interval: int = 1,
+        movie_interval: int = 10,
         taut: float = 10.0,
         taup: float = 500.0,
         out_folder: str = ".",
-        out_file: TextIO = sys.stdout
+        out_file: TextIO = sys.stdout,
+        trajectory= None,
         ) -> ase.Atoms:
     """
     Run NPT molecular dynamics simulation using the Berendsen thermostat and barostat.
@@ -405,7 +406,7 @@ def nPT_Berendsen(
         taut=taut * units.fs,
         taup=taup * units.fs,
         loginterval=movie_interval,
-        trajectory=traj_filename
+        trajectory=trajectory if trajectory else traj_filename,
         )
 
     # Print statements

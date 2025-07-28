@@ -9,7 +9,7 @@ import numpy as np
 from ase import units
 from ase.calculators import calculator
 from ase.optimize import LBFGS
-from ase.io import read, write
+from ase.io import read, write, Trajectory
 import ase
 from tqdm import tqdm
 
@@ -86,6 +86,11 @@ class GCMC():
             self.out_file: Union[TextIO, None] = open(os.path.join(self.out_folder, 'GCMC_Output.out'), 'a')
 
         self.model = model
+
+        self.trajectory= Trajectory(
+            os.path.join(self.out_folder, 'GCMC_Trajectory.traj'),
+            'a',
+        )
 
         # Framework setup
         self.set_framework(framework_atoms)
@@ -450,7 +455,7 @@ Start optimizing framework structure...
             constant_volume=False,
             scalar_pressure=0,
             max_steps=max_steps,
-            trajectory="Optimization.traj",
+            trajectory=self.trajectory,
             verbose=True,
             symm_tol=symm_tol,
             out_file=self.out_file
@@ -532,6 +537,8 @@ Start optimizing adsorbate structure...
             num_md_steps=nsteps,
             out_folder=self.out_folder,
             out_file=self.out_file,
+            trajectory=self.trajectory,
+            movie_interval=self.save_every
         )
 
         self.set_state(new_state)
@@ -583,7 +590,7 @@ Start optimizing adsorbate structure...
         # Pacc (N -> N + 1) = min(1, β * V * f * exp(-β ΔE) / (N + 1))
         """
 
-        #if deltaE / (units.kJ / units.mol) < 100:
+        # if deltaE / (units.kJ / units.mol) < 100:
         #    return True  # Always accept if the energy change is too high
 
         exp_value = np.exp(-self.beta * deltaE)
@@ -613,7 +620,7 @@ Start optimizing adsorbate structure...
         Pdel (N -> N - 1 ) = min(1, N / (β * V * f) * exp(-β ΔE) )
         """
 
-        #if deltaE / (units.kJ / units.mol) > 100:
+        # if deltaE / (units.kJ / units.mol) > 100:
         #    return True  # Always accept if the energy change is too high
 
         exp_value = np.exp(-self.beta * deltaE)
@@ -861,10 +868,15 @@ Start optimizing adsorbate structure...
                 (datetime.datetime.now() - step_time_start).total_seconds()),
                 file=self.out_file)
 
-            if iteration % self.save_every == 0 and self.N_ads > 0:
-                write(os.path.join(self.out_folder, f'Movies/snapshot_{len(self.uptake_list)}_{self.P:.2f}_{self.T:.2f}.xyz'),
-                      self.current_system,
-                      format='extxyz')
+            if iteration % self.save_every == 0:
+                # Save the current state of the system as xyz deactivated for now
+                # write(
+                # os.path.join(self.out_folder,
+                # f'Movies/snapshot_{len(self.uptake_list)}_{self.P:.2f}_{self.T:.2f}.xyz'),
+                #       self.current_system,
+                #       format='extxyz')
+
+                self.trajectory.write(self.current_system)
 
                 np.save(os.path.join(self.out_folder, f'uptake_{self.P:.5f}.npy'),
                         np.array(self.uptake_list)
