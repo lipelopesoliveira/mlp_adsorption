@@ -5,23 +5,17 @@ import platform
 import sys
 from typing import TextIO, Union
 
+import ase
 import numpy as np
 from ase import units
 from ase.calculators import calculator
+from ase.io import Trajectory, read
 from ase.optimize import LBFGS
-from ase.io import read, write, Trajectory
-import ase
 from tqdm import tqdm
 
 from mlp_adsorption import VERSION
-from mlp_adsorption.utilities import (enthalpy_of_adsorption,
-                                      random_position,
-                                      random_rotation,
-                                      vdw_overlap)
-
-from mlp_adsorption.ase_utils import (crystalOptmization,
-                                      nVT_Berendsen,
-                                      nPT_Berendsen)
+from mlp_adsorption.ase_utils import crystalOptmization, nPT_Berendsen
+from mlp_adsorption.utilities import enthalpy_of_adsorption, random_position, random_rotation, vdw_overlap
 
 
 class GCMC():
@@ -87,7 +81,7 @@ class GCMC():
 
         self.model = model
 
-        self.trajectory= Trajectory(
+        self.trajectory = Trajectory(
             os.path.join(self.out_folder, 'GCMC_Trajectory.traj'),
             'a',
         )
@@ -447,7 +441,7 @@ Start optimizing framework structure...
         resultsDict, optFramework = crystalOptmization(
             atoms_in=self.framework,
             calculator=self.model,
-            optimizer=LBFGS,
+            optimizer=LBFGS,  # type: ignore
             fmax=max_force,
             opt_cell=opt_cell,
             fix_symmetry=fix_symmetry,
@@ -455,10 +449,10 @@ Start optimizing framework structure...
             constant_volume=False,
             scalar_pressure=0,
             max_steps=max_steps,
-            trajectory=self.trajectory,
+            trajectory=self.trajectory,  # type: ignore
             verbose=True,
             symm_tol=symm_tol,
-            out_file=self.out_file
+            out_file=self.out_file  # type: ignore
         )
 
         # Remove any constraints from the optimized framework
@@ -497,7 +491,7 @@ Start optimizing adsorbate structure...
         resultsDict, optAdsorbate = crystalOptmization(
             atoms_in=self.adsorbate,
             calculator=self.model,
-            optimizer=LBFGS,
+            optimizer=LBFGS,  # type: ignore
             fmax=max_force,
             opt_cell=False,
             fix_symmetry=False,
@@ -508,7 +502,7 @@ Start optimizing adsorbate structure...
             trajectory="Adsorbate_Optimization.traj",
             verbose=True,
             symm_tol=1e3,
-            out_file=self.out_file
+            out_file=self.out_file  # type: ignore
         )
 
         self.adsorbate = optAdsorbate.copy()
@@ -536,14 +530,14 @@ Start optimizing adsorbate structure...
             time_step=time_step,
             num_md_steps=nsteps,
             out_folder=self.out_folder,
-            out_file=self.out_file,
+            out_file=self.out_file,  # type: ignore
             trajectory=self.trajectory,
             movie_interval=self.save_every
         )
 
         self.set_state(new_state)
 
-        self.set_framework(new_state[:self.n_atoms_framework].copy())
+        self.set_framework(new_state[:self.n_atoms_framework].copy())  # type: ignore
 
     def get_ideal_chemical_potential(self) -> float:
         """
@@ -876,7 +870,7 @@ Start optimizing adsorbate structure...
                 #       self.current_system,
                 #       format='extxyz')
 
-                self.trajectory.write(self.current_system)
+                self.trajectory.write(self.current_system)  # type: ignore
 
                 np.save(os.path.join(self.out_folder, f'uptake_{self.P:.5f}.npy'),
                         np.array(self.uptake_list)
