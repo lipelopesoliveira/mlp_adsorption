@@ -266,7 +266,7 @@ Iteration  |  dE (eV)  |  dE (kJ/mol)  | kH [mol kg-1 bar-1] |  dH (kJ/mol) | Ti
                       atoms_trial,
                       format='cif')
 
-            self.trajectory.write(atoms_trial)
+            self.trajectory.write(atoms_trial)  # type: ignore
 
             energiy_list[i - 1] = deltaE
 
