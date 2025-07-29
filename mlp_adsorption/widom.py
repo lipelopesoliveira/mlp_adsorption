@@ -66,7 +66,7 @@ class Widom:
                 os.path.join(self.out_folder, "GCMC_Output.out"), "a"
             )
         else:
-            self.out_file: Union[TextIO, None] = None
+            self.out_file = None
 
         self.trajectory = Trajectory(os.path.join(self.out_folder, "Widom_Trajectory.traj"), "a")  # type: ignore
 
