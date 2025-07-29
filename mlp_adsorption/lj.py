@@ -114,13 +114,13 @@ class CustomLennardJones(Calculator):
 
     """
 
-    implemented_properties = ['energy', 'energies']
+    implemented_properties = ["energy", "energies"]
     default_parameters = {
-        'epsilon': 1.0,
-        'sigma': 1.0,
-        'rc': None,
-        'ro': None,
-        'smooth': False,
+        "epsilon": 1.0,
+        "sigma": 1.0,
+        "rc": None,
+        "ro": None,
+        "smooth": False,
     }
     nolabel = True
 
@@ -143,7 +143,7 @@ class CustomLennardJones(Calculator):
         Calculator.__init__(self, **kwargs)
 
         self.lj_params: dict = lj_parameters
-        self.vdw_cutoff = kwargs.get('vdw_cutoff', 12.0)
+        self.vdw_cutoff = kwargs.get("vdw_cutoff", 12.0)
 
     def calculate(
         self,
@@ -156,7 +156,7 @@ class CustomLennardJones(Calculator):
 
         Calculator.calculate(self, atoms, properties, system_changes)
 
-        np.seterr(invalid='ignore')
+        np.seterr(invalid="ignore")
 
         nAtoms = len(self.atoms)  # type: ignore
 
@@ -165,11 +165,11 @@ class CustomLennardJones(Calculator):
         epsilons = np.empty((nAtoms, nAtoms))
 
         sigma_vec = np.array(
-            [self.lj_params[s]['sigma'] for s in self.atoms.get_chemical_symbols()]  # type: ignore
-            )
+            [self.lj_params[s]["sigma"] for s in self.atoms.get_chemical_symbols()]  # type: ignore
+        )
         epsilon_vec = np.array(
-            [self.lj_params[s]['epsilon'] for s in self.atoms.get_chemical_symbols()]  # type: ignore
-            )
+            [self.lj_params[s]["epsilon"] for s in self.atoms.get_chemical_symbols()]  # type: ignore
+        )
 
         # Use broadcasting instead of loops
         sigmas = (sigma_vec[:, None] + sigma_vec[None, :]) / 2
@@ -180,7 +180,7 @@ class CustomLennardJones(Calculator):
         # Replace all distances greater than the cutoff with 0
         rij[rij > self.vdw_cutoff] = 0
 
-        energy = 4 * epsilons * ((sigmas / rij)**12 - (sigmas / rij)**6)
+        energy = 4 * epsilons * ((sigmas / rij) ** 12 - (sigmas / rij) ** 6)
 
         # Replace any NaN values with 0
         energy[np.isnan(energy)] = 0.0
@@ -191,6 +191,6 @@ class CustomLennardJones(Calculator):
         # Convert from K to eV
         energy *= units.kB
 
-        self.results['energy'] = energy.sum()
-        self.results['energies'] = energy.sum(axis=1)
-        self.results['free_energy'] = energy.sum()
+        self.results["energy"] = energy.sum()
+        self.results["energies"] = energy.sum(axis=1)
+        self.results["free_energy"] = energy.sum()

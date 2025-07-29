@@ -16,17 +16,19 @@ from mlp_adsorption import VERSION
 from mlp_adsorption.utilities import random_position, vdw_overlap2
 
 
-class Widom():
-    def __init__(self,
-                 framework_atoms: ase.Atoms,
-                 adsorbate_atoms: ase.Atoms,
-                 temperature: float,
-                 model: calculator.Calculator,
-                 vdw_radii: np.ndarray,
-                 device: str = 'cpu',
-                 save_frequency: int = 100,
-                 output_to_file: bool = True,
-                 debug: bool = False) -> None:
+class Widom:
+    def __init__(
+        self,
+        framework_atoms: ase.Atoms,
+        adsorbate_atoms: ase.Atoms,
+        temperature: float,
+        model: calculator.Calculator,
+        vdw_radii: np.ndarray,
+        device: str = "cpu",
+        save_frequency: int = 100,
+        output_to_file: bool = True,
+        debug: bool = False,
+    ) -> None:
         """
         Base class for Widom insertion method using ASE.
 
@@ -54,17 +56,19 @@ class Widom():
 
         self.start_time = datetime.datetime.now()
 
-        os.makedirs(f'results_{temperature:.2f}_0.0', exist_ok=True)
-        os.makedirs(f'results_{temperature:.2f}_0.0/Movies', exist_ok=True)
+        os.makedirs(f"results_{temperature:.2f}_0.0", exist_ok=True)
+        os.makedirs(f"results_{temperature:.2f}_0.0/Movies", exist_ok=True)
 
-        self.out_folder = f'results_{temperature:.2f}_0.0'
+        self.out_folder = f"results_{temperature:.2f}_0.0"
 
         if output_to_file:
-            self.out_file: Union[TextIO, None] = open(os.path.join(self.out_folder, 'GCMC_Output.out'), 'a')
+            self.out_file: Union[TextIO, None] = open(
+                os.path.join(self.out_folder, "GCMC_Output.out"), "a"
+            )
         else:
             self.out_file: Union[TextIO, None] = None
 
-        self.trajectory = Trajectory(os.path.join(self.out_folder, 'Widom_Trajectory.traj'), 'a')  # type: ignore
+        self.trajectory = Trajectory(os.path.join(self.out_folder, "Widom_Trajectory.traj"), "a")  # type: ignore
 
         self.debug: bool = debug
         self.save_every: int = save_frequency
@@ -75,7 +79,7 @@ class Widom():
         self.framework_energy = self.framework.get_potential_energy()
         self.n_atoms_framework = len(self.framework)
         self.cell: np.ndarray = np.array(self.framework.get_cell())
-        self.V: float = np.linalg.det(self.cell) / units.m ** 3  # Convert to m^3
+        self.V: float = np.linalg.det(self.cell) / units.m**3  # Convert to m^3
         self.framework_mass: float = np.sum(self.framework.get_masses()) / units.kg
 
         self.density: float = self.framework_mass / self.V  # kg/m^3
@@ -171,7 +175,9 @@ Atomic positions:
 ===========================================================================
 Shortest distances:
 """
-        atomic_numbers = set(list(self.framework.get_atomic_numbers()) + list(self.adsorbate.get_atomic_numbers()))
+        atomic_numbers = set(
+            list(self.framework.get_atomic_numbers()) + list(self.adsorbate.get_atomic_numbers())
+        )
 
         for i, j in list(itertools.combinations(atomic_numbers, 2)):
             header += f"  {ase.Atom(i).symbol:2} - {ase.Atom(j).symbol:2}: {self.vdw[i] + self.vdw[j]:.3f} A\n"
@@ -186,7 +192,8 @@ Shortest distances:
         Print debug information about the current state of the simulation.
         This method is called to provide detailed information about the current state of the system.
         """
-        print(f"""
+        print(
+            f"""
 =======================================================================================================
 Movement type: {movement}
 Interaction energy: {deltaE} eV, {(deltaE / (units.kJ / units.mol))} kJ/mol
@@ -197,7 +204,9 @@ Acceptance probability: {acc:.3f}
 Random number:          {rnd_number:.3f}
 Accepted: {rnd_number < acc}
 =======================================================================================================
-""", file=self.out_file)
+""",
+            file=self.out_file,
+        )
 
     def try_insertion(self):
         """
@@ -216,7 +225,7 @@ Accepted: {rnd_number < acc}
         atoms_trial.calc = self.model
 
         pos = atoms_trial.get_positions()
-        pos[-self.n_ads:] = random_position(pos[-self.n_ads:], atoms_trial.get_cell())
+        pos[-self.n_ads :] = random_position(pos[-self.n_ads :], atoms_trial.get_cell())
         atoms_trial.set_positions(pos)
         atoms_trial.wrap()
 
@@ -260,11 +269,13 @@ Iteration  |  dE (eV)  |  dE (kJ/mol)  | kH [mol kg-1 bar-1] |  dH (kJ/mol) | Ti
                 self.minimum_configuration = atoms_trial.copy()
                 self.minimum_energy = deltaE
 
-                write('results_{:.2f}_0.0/Movies/minimum_configuration_{:.2f}.cif'.format(
-                    self.T, deltaE / (units.kJ / units.mol)
+                write(
+                    "results_{:.2f}_0.0/Movies/minimum_configuration_{:.2f}.cif".format(
+                        self.T, deltaE / (units.kJ / units.mol)
                     ),
-                      atoms_trial,
-                      format='cif')
+                    atoms_trial,
+                    format="cif",
+                )
 
             self.trajectory.write(atoms_trial)  # type: ignore
 
@@ -277,13 +288,18 @@ Iteration  |  dE (eV)  |  dE (kJ/mol)  | kH [mol kg-1 bar-1] |  dH (kJ/mol) | Ti
             kH *= 1e-5  # Convert from Pa-1 to bar-1
 
             # Qst = - < ΔE * exp(-β ΔE) > / <exp(-β ΔE)>  + RT # [kJ/mol]
-            Qst = (energiy_list[:i] * boltz_fac[:i]).mean() / boltz_fac[:i].mean() / units.kJ * units.mol - (R * self.T)
+            Qst = (energiy_list[:i] * boltz_fac[:i]).mean() / boltz_fac[
+                :i
+            ].mean() / units.kJ * units.mol - (R * self.T)
 
-            print('{:^10} | {:^9.6f} | {:>13.2f} | {:>19.3e} | {:12.2f} | {:8.2f}'.format(
-                i,
-                deltaE,
-                deltaE / (units.kJ / units.mol),
-                kH,
-                Qst,
-                (datetime.datetime.now() - step_time_start).total_seconds()),
-                 file=self.out_file)
+            print(
+                "{:^10} | {:^9.6f} | {:>13.2f} | {:>19.3e} | {:12.2f} | {:8.2f}".format(
+                    i,
+                    deltaE,
+                    deltaE / (units.kJ / units.mol),
+                    kH,
+                    Qst,
+                    (datetime.datetime.now() - step_time_start).total_seconds(),
+                ),
+                file=self.out_file,
+            )

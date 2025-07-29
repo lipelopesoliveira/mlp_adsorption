@@ -23,18 +23,20 @@ os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 sys.path.append("C:\\Users\\flopes\\Documents\\PRs\\mlp_adsorption")
 
 
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
+device = "cuda" if torch.cuda.is_available() else "cpu"
 
 
-FrameworkPath = ''
-AdsorbatePath = ''
+FrameworkPath = ""
+AdsorbatePath = ""
 
-model = mace_mp(model="mace-dac-1.model",
-                dispersion=True,
-                damping='zero',
-                dispersion_xc='pbe',
-                default_dtype="float32",
-                device=device)
+model = mace_mp(
+    model="mace-dac-1.model",
+    dispersion=True,
+    damping="zero",
+    dispersion_xc="pbe",
+    default_dtype="float32",
+    device=device,
+)
 
 # Load the framework structure
 framework: ase.Atoms = read(FrameworkPath)  # type: ignore
@@ -53,7 +55,7 @@ resultsDict, frameworkOpt = crystalOptmization(
     scalar_pressure=0.0,
     max_steps=1000,
     trajectory="FrameworkOpt.traj",
-    verbose=False
+    verbose=False,
 )
 
 # Load the adsorbate structure
@@ -72,7 +74,7 @@ resultsDict, frameworkOpt = crystalOptmization(
     scalar_pressure=0.0,
     max_steps=1000,
     trajectory="AdsorbateOpt.traj",
-    verbose=False
+    verbose=False,
 )
 
 Temperature = 298.0
@@ -84,26 +86,30 @@ for i, pressure in enumerate(pressure_list):
 
     Pressure = pressure_list[i]
 
-    print(f"Running GCMC simulation for pressure: {Pressure:.2f} Pa at temperature: {Temperature:.2f} K")
+    print(
+        f"Running GCMC simulation for pressure: {Pressure:.2f} Pa at temperature: {Temperature:.2f} K"
+    )
 
-    gcmc = GCMC(model=model,
-                framework_atoms=framework,
-                adsorbate_atoms=adsorbate,
-                temperature=Temperature,
-                pressure=Pressure,
-                fugacity_coeff=1,
-                device=device,
-                vdw_radii=vdw_radii,
-                debug=True,
-                output_to_file=True)
+    gcmc = GCMC(
+        model=model,
+        framework_atoms=framework,
+        adsorbate_atoms=adsorbate,
+        temperature=Temperature,
+        pressure=Pressure,
+        fugacity_coeff=1,
+        device=device,
+        vdw_radii=vdw_radii,
+        debug=True,
+        output_to_file=True,
+    )
 
     gcmc.print_introduction()
 
     if pressure > 10:
         print("Loading previous state for continuation...")
-        output_dir = f'results_{Temperature:.2f}_{pressure_list[i-1]:.2f}'
-        if os.path.exists(os.path.join(output_dir, 'GCMC_Trajectory.traj')):
-            traj = Trajectory(os.path.join(output_dir, 'GCMC_Trajectory.traj'))
+        output_dir = f"results_{Temperature:.2f}_{pressure_list[i-1]:.2f}"
+        if os.path.exists(os.path.join(output_dir, "GCMC_Trajectory.traj")):
+            traj = Trajectory(os.path.join(output_dir, "GCMC_Trajectory.traj"))
             if len(traj) > 0:
                 gcmc.load_state(traj[-1])  # type: ignore
                 print(f"Loaded last snapshot from {output_dir}/GCMC_Trajectory.traj")
