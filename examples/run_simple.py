@@ -84,10 +84,8 @@ MDSteps = 30000
 
 for i, pressure in enumerate(pressure_list):
 
-    Pressure = pressure_list[i]
-
     print(
-        f"Running GCMC simulation for pressure: {Pressure:.2f} Pa at temperature: {Temperature:.2f} K"
+        f"Running GCMC simulation for pressure: {pressure:.2f} Pa at temperature: {Temperature:.2f} K"
     )
 
     gcmc = GCMC(
@@ -95,7 +93,7 @@ for i, pressure in enumerate(pressure_list):
         framework_atoms=framework,
         adsorbate_atoms=adsorbate,
         temperature=Temperature,
-        pressure=Pressure,
+        pressure=pressure,
         fugacity_coeff=1,
         device=device,
         vdw_radii=vdw_radii,
@@ -105,7 +103,7 @@ for i, pressure in enumerate(pressure_list):
 
     gcmc.print_introduction()
 
-    if pressure > 10:
+    if pressure > pressure_list[0]:
         print("Loading previous state for continuation...")
         output_dir = f"results_{Temperature:.2f}_{pressure_list[i-1]:.2f}"
         if os.path.exists(os.path.join(output_dir, "GCMC_Trajectory.traj")):
