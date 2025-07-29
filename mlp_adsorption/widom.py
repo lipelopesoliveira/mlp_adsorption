@@ -3,6 +3,7 @@ import itertools
 import os
 import platform
 import sys
+from typing import Union, TextIO
 
 import ase
 import numpy as np
@@ -59,9 +60,9 @@ class Widom():
         self.out_folder = f'results_{temperature:.2f}_0.0'
 
         if output_to_file:
-            self.out_file = open(os.path.join(self.out_folder, 'Widom_Output.out'), 'a')
+            self.out_file: Union[TextIO, None] = open(os.path.join(self.out_folder, 'GCMC_Output.out'), 'a')
         else:
-            self.out_file = None
+            self.out_file: Union[TextIO, None] = None
 
         self.trajectory = Trajectory(os.path.join(self.out_folder, 'Widom_Trajectory.traj'), 'a')  # type: ignore
 
