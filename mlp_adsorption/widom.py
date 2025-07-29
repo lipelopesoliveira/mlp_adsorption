@@ -3,7 +3,7 @@ import itertools
 import os
 import platform
 import sys
-from typing import Union, TextIO
+from typing import TextIO, Union
 
 import ase
 import numpy as np
@@ -11,9 +11,9 @@ from ase import units
 from ase.calculators import calculator
 from ase.io import Trajectory, write
 from tqdm import tqdm
-from mlp_adsorption.utilities import random_position, vdw_overlap2
 
 from mlp_adsorption import VERSION
+from mlp_adsorption.utilities import random_position, vdw_overlap2
 
 
 class Widom():

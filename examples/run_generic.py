@@ -1,17 +1,18 @@
-import os
 import argparse
-import torch
+import os
 import sys
-import ase
-from ase.io import read, Trajectory
-from ase.data import vdw_radii
 
+# Hide UserWarning and RuntimeWarning messages
+import warnings
+
+import ase
+import torch
+from ase.data import vdw_radii
+from ase.io import Trajectory, read
 from mace.calculators import mace_mp
 
 from mlp_adsorption.gcmc import GCMC
 
-# Hide UserWarning and RuntimeWarning messages
-import warnings
 warnings.filterwarnings("ignore", category=UserWarning)
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
