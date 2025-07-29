@@ -1,7 +1,4 @@
-# fmt: off
-
 import numpy as np
-import json
 
 from ase.calculators.calculator import Calculator, all_changes
 from ase import units
@@ -127,9 +124,6 @@ class CustomLennardJones(Calculator):
         'smooth': False,
     }
     nolabel = True
-
-    # with open('lj_params.json', 'r') as f:
-    #    lj_params = json.load(f)
 
     def __init__(self, lj_parameters: dict, **kwargs):
         """
