@@ -63,7 +63,7 @@ class Widom:
 
         if output_to_file:
             self.out_file: Union[TextIO, None] = open(
-                os.path.join(self.out_folder, "GCMC_Output.out"), "a"
+                os.path.join(self.out_folder, "Widom_Output.out"), "a"
             )
         else:
             self.out_file = None
