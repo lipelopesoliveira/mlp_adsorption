@@ -128,8 +128,8 @@ class CustomLennardJones(Calculator):
     }
     nolabel = True
 
-    with open('lj_params.json', 'r') as f:
-        lj_params = json.load(f)
+    # with open('lj_params.json', 'r') as f:
+    #    lj_params = json.load(f)
 
     def __init__(self, lj_parameters: dict, **kwargs):
         """
