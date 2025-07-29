@@ -3,7 +3,6 @@ import itertools
 import os
 import platform
 import sys
-from typing import TextIO, Union
 
 import ase
 import numpy as np
@@ -74,10 +73,10 @@ class GCMC():
         os.makedirs(self.out_folder, exist_ok=True)
         os.makedirs(os.path.join(self.out_folder, "Movies"), exist_ok=True)
 
-        self.out_file: Union[TextIO, None] = None
-
         if output_to_file:
-            self.out_file: Union[TextIO, None] = open(os.path.join(self.out_folder, 'GCMC_Output.out'), 'a')
+            self.out_file = open(os.path.join(self.out_folder, 'GCMC_Output.out'), 'a')
+        else:
+            self.out_file = None
 
         self.model = model
 

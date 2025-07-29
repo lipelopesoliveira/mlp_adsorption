@@ -3,7 +3,6 @@ import itertools
 import os
 import platform
 import sys
-from typing import TextIO, Union
 
 import ase
 import numpy as np
@@ -57,12 +56,12 @@ class Widom():
         os.makedirs(f'results_{temperature:.2f}_0.0', exist_ok=True)
         os.makedirs(f'results_{temperature:.2f}_0.0/Movies', exist_ok=True)
 
-        self.out_file: Union[TextIO, None] = None
-
         self.out_folder = f'results_{temperature:.2f}_0.0'
 
         if output_to_file:
-            self.out_file: Union[TextIO, None] = open(os.path.join(self.out_folder, 'Widom_Output.out'), 'a')
+            self.out_file = open(os.path.join(self.out_folder, 'Widom_Output.out'), 'a')
+        else:
+            self.out_file = None
 
         self.trajectory = Trajectory(os.path.join(self.out_folder, 'Widom_Trajectory.traj'), 'a')  # type: ignore
 
