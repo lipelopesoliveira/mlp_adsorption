@@ -173,10 +173,10 @@ class CustomLennardJones(Calculator):
 
         sigma_vec = np.array(
             [self.lj_params[s]['sigma'] for s in self.atoms.get_chemical_symbols()]  # type: ignore
-            )  
+            )
         epsilon_vec = np.array(
             [self.lj_params[s]['epsilon'] for s in self.atoms.get_chemical_symbols()]  # type: ignore
-            )  
+            )
 
         # Use broadcasting instead of loops
         sigmas = (sigma_vec[:, None] + sigma_vec[None, :]) / 2

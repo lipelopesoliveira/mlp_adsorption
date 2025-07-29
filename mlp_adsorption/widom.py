@@ -11,7 +11,7 @@ from ase import units
 from ase.calculators import calculator
 from ase.io import Trajectory, write
 from tqdm import tqdm
-from utilities import random_position, vdw_overlap2
+from mlp_adsorption.utilities import random_position, vdw_overlap2
 
 from mlp_adsorption import VERSION
 
@@ -94,7 +94,6 @@ class Widom():
         self.beta: float = 1 / (units.kB * temperature)
         self.device = device
         self.vdw: np.ndarray = vdw_radii * 0.6  # Adjust van der Waals radii to avoid overlap
-        self.trajectory: list[ase.Atoms] = []
 
         self.minimum_configuration: ase.Atoms = self.framework.copy()
         self.minimum_energy: float = 0
@@ -175,7 +174,7 @@ Shortest distances:
         atomic_numbers = set(list(self.framework.get_atomic_numbers()) + list(self.adsorbate.get_atomic_numbers()))
 
         for i, j in list(itertools.combinations(atomic_numbers, 2)):
-            header += f"  {ase.Atom(i).symbol:2} - {ase.Atom(j).symbol:2}: {self.vdw[i] + self.vdw[j]:.3f} Å\n"
+            header += f"  {ase.Atom(i).symbol:2} - {ase.Atom(j).symbol:2}: {self.vdw[i] + self.vdw[j]:.3f} A\n"
 
         header += """
 ===========================================================================
@@ -236,7 +235,7 @@ Accepted: {rnd_number < acc}
         R = units.kB / units.kJ * units.mol
 
         header = """
-Iteration  |  ΔE (eV)  |  ΔE (kJ/mol)  | kH [mol kg-1 bar-1] |  ΔH (kJ/mol) | Time (s)
+Iteration  |  dE (eV)  |  dE (kJ/mol)  | kH [mol kg-1 bar-1] |  dH (kJ/mol) | Time (s)
 ---------------------------------------------------------------------------------------"""
         print(header, file=self.out_file)
 
@@ -267,7 +266,7 @@ Iteration  |  ΔE (eV)  |  ΔE (kJ/mol)  | kH [mol kg-1 bar-1] |  ΔH (kJ/mol) |
                       atoms_trial,
                       format='cif')
 
-            self.trajectory.append(atoms_trial.copy())
+            self.trajectory.write(atoms_trial)
 
             energiy_list[i - 1] = deltaE
 
@@ -279,12 +278,6 @@ Iteration  |  ΔE (eV)  |  ΔE (kJ/mol)  | kH [mol kg-1 bar-1] |  ΔH (kJ/mol) |
 
             # Qst = - < ΔE * exp(-β ΔE) > / <exp(-β ΔE)>  + RT # [kJ/mol]
             Qst = (energiy_list[:i] * boltz_fac[:i]).mean() / boltz_fac[:i].mean() / units.kJ * units.mol - (R * self.T)
-
-            if i % self.save_every == 0:
-                # from ase.io.proteindatabank import write_proteindatabank
-                # write(f'results_{self.T:.2f}_{0.0:.2f}/Movies/widom_{i:04d}.traj', atoms_trial)
-                # write_proteindatabank(f'results_{self.T:.2f}_0.0/Movies/widom.pdb', self.trajectory)
-                self.trajectory.write(atoms_trial)  # type: ignore
 
             print('{:^10} | {:^9.6f} | {:>13.2f} | {:>19.3e} | {:12.2f} | {:8.2f}'.format(
                 i,
