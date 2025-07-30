@@ -22,9 +22,7 @@ os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 sys.path.append("C:\\Users\\flopes\\Documents\\PRs\\mlp_adsorption")
 
-
 device = "cuda" if torch.cuda.is_available() else "cpu"
-
 
 FrameworkPath = ""
 AdsorbatePath = ""
@@ -78,7 +76,7 @@ resultsDict, frameworkOpt = crystalOptmization(
 )
 
 Temperature = 298.0
-pressure_list = np.arange(10, 5000, 200)  # Example pressure list in Pa
+pressure_list = np.arange(10, 5000, 200).astype(float)  # Example pressure list in Pa
 MCSteps = 30000
 MDSteps = 30000
 
