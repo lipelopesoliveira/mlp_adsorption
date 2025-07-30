@@ -99,6 +99,8 @@ class Widom:
         self.device = device
         self.vdw: np.ndarray = vdw_radii * 0.6  # Adjust van der Waals radii to avoid overlap
 
+        self.energy_list = np.zeros(100, dtype=float)
+
         self.minimum_configuration: ase.Atoms = self.framework.copy()
         self.minimum_energy: float = 0
 
@@ -187,6 +189,53 @@ Shortest distances:
 """
         print(header, file=self.out_file)
 
+    def print_finish(self):
+        """
+        Print the footer for the simulation output.
+        This method is called at the end of the simulation to display the final results and elapsed time.
+        """
+
+        boltz_fac = np.exp(-self.beta * self.energy_list)
+
+        # kH = β <exp(-β ΔE)> [mol kg-1 bar-1]
+        kH = self.beta * boltz_fac.mean() * (units.mol / units.J) / self.density
+        kH *= 1e-5  # Convert from Pa-1 to bar-1
+
+        # Qst = - < ΔE * exp(-β ΔE) > / <exp(-β ΔE)>  + kB.T # [kJ/mol]
+        Qst = (self.energy_list * boltz_fac).mean() / boltz_fac.mean() - (units.kB * self.T)
+        Qst /= units.kJ * units.mol
+
+        footer = """
+===========================================================================
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Finishing simulation
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+    Average properties of the system:
+    ------------------------------------------------------------------------------
+    Henry coefficient: [mol/kg/bar]                      {:12.5e} +/- {:12.5e} [-]
+    Enthalpy of adsorption: [kJ/mol]                     {:12.5f} +/- {:12.5f} [-]
+
+===========================================================================
+Simulation finished suscessfully!
+===========================================================================
+
+Simulation finished at {}
+Simulation duration: {}
+
+===========================================================================
+
+""".format(
+            kH,
+            0.0,
+            Qst,
+            0.0,
+            datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            datetime.datetime.now() - self.start_time,
+        )
+        print(footer, file=self.out_file)
+
     def debug_movement(self, movement, deltaE, prefactor, acc, rnd_number) -> None:
         """
         Print debug information about the current state of the simulation.
@@ -241,14 +290,12 @@ Accepted: {rnd_number < acc}
 
     def run(self, N) -> None:
 
-        R = units.kB / units.kJ * units.mol
+        self.energy_list = np.zeros(N, dtype=float)
 
         header = """
 Iteration  |  dE (eV)  |  dE (kJ/mol)  | kH [mol kg-1 bar-1] |  dH (kJ/mol) | Time (s)
 ---------------------------------------------------------------------------------------"""
         print(header, file=self.out_file)
-
-        energiy_list = np.zeros(N, dtype=float)
 
         for i in tqdm(range(1, N + 1), disable=(self.out_file is None), desc="Widom Step"):
 
@@ -279,18 +326,19 @@ Iteration  |  dE (eV)  |  dE (kJ/mol)  | kH [mol kg-1 bar-1] |  dH (kJ/mol) | Ti
 
             self.trajectory.write(atoms_trial)  # type: ignore
 
-            energiy_list[i - 1] = deltaE
+            self.energy_list[i - 1] = deltaE
 
-            boltz_fac = np.exp(-self.beta * energiy_list)
+            boltz_fac = np.exp(-self.beta * self.energy_list)
 
             # kH = β <exp(-β ΔE)> [mol kg-1 bar-1]
             kH = self.beta * boltz_fac[:i].mean() * (units.mol / units.J) / self.density
             kH *= 1e-5  # Convert from Pa-1 to bar-1
 
-            # Qst = - < ΔE * exp(-β ΔE) > / <exp(-β ΔE)>  + RT # [kJ/mol]
-            Qst = (energiy_list[:i] * boltz_fac[:i]).mean() / boltz_fac[
-                :i
-            ].mean() / units.kJ * units.mol - (R * self.T)
+            # Qst = - < ΔE * exp(-β ΔE) > / <exp(-β ΔE)>  + kB.T # [kJ/mol]
+            Qst = (self.energy_list[:i] * boltz_fac[:i]).mean() / boltz_fac[:i].mean() - (
+                units.kB * self.T
+            )
+            Qst /= units.kJ * units.mol
 
             print(
                 "{:^10} | {:^9.6f} | {:>13.2f} | {:>19.3e} | {:12.2f} | {:8.2f}".format(
