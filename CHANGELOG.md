@@ -5,9 +5,9 @@
 ### New Features 🎉
 
 - Now GCMC has three different methods for NPT Molecular Dynamics (MD):
-  - Isotropic volume change and fixed shape with Berendsen thermostat/barostat
-  - Anisotropic volume change and fixed shape with Berendsen thermostat/barostat
-  - Anisotropic volume change and flexible shape with Nose-Hoover/Parrinello-Rahman thermostat/barostat
+  - Isotropic volume change and fixed shape with Berendsen thermostat/barostat (`mode=iso_shape`)
+  - Anisotropic volume change and fixed shape with Berendsen thermostat/barostat (`mode=aniso_shape`)
+  - Anisotropic volume change and flexible shape with Nose-Hoover/Parrinello-Rahman thermostat/barostat (`mode=aniso_flex`).
 
 ### Fixed 🐛
 
@@ -16,6 +16,7 @@
 ### Enhanced ✨
 
 - Now the NPT MD simulation log also prints the cell volume.
+- Now it is possible to control the type of NPT MD simulation through the use of a keyword argument on the `npt` method of GCMC simulation.
 
 ### Documentation 📖
 
