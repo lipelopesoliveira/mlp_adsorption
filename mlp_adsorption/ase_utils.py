@@ -270,25 +270,31 @@ def nVT_Berendsen(
 
     atoms.calc = model
 
-    print(
-        """
+    header = """
 ===========================================================================
-  Starting NVT Molecular Dynamics Simulation using Berendsen Thermostat
+    Starting NVT MD Simulation using Berendsen Thermostat
 
-    Temperature: {:.2f} K
-    Pressure: {:.2f} Pa (Not used in NVT!)
-    Time Step: {:.2f} fs
-    Number of MD Steps: {}
-    Output Interval: {} steps
-    Movie Interval: {} steps
-    Time Constant (taut): {:.2f} fs
+    Parameters:
+        Temperature: {:.2f} K
+        Pressure: {:.2f} Pa (Not used in NVT!)
+        Time Step: {:.2f} fs
+        Number of MD Steps: {}
+        Output Interval: {} steps
+        Movie Interval: {} steps
+        Time Constant (taut): {:.2f} fs
 
 ===========================================================================
 """.format(
-            temperature, pressure, time_step, num_md_steps, output_interval, movie_interval, taut
-        ),
-        file=out_file,
-    )
+            temperature,
+            pressure,
+            time_step,
+            num_md_steps,
+            output_interval,
+            movie_interval,
+            taut
+        )
+
+    print(header, file=out_file)
 
     existing_md_traj = [
         i for i in os.listdir(".") if i.startswith("NVT-Berendsen") and i.endswith(".traj")
@@ -340,21 +346,19 @@ def nVT_Berendsen(
 
     dyn.run(num_md_steps)
 
-    print(
-        "=========================================================================", file=out_file
-    )
-    print("NVT MD simulation completed.", file=out_file)
-    print("Final structure saved to:", traj_filename, file=out_file)
-    print("Log file saved to:", log_filename, file=out_file)
-    print(
-        "Total simulation time: {:.2f} seconds".format(
-            (datetime.datetime.now() - start_time).total_seconds()
-        ),
-        file=out_file,
-    )
-    print(
-        "=========================================================================", file=out_file
-    )
+    footer = """
+======================================================================================
+    NVT MD simulation completed at {}
+    Log file saved to: {}
+    Total simulation time: {:.2f} seconds
+======================================================================================
+    """.format(
+        datetime.datetime.now(),
+        log_filename,
+        (datetime.datetime.now() - start_time).total_seconds()
+        )
+
+    print(footer, file=out_file)
 
     return atoms
 
@@ -382,7 +386,7 @@ def nPT_Berendsen(
 
     Warning: The Berendsen method does not change the shape of the simulation cell, i.e.,
     it does not change the cell angles. If you want to change the shape of the cell,
-    use the NPT class instead.
+    use the NPT Nose-Hoover-Parrinello-Rahman method instead.
 
     Parameters
     ----------
@@ -427,17 +431,19 @@ def nPT_Berendsen(
     atoms.calc = model
     header = """
 ======================================================================================
-    Starting NPT Molecular Dynamics Simulation using Berendsen Thermostat/Barostat
-    Temperature: {:.2f} K
-    Pressure: {:.2f} Pa
-    Isotropic: {}
-    Compressibility: {:.2f} bar-1
-    Time Constant (taut): {:.2f} fs
-    Time Step: {:.2f} fs
-    Number of MD Steps: {}
-    Output Interval: {} steps
-    Movie Interval: {} steps
-    Mask: {}
+    Starting NPT MD Simulation using Berendsen Thermostat/Barostat
+
+    Parameters:
+        Temperature: {:.2f} K
+        Pressure: {:.2f} Pa
+        Isotropic: {}
+        Compressibility: {:.2f} bar-1
+        Time Constant (taut): {:.2f} fs
+        Time Step: {:.2f} fs
+        Number of MD Steps: {}
+        Output Interval: {} steps
+        Movie Interval: {} steps
+        Mask: {}
 
 ======================================================================================
     Step   |  Total Energy  |  Temperature  |  Stress  |   Volume    | Elapsed Time
@@ -470,6 +476,7 @@ def nPT_Berendsen(
 
     # Set the momenta corresponding to the given "temperature"
     MaxwellBoltzmannDistribution(atoms, temperature_K=temperature, force_temp=True)
+
     # Set zero total momentum to avoid drifting
     Stationary(atoms)
 
@@ -518,13 +525,185 @@ def nPT_Berendsen(
     footer = """
 ======================================================================================
     NPT MD simulation completed at {}
-    Final structure saved to: {}
     Log file saved to: {}
     Total simulation time: {:.2f} seconds
 ======================================================================================
     """.format(
         datetime.datetime.now(),
-        traj_filename,
+        log_filename,
+        (datetime.datetime.now() - start_time).total_seconds()
+        )
+
+    print(footer, file=out_file)
+
+    return atoms
+
+
+def nPT_NoseHoover(
+    atoms: ase.Atoms,
+    model: Calculator,
+    temperature: float,
+    pressure: float = 0.0,
+    time_step: float = 0.5,
+    num_md_steps: int = 1000000,
+    output_interval: int = 100,
+    movie_interval: int = 10,
+    ttime: float = 25.0,
+    pfactor: float = 75.0,
+    B_guess: float = 30.0,
+    isotropic: bool = True,
+    mask: tuple[int, int, int] = (1, 1, 1),
+    out_folder: str = ".",
+    out_file: TextIO = sys.stdout,
+    trajectory=None,
+) -> ase.Atoms:
+    """
+    Constant pressure/stress and temperature dynamics.
+
+    Combined Nose-Hoover and Parrinello-Rahman dynamics, creating an NPT (or N,stress,T) ensemble.
+
+    Warning: The Nose-Hoover-Parrinello-Rahman method change the shape of the simulation cell, i.e.,
+    it change the cell angles. If you do not want to change the shape of the cell, use the NPT-Barendsen instead.
+
+    Parameters
+    ----------
+    atoms : ase.Atoms
+        The atomic structure to simulate.
+    temperature : float
+        The target temperature in Kelvin.
+    pressure : float, optional
+        The desired pressure, in bar (1 bar = 1e5 Pa).
+    compressibility : float, optional
+        The compressibility of the material, in bar-1.
+    time_step : float, optional
+        The time step for the simulation in femtoseconds (default is 0.5 fs).
+    num_md_steps : int, optional
+        The total number of MD steps to run (default is 1,000,000).
+    output_interval : int, optional
+        The interval for logging output (default is 100 steps).
+    movie_interval : int, optional
+        The interval for saving trajectory frames (default is 1 step).
+    taut : float, optional
+        The time constant for the Berendsen thermostat in femtoseconds (default is 10.0 fs).
+    taup : float, optional
+        The time constant for the Berendsen barostat in femtoseconds (default is 500.0 fs).
+    isotropic : bool, optional
+        If True, the barostat is isotropic, i.e., changes on the unit cell changes equally in all directions
+        Default is True.
+    mask : tuple[int]
+        Specifies which axes participate in the barostat.  Default (1, 1, 1)
+        means that all axes participate, set any of them to zero to disable
+        the barostat in that direction.
+    out_folder : str, optional
+        The folder where the output files will be saved (default is the current directory).
+    out_file : TextIO, optional
+        The output file to write the simulation log to (default is sys.stdout).
+
+    Returns
+    -------
+    ase.Atoms
+        The final atomic structure after the MD simulation.
+    """
+
+    atoms.calc = model
+    header = """
+======================================================================================
+    Starting NPT MD Simulation using Nose-Hoover/Parrinello-Rahman Thermostat/Barostat
+
+    Parameters:
+        Temperature: {:.2f} K
+        Pressure: {:.2f} Pa
+        Isotropic: {}
+        Time Constant (ttime): {:.2f} fs
+        Pressure Factor (pfactor): {:.2f}
+        Guess of Bulk Modulus (B_guess): {:.2f} GPa
+        Time Step: {:.2f} fs
+        Number of MD Steps: {}
+        Output Interval: {} steps
+        Movie Interval: {} steps
+        Mask: {}
+
+======================================================================================
+    Step   |  Total Energy  |  Temperature  |  Stress  |   Volume    | Elapsed Time
+    [-]    |      [eV]      |      [K]      |   [GPa]  |    [A^3]    |      [s]
+ --------- | -------------- | ------------- | -------- | ----------- | -------------
+""".format(
+            temperature,
+            pressure,
+            isotropic,
+            ttime,
+            pfactor,
+            B_guess,
+            time_step,
+            num_md_steps,
+            output_interval,
+            movie_interval,
+            mask,
+        )
+
+    print(header, file=out_file)
+
+    existing_md_traj = [
+        i for i in os.listdir(out_folder) if i.startswith("NPT-Nose-Hoover-Parrinello-Rahman") and i.endswith(".traj")
+    ]
+    traj_filename = os.path.join(
+        out_folder, f"NPT-Nose-Hoover-Parrinello-Rahman_{temperature:.2f}K_{len(existing_md_traj)}.traj"
+    )
+    log_filename = os.path.join(
+        out_folder, f"NPT-Nose-Hoover-Parrinello-Rahman_{temperature:.2f}K_{len(existing_md_traj)}.log"
+    )
+
+    # Set the momenta corresponding to the given "temperature"
+    MaxwellBoltzmannDistribution(atoms, temperature_K=temperature, force_temp=True)
+
+    # Set zero total momentum to avoid drifting
+    Stationary(atoms)
+
+    dyn = NPT(
+        atoms=atoms,
+        timestep=time_step * units.fs,
+        temperature_K=temperature,
+        ttime=ttime * units.fs,  # Time constant for temperature control
+        pfactor=pfactor ** 2 * units.fs * B_guess * units.GPa,  # Time constant for pressure control
+        externalstress=pressure * units.bar,  # External stress applied
+        trajectory=trajectory if trajectory else traj_filename,
+        logfile=log_filename,
+        loginterval=output_interval,
+        append_trajectory=True,
+    )
+
+    # Print statements
+    def print_md_log():
+        step = dyn.get_number_of_steps()
+        etot = atoms.get_total_energy()
+        temp_K = atoms.get_temperature()
+        stress = atoms.get_stress(include_ideal_gas=True) / units.GPa
+        stress_ave = (stress[0] + stress[1] + stress[2]) / 3.0
+        volume = atoms.get_volume()
+        elapsed_time = (datetime.datetime.now() - start_time).total_seconds()
+        print("  {:>7}  | {:13.6f}  |  {:11.3f}  |  {:7.2f} | {:11.2f} | {:9.1f}".format(
+            step, etot, temp_K, stress_ave, volume, elapsed_time),
+            file=out_file)
+
+    dyn.attach(print_md_log, interval=output_interval)
+    dyn.attach(
+        MDLogger(dyn, atoms, log_filename, header=True, stress=True, peratom=True, mode="a"),
+        interval=movie_interval
+        )
+
+    # Now run the dynamics
+    start_time = datetime.datetime.now()
+
+    dyn.run(num_md_steps)
+
+    footer = """
+======================================================================================
+    NPT MD simulation completed at {}
+    Log file saved to: {}
+    Total simulation time: {:.2f} seconds
+======================================================================================
+    """.format(
+        datetime.datetime.now(),
         log_filename,
         (datetime.datetime.now() - start_time).total_seconds()
         )
