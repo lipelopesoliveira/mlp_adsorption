@@ -11,7 +11,8 @@ from ase.constraints import FixSymmetry
 from ase.filters import FrechetCellFilter
 from ase.io.trajectory import Trajectory
 from ase.md import MDLogger
-from ase.md.nptberendsen import NPTBerendsen
+from ase.md.nptberendsen import NPTBerendsen, Inhomogeneous_NPTBerendsen
+from ase.md.npt import NPT
 from ase.md.nvtberendsen import NVTBerendsen
 from ase.md.velocitydistribution import MaxwellBoltzmannDistribution, Stationary
 from ase.optimize.optimize import Optimizer
@@ -370,12 +371,18 @@ def nPT_Berendsen(
     movie_interval: int = 10,
     taut: float = 10.0,
     taup: float = 500.0,
+    isotropic: bool = True,
+    mask: tuple[int, int, int] = (1, 1, 1),
     out_folder: str = ".",
     out_file: TextIO = sys.stdout,
     trajectory=None,
 ) -> ase.Atoms:
     """
     Run NPT molecular dynamics simulation using the Berendsen thermostat and barostat.
+
+    Warning: The Berendsen method does not change the shape of the simulation cell, i.e.,
+    it does not change the cell angles. If you want to change the shape of the cell,
+    use the NPT class instead.
 
     Parameters
     ----------
@@ -399,6 +406,17 @@ def nPT_Berendsen(
         The time constant for the Berendsen thermostat in femtoseconds (default is 10.0 fs).
     taup : float, optional
         The time constant for the Berendsen barostat in femtoseconds (default is 500.0 fs).
+    isotropic : bool, optional
+        If True, the barostat is isotropic, i.e., changes on the unit cell changes equally in all directions
+        Default is True.
+    mask : tuple[int]
+        Specifies which axes participate in the barostat.  Default (1, 1, 1)
+        means that all axes participate, set any of them to zero to disable
+        the barostat in that direction.
+    out_folder : str, optional
+        The folder where the output files will be saved (default is the current directory).
+    out_file : TextIO, optional
+        The output file to write the simulation log to (default is sys.stdout).
 
     Returns
     -------
@@ -439,18 +457,23 @@ def nPT_Berendsen(
     # Set zero total momentum to avoid drifting
     Stationary(atoms)
 
-    # run Berendsen MD
-    dyn = NPTBerendsen(
-        atoms=atoms,
-        timestep=time_step * units.fs,
-        temperature_K=temperature,
-        pressure=pressure,
-        compressibility_au=compressibility / (1e5 * units.Pascal),
-        taut=taut * units.fs,
-        taup=taup * units.fs,
-        loginterval=movie_interval,
-        trajectory=trajectory if trajectory else traj_filename,
-    )
+    # Common parameters for both dynamics types
+    dyn_params = {
+        "atoms": atoms,
+        "timestep": time_step * units.fs,
+        "temperature_K": temperature,
+        "pressure_au": pressure * units.bar,
+        "compressibility_au": compressibility / units.bar,
+        "taut": taut * units.fs,
+        "taup": taup * units.fs,
+        "loginterval": movie_interval,
+        "trajectory": trajectory if trajectory else traj_filename,
+        "mask": mask,
+    }
+
+    # Select the appropriate dynamics class based on isotropic flag
+    dyn_class = NPTBerendsen if isotropic else Inhomogeneous_NPTBerendsen
+    dyn = dyn_class(**dyn_params)
 
     # Print statements
     def print_md_log():
@@ -459,36 +482,44 @@ def nPT_Berendsen(
         temp_K = atoms.get_temperature()
         stress = atoms.get_stress(include_ideal_gas=True) / units.GPa
         stress_ave = (stress[0] + stress[1] + stress[2]) / 3.0
+        volume = atoms.get_volume()
         elapsed_time = (datetime.datetime.now() - start_time).total_seconds()
-        print(
-            "  {:>7}  | {:13.6f}  |  {:11.3f}  |  {:7.2f} | {:9.1f}".format(
-                step, etot, temp_K, stress_ave, elapsed_time
-            ),
-            file=out_file,
-        )
+        print("  {:>7}  | {:13.6f}  |  {:11.3f}  |  {:7.2f} | {:11.2f} | {:9.1f}".format(
+            step, etot, temp_K, stress_ave, volume, elapsed_time),
+            file=out_file)
 
     dyn.attach(print_md_log, interval=output_interval)
     dyn.attach(
         MDLogger(dyn, atoms, log_filename, header=True, stress=True, peratom=True, mode="a"),
-        interval=movie_interval,
-    )
+        interval=movie_interval
+        )
 
     # Now run the dynamics
     start_time = datetime.datetime.now()
-    print("    Step   |  Total Energy  |  Temperature  |  Stress  | Elapsed Time", file=out_file)
-    print("    [-]    |      [eV]      |      [K]      |   [GPa]  |     [s]", file=out_file)
-    print(" --------- | -------------- | ------------- | -------- | -------------", file=out_file)
+    header = """
+======================================================================================
+    Step   |  Total Energy  |  Temperature  |  Stress  |   Volume    | Elapsed Time
+    [-]    |      [eV]      |      [K]      |   [GPa]  |    [A^3]    |      [s]
+ --------- | -------------- | ------------- | -------- | ----------- | -------------
+"""
+    print(header, file=out_file)
 
     dyn.run(num_md_steps)
 
-    print(
-        "=========================================================================", file=out_file
-    )
-    print("NPT MD simulation completed.", file=out_file)
-    print("Final structure saved to:", traj_filename, file=out_file)
-    print("Log file saved to:", log_filename, file=out_file)
-    print(
-        "=========================================================================", file=out_file
-    )
+    footer = """
+======================================================================================
+    NPT MD simulation completed at {}
+    Final structure saved to: {}
+    Log file saved to: {}
+    Total simulation time: {:.2f} seconds
+======================================================================================
+    """.format(
+        datetime.datetime.now(),
+        traj_filename,
+        log_filename,
+        (datetime.datetime.now() - start_time).total_seconds()
+        )
+
+    print(footer, file=out_file)
 
     return atoms
