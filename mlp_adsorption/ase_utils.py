@@ -12,7 +12,7 @@ from ase.filters import FrechetCellFilter
 from ase.io.trajectory import Trajectory
 from ase.md import MDLogger
 from ase.md.npt import NPT
-from ase.md.nptberendsen import NPTBerendsen, Inhomogeneous_NPTBerendsen
+from ase.md.nptberendsen import Inhomogeneous_NPTBerendsen, NPTBerendsen
 from ase.md.nvtberendsen import NVTBerendsen
 from ase.md.velocitydistribution import MaxwellBoltzmannDistribution, Stationary
 from ase.optimize.optimize import Optimizer
@@ -285,14 +285,8 @@ def nVT_Berendsen(
 
 ===========================================================================
 """.format(
-            temperature,
-            pressure,
-            time_step,
-            num_md_steps,
-            output_interval,
-            movie_interval,
-            taut
-        )
+        temperature, pressure, time_step, num_md_steps, output_interval, movie_interval, taut
+    )
 
     print(header, file=out_file)
 
@@ -355,8 +349,8 @@ def nVT_Berendsen(
     """.format(
         datetime.datetime.now(),
         log_filename,
-        (datetime.datetime.now() - start_time).total_seconds()
-        )
+        (datetime.datetime.now() - start_time).total_seconds(),
+    )
 
     print(footer, file=out_file)
 
@@ -450,17 +444,17 @@ def nPT_Berendsen(
     [-]    |      [eV]      |      [K]      |   [GPa]  |    [A^3]    |      [s]
  --------- | -------------- | ------------- | -------- | ----------- | -------------
 """.format(
-            temperature,
-            pressure,
-            isotropic,
-            compressibility,
-            taut,
-            time_step,
-            num_md_steps,
-            output_interval,
-            movie_interval,
-            mask,
-        )
+        temperature,
+        pressure,
+        isotropic,
+        compressibility,
+        taut,
+        time_step,
+        num_md_steps,
+        output_interval,
+        movie_interval,
+        mask,
+    )
 
     print(header, file=out_file)
 
@@ -507,15 +501,18 @@ def nPT_Berendsen(
         stress_ave = (stress[0] + stress[1] + stress[2]) / 3.0
         volume = atoms.get_volume()
         elapsed_time = (datetime.datetime.now() - start_time).total_seconds()
-        print("  {:>7}  | {:13.6f}  |  {:11.3f}  |  {:7.2f} | {:11.2f} | {:9.1f}".format(
-            step, etot, temp_K, stress_ave, volume, elapsed_time),
-            file=out_file)
+        print(
+            "  {:>7}  | {:13.6f}  |  {:11.3f}  |  {:7.2f} | {:11.2f} | {:9.1f}".format(
+                step, etot, temp_K, stress_ave, volume, elapsed_time
+            ),
+            file=out_file,
+        )
 
     dyn.attach(print_md_log, interval=output_interval)
     dyn.attach(
         MDLogger(dyn, atoms, log_filename, header=True, stress=True, peratom=True, mode="a"),
-        interval=movie_interval
-        )
+        interval=movie_interval,
+    )
 
     # Now run the dynamics
     start_time = datetime.datetime.now()
@@ -531,8 +528,8 @@ def nPT_Berendsen(
     """.format(
         datetime.datetime.now(),
         log_filename,
-        (datetime.datetime.now() - start_time).total_seconds()
-        )
+        (datetime.datetime.now() - start_time).total_seconds(),
+    )
 
     print(footer, file=out_file)
 
@@ -628,29 +625,33 @@ def nPT_NoseHoover(
     [-]    |      [eV]      |      [K]      |   [GPa]  |    [A^3]    |      [s]
  --------- | -------------- | ------------- | -------- | ----------- | -------------
 """.format(
-            temperature,
-            pressure,
-            isotropic,
-            ttime,
-            pfactor,
-            B_guess,
-            time_step,
-            num_md_steps,
-            output_interval,
-            movie_interval,
-            mask,
-        )
+        temperature,
+        pressure,
+        isotropic,
+        ttime,
+        pfactor,
+        B_guess,
+        time_step,
+        num_md_steps,
+        output_interval,
+        movie_interval,
+        mask,
+    )
 
     print(header, file=out_file)
 
     existing_md_traj = [
-        i for i in os.listdir(out_folder) if i.startswith("NPT-Nose-Hoover-Parrinello-Rahman") and i.endswith(".traj")
+        i
+        for i in os.listdir(out_folder)
+        if i.startswith("NPT-Nose-Hoover-Parrinello-Rahman") and i.endswith(".traj")
     ]
     traj_filename = os.path.join(
-        out_folder, f"NPT-Nose-Hoover-Parrinello-Rahman_{temperature:.2f}K_{len(existing_md_traj)}.traj"
+        out_folder,
+        f"NPT-Nose-Hoover-Parrinello-Rahman_{temperature:.2f}K_{len(existing_md_traj)}.traj",
     )
     log_filename = os.path.join(
-        out_folder, f"NPT-Nose-Hoover-Parrinello-Rahman_{temperature:.2f}K_{len(existing_md_traj)}.log"
+        out_folder,
+        f"NPT-Nose-Hoover-Parrinello-Rahman_{temperature:.2f}K_{len(existing_md_traj)}.log",
     )
 
     # Set the momenta corresponding to the given "temperature"
@@ -664,7 +665,7 @@ def nPT_NoseHoover(
         timestep=time_step * units.fs,
         temperature_K=temperature,
         ttime=ttime * units.fs,  # Time constant for temperature control
-        pfactor=pfactor ** 2 * units.fs * B_guess * units.GPa,  # Time constant for pressure control
+        pfactor=pfactor**2 * units.fs * B_guess * units.GPa,  # Time constant for pressure control
         externalstress=pressure * units.bar,  # External stress applied
         trajectory=trajectory if trajectory else traj_filename,
         logfile=log_filename,
@@ -681,15 +682,18 @@ def nPT_NoseHoover(
         stress_ave = (stress[0] + stress[1] + stress[2]) / 3.0
         volume = atoms.get_volume()
         elapsed_time = (datetime.datetime.now() - start_time).total_seconds()
-        print("  {:>7}  | {:13.6f}  |  {:11.3f}  |  {:7.2f} | {:11.2f} | {:9.1f}".format(
-            step, etot, temp_K, stress_ave, volume, elapsed_time),
-            file=out_file)
+        print(
+            "  {:>7}  | {:13.6f}  |  {:11.3f}  |  {:7.2f} | {:11.2f} | {:9.1f}".format(
+                step, etot, temp_K, stress_ave, volume, elapsed_time
+            ),
+            file=out_file,
+        )
 
     dyn.attach(print_md_log, interval=output_interval)
     dyn.attach(
         MDLogger(dyn, atoms, log_filename, header=True, stress=True, peratom=True, mode="a"),
-        interval=movie_interval
-        )
+        interval=movie_interval,
+    )
 
     # Now run the dynamics
     start_time = datetime.datetime.now()
@@ -705,8 +709,8 @@ def nPT_NoseHoover(
     """.format(
         datetime.datetime.now(),
         log_filename,
-        (datetime.datetime.now() - start_time).total_seconds()
-        )
+        (datetime.datetime.now() - start_time).total_seconds(),
+    )
 
     print(footer, file=out_file)
 
