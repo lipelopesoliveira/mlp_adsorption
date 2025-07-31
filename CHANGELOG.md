@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+### New Features 🎉
+
+### Fixed 🐛
+
+### Enhanced ✨
+
+### Documentation 📖
+
+### Removed 🗑️
+
 ## v[0.3.0] - 2025-07-31
 
 ### New Features 🎉
@@ -21,8 +33,6 @@
 ### Documentation 📖
 
 ### Removed 🗑️
-
-- Unused imports and commented-out code in `widom.py`.
 
 ## v[0.2.0] - 2025-07-12
 
