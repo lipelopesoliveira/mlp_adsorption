@@ -11,8 +11,8 @@ from ase.constraints import FixSymmetry
 from ase.filters import FrechetCellFilter
 from ase.io.trajectory import Trajectory
 from ase.md import MDLogger
-from ase.md.nptberendsen import NPTBerendsen, Inhomogeneous_NPTBerendsen
 from ase.md.npt import NPT
+from ase.md.nptberendsen import NPTBerendsen, Inhomogeneous_NPTBerendsen
 from ase.md.nvtberendsen import NVTBerendsen
 from ase.md.velocitydistribution import MaxwellBoltzmannDistribution, Stationary
 from ase.optimize.optimize import Optimizer
