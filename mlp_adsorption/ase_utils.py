@@ -425,22 +425,38 @@ def nPT_Berendsen(
     """
 
     atoms.calc = model
-
-    print(
-        """===========================================================================
+    header = """
+======================================================================================
     Starting NPT Molecular Dynamics Simulation using Berendsen Thermostat/Barostat
     Temperature: {:.2f} K
-    Pressure: {:.2f} Pa (Not used in NVT!)
+    Pressure: {:.2f} Pa
+    Isotropic: {}
+    Compressibility: {:.2f} bar-1
+    Time Constant (taut): {:.2f} fs
     Time Step: {:.2f} fs
     Number of MD Steps: {}
     Output Interval: {} steps
     Movie Interval: {} steps
-    Time Constant (taut): {:.2f} fs
-===========================================================================""".format(
-            temperature, pressure, time_step, num_md_steps, output_interval, movie_interval, taut
-        ),
-        file=out_file,
-    )
+    Mask: {}
+
+======================================================================================
+    Step   |  Total Energy  |  Temperature  |  Stress  |   Volume    | Elapsed Time
+    [-]    |      [eV]      |      [K]      |   [GPa]  |    [A^3]    |      [s]
+ --------- | -------------- | ------------- | -------- | ----------- | -------------
+""".format(
+            temperature,
+            pressure,
+            isotropic,
+            compressibility,
+            taut,
+            time_step,
+            num_md_steps,
+            output_interval,
+            movie_interval,
+            mask,
+        )
+
+    print(header, file=out_file)
 
     existing_md_traj = [
         i for i in os.listdir(out_folder) if i.startswith("NPT-Berendsen") and i.endswith(".traj")
@@ -496,13 +512,6 @@ def nPT_Berendsen(
 
     # Now run the dynamics
     start_time = datetime.datetime.now()
-    header = """
-======================================================================================
-    Step   |  Total Energy  |  Temperature  |  Stress  |   Volume    | Elapsed Time
-    [-]    |      [eV]      |      [K]      |   [GPa]  |    [A^3]    |      [s]
- --------- | -------------- | ------------- | -------- | ----------- | -------------
-"""
-    print(header, file=out_file)
 
     dyn.run(num_md_steps)
 
