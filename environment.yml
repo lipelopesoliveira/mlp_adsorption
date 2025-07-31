@@ -14,7 +14,6 @@ dependencies:
   - pymatgen
   - tqdm
   - simplejson
-  - molmod
   - pip:
     - pymser
     - mace-torch

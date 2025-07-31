@@ -5,38 +5,39 @@ import platform
 import sys
 from typing import TextIO, Union
 
+import ase
 import numpy as np
 from ase import units
 from ase.calculators import calculator
+from ase.io import Trajectory, read
 from ase.optimize import LBFGS
-from ase.io import read, write
-import ase
 from tqdm import tqdm
 
 from mlp_adsorption import VERSION
-from mlp_adsorption.utilities import (enthalpy_of_adsorption,
-                                      random_position,
-                                      random_rotation,
-                                      vdw_overlap)
+from mlp_adsorption.ase_utils import crystalOptmization, nPT_Berendsen
+from mlp_adsorption.utilities import (
+    enthalpy_of_adsorption,
+    random_position,
+    random_rotation,
+    vdw_overlap,
+)
 
-from mlp_adsorption.ase_utils import (crystalOptmization,
-                                      nVT_Berendsen,
-                                      nPT_Berendsen)
 
-
-class GCMC():
-    def __init__(self,
-                 model: calculator.Calculator,
-                 framework_atoms: ase.Atoms,
-                 adsorbate_atoms: ase.Atoms,
-                 temperature: float,
-                 pressure: float,
-                 fugacity_coeff: float,
-                 device: str,
-                 vdw_radii: np.ndarray,
-                 save_frequency: int = 100,
-                 output_to_file: bool = True,
-                 debug: bool = False):
+class GCMC:
+    def __init__(
+        self,
+        model: calculator.Calculator,
+        framework_atoms: ase.Atoms,
+        adsorbate_atoms: ase.Atoms,
+        temperature: float,
+        pressure: float,
+        fugacity_coeff: float,
+        device: str,
+        vdw_radii: np.ndarray,
+        save_frequency: int = 100,
+        output_to_file: bool = True,
+        debug: bool = False,
+    ):
         """
         Base class for Grand Canonical Monte Carlo (GCMC) simulations using ASE.
 
@@ -76,16 +77,23 @@ class GCMC():
 
         self.start_time = datetime.datetime.now()
 
-        self.out_folder = f'results_{temperature:.2f}_{pressure:.2f}'
+        self.out_folder = f"results_{temperature:.2f}_{pressure:.2f}"
         os.makedirs(self.out_folder, exist_ok=True)
         os.makedirs(os.path.join(self.out_folder, "Movies"), exist_ok=True)
 
-        self.out_file: Union[TextIO, None] = None
-
         if output_to_file:
-            self.out_file: Union[TextIO, None] = open(os.path.join(self.out_folder, 'GCMC_Output.out'), 'a')
+            self.out_file: Union[TextIO, None] = open(
+                os.path.join(self.out_folder, "GCMC_Output.out"), "a"
+            )
+        else:
+            self.out_file = None
 
         self.model = model
+
+        self.trajectory = Trajectory(
+            os.path.join(self.out_folder, "GCMC_Trajectory.traj"),
+            "a",
+        )
 
         # Framework setup
         self.set_framework(framework_atoms)
@@ -97,7 +105,9 @@ class GCMC():
         self.T: float = temperature
         self.P: float = pressure
         self.fugacity_coeff: float = fugacity_coeff
-        self.fugacity: float = pressure * fugacity_coeff * units.J  # Convert fugacity from Pa (J/m^3) to eV / m^3
+        self.fugacity: float = (
+            pressure * fugacity_coeff * units.J
+        )  # Convert fugacity from Pa (J/m^3) to eV / m^3
 
         self.model = model
         self.device = device
@@ -121,10 +131,10 @@ class GCMC():
         mol2cm3 = R * 273.15 / atm2pa
 
         self.conv_factors = {
-            'mol/kg': (1 / units.mol) / self.framework_mass,
-            'mg/g': (self.adsorbate_mass * 1e3) / self.framework_mass,
-            'cm^3 STP/gr': mol2cm3 / units.mol / self.framework_mass * 1e3,
-            'cm^3 STP/cm^3': 1e6 * mol2cm3 / units.mol / (self.framework.get_volume() * (1e-8 ** 3))
+            "mol/kg": (1 / units.mol) / self.framework_mass,
+            "mg/g": (self.adsorbate_mass * 1e3) / self.framework_mass,
+            "cm^3 STP/gr": mol2cm3 / units.mol / self.framework_mass * 1e3,
+            "cm^3 STP/cm^3": 1e6 * mol2cm3 / units.mol / (self.framework.get_volume() * (1e-8**3)),
         }
 
         self.vdw: np.ndarray = vdw_radii * 0.6  # Adjust van der Waals radii to avoid overlap
@@ -140,12 +150,7 @@ class GCMC():
         self.total_energy_list: list[float] = []
         self.total_ads_list: list[float] = []
 
-        self.mov_dict: dict = {
-            'insertion': [],
-            'deletion': [],
-            'translation': [],
-            'rotation': []
-        }
+        self.mov_dict: dict = {"insertion": [], "deletion": [], "translation": [], "rotation": []}
 
     def set_framework(self, framework_atoms: ase.Atoms) -> None:
         """
@@ -161,7 +166,7 @@ class GCMC():
         self.framework_energy = self.framework.get_potential_energy()
         self.n_atoms_framework = len(self.framework)
         self.cell = np.array(self.framework.get_cell())
-        self.V = np.linalg.det(self.cell) / units.m ** 3
+        self.V = np.linalg.det(self.cell) / units.m**3
         self.framework_mass = np.sum(self.framework.get_masses()) / units.kg
 
     def set_adsorbate(self, adsorbate_atoms: ase.Atoms) -> None:
@@ -210,10 +215,15 @@ class GCMC():
 
         self.N_ads = int((len(state) - self.n_atoms_framework) / len(self.adsorbate))
         average_binding_energy = (
-            self.current_total_energy - self.framework_energy - self.N_ads * self.adsorbate_energy
-        ) / (units.kJ / units.mol) / self.N_ads if self.N_ads > 0 else 0
+            (self.current_total_energy - self.framework_energy - self.N_ads * self.adsorbate_energy)
+            / (units.kJ / units.mol)
+            / self.N_ads
+            if self.N_ads > 0
+            else 0
+        )
 
-        print("""
+        print(
+            """
 ===========================================================================
 
 Restart file requested.
@@ -225,8 +235,14 @@ Current number of adsorbates: {}
 Current average binding energy: {:.3f} kJ/mol
 
 ===========================================================================
-""".format(len(state), self.current_total_energy, self.N_ads, average_binding_energy,),
-            file=self.out_file)
+""".format(
+                len(state),
+                self.current_total_energy,
+                self.N_ads,
+                average_binding_energy,
+            ),
+            file=self.out_file,
+        )
 
     def print_introduction(self):
         """
@@ -309,7 +325,9 @@ Atomic positions:
 ===========================================================================
 Shortest distances:
 """
-        atomic_numbers = set(list(self.framework.get_atomic_numbers()) + list(self.adsorbate.get_atomic_numbers()))
+        atomic_numbers = set(
+            list(self.framework.get_atomic_numbers()) + list(self.adsorbate.get_atomic_numbers())
+        )
 
         for i, j in list(itertools.combinations(atomic_numbers, 2)):
             header += f"  {ase.Atom(i).symbol:2} - {ase.Atom(j).symbol:2}: {self.vdw[i] + self.vdw[j]:.3f} Å\n"
@@ -344,10 +362,11 @@ Partial pressure:
         Qst = enthalpy_of_adsorption(
             energy=np.array(self.total_ads_list) / units.kB,  # Convert to K
             number_of_molecules=self.uptake_list,
-            temperature=self.T
+            temperature=self.T,
         )
 
-        print("""
+        print(
+            """
 ===========================================================================
 
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -376,18 +395,24 @@ Simulation duration: {}
 ===========================================================================
 
 """.format(
-            avg_uptake, std_uptake,
-            avg_uptake * self.conv_factors['mol/kg'], std_uptake * self.conv_factors['mol/kg'],
-            avg_uptake * self.conv_factors['mg/g'], std_uptake * self.conv_factors['mg/g'],
-            avg_uptake * self.conv_factors['cm^3 STP/gr'], std_uptake * self.conv_factors['cm^3 STP/gr'],
-            avg_uptake * self.conv_factors['cm^3 STP/cm^3'], std_uptake * self.conv_factors['cm^3 STP/cm^3'],
-            avg_uptake * self.conv_factors['mg/g'] * 1e-3, std_uptake * self.conv_factors['mg/g'] * 1e-3,
-            Qst,
-            0.0,
-            datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-            datetime.datetime.now() - self.start_time
+                avg_uptake,
+                std_uptake,
+                avg_uptake * self.conv_factors["mol/kg"],
+                std_uptake * self.conv_factors["mol/kg"],
+                avg_uptake * self.conv_factors["mg/g"],
+                std_uptake * self.conv_factors["mg/g"],
+                avg_uptake * self.conv_factors["cm^3 STP/gr"],
+                std_uptake * self.conv_factors["cm^3 STP/gr"],
+                avg_uptake * self.conv_factors["cm^3 STP/cm^3"],
+                std_uptake * self.conv_factors["cm^3 STP/cm^3"],
+                avg_uptake * self.conv_factors["mg/g"] * 1e-3,
+                std_uptake * self.conv_factors["mg/g"] * 1e-3,
+                Qst,
+                0.0,
+                datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                datetime.datetime.now() - self.start_time,
             ),
-            file=self.out_file
+            file=self.out_file,
         )
 
     def debug_movement(self, movement, deltaE, prefactor, acc, rnd_number) -> None:
@@ -395,7 +420,8 @@ Simulation duration: {}
         Print debug information about the current state of the simulation.
         This method is called to provide detailed information about the current state of the system.
         """
-        print(f"""
+        print(
+            f"""
 =======================================================================================================
 Movement type: {movement}
 Current number of adsorbates: {self.N_ads}
@@ -407,15 +433,19 @@ Acceptance probability: {acc:.3f}
 Random number:          {rnd_number:.3f}
 Accepted: {rnd_number < acc}
 =======================================================================================================
-""", file=self.out_file)
+""",
+            file=self.out_file,
+        )
 
-    def optimize_framework(self,
-                           max_steps: int = 1000,
-                           opt_cell: bool = True,
-                           fix_symmetry: bool = True,
-                           hydrostatic_strain: bool = True,
-                           symm_tol: float = 1e-3,
-                           max_force: float = 0.05) -> None:
+    def optimize_framework(
+        self,
+        max_steps: int = 1000,
+        opt_cell: bool = True,
+        fix_symmetry: bool = True,
+        hydrostatic_strain: bool = True,
+        symm_tol: float = 1e-3,
+        max_force: float = 0.05,
+    ) -> None:
         """
         Optimize the framework structure using the provided calculator.
 
@@ -432,17 +462,19 @@ Accepted: {rnd_number < acc}
             The optimized framework structure.
         """
 
-        print("""
+        print(
+            """
 =======================================================================================================
 Start optimizing framework structure...
 =======================================================================================================
               """,
-              file=self.out_file)
+            file=self.out_file,
+        )
 
         resultsDict, optFramework = crystalOptmization(
             atoms_in=self.framework,
             calculator=self.model,
-            optimizer=LBFGS,
+            optimizer=LBFGS,  # type: ignore
             fmax=max_force,
             opt_cell=opt_cell,
             fix_symmetry=fix_symmetry,
@@ -450,17 +482,18 @@ Start optimizing framework structure...
             constant_volume=False,
             scalar_pressure=0,
             max_steps=max_steps,
-            trajectory="Optimization.traj",
+            trajectory=self.trajectory,  # type: ignore
             verbose=True,
             symm_tol=symm_tol,
-            out_file=self.out_file
+            out_file=self.out_file,  # type: ignore
         )
+
+        # Remove any constraints from the optimized framework
+        optFramework.set_constraint(None)
 
         self.set_framework(optFramework.copy())
 
-    def optimize_adsorbate(self,
-                           max_steps: int = 1000,
-                           max_force: float = 0.05) -> None:
+    def optimize_adsorbate(self, max_steps: int = 1000, max_force: float = 0.05) -> None:
         """
         Optimize the adsorbate structure using the provided calculator.
 
@@ -479,17 +512,19 @@ Start optimizing framework structure...
             The optimized adsorbate structure.
         """
 
-        print("""
+        print(
+            """
 =======================================================================================================
 Start optimizing adsorbate structure...
 =======================================================================================================
               """,
-              file=self.out_file)
+            file=self.out_file,
+        )
 
         resultsDict, optAdsorbate = crystalOptmization(
             atoms_in=self.adsorbate,
             calculator=self.model,
-            optimizer=LBFGS,
+            optimizer=LBFGS,  # type: ignore
             fmax=max_force,
             opt_cell=False,
             fix_symmetry=False,
@@ -500,10 +535,12 @@ Start optimizing adsorbate structure...
             trajectory="Adsorbate_Optimization.traj",
             verbose=True,
             symm_tol=1e3,
-            out_file=self.out_file
+            out_file=self.out_file,  # type: ignore
         )
 
         self.adsorbate = optAdsorbate.copy()
+        self.adsorbate.set_constraint(None)
+        self.adsorbate.set_cell(self.framework.get_cell())
         self.adsorbate.calc = self.model
         self.adsorbate_energy = self.adsorbate.get_potential_energy()
 
@@ -521,17 +558,19 @@ Start optimizing adsorbate structure...
             atoms=self.current_system,
             model=self.model,
             temperature=self.T,
-            pressure=self.P*1e-5,
+            pressure=self.P * 1e-5,
             compressibility=1e-4,
             time_step=time_step,
             num_md_steps=nsteps,
             out_folder=self.out_folder,
-            out_file=self.out_file,
+            out_file=self.out_file,  # type: ignore
+            trajectory=self.trajectory,
+            movie_interval=self.save_every,
         )
 
         self.set_state(new_state)
 
-        self.set_framework(new_state[:self.n_atoms_framework].copy())
+        self.set_framework(new_state[: self.n_atoms_framework].copy())  # type: ignore
 
     def get_ideal_chemical_potential(self) -> float:
         """
@@ -566,8 +605,8 @@ Start optimizing adsorbate structure...
 
         lmbd = np.sqrt(h**2 * beta / (2 * np.pi * self.adsorbate_mass))  # unit: m
 
-        mu_i = np.log(lmbd ** 3 * beta * self.P * self.fugacity_coeff) * (units.kB * self.T)  # In J
-        mu_i *= (units.J / units.mol)  # Convert to eV
+        mu_i = np.log(lmbd**3 * beta * self.P * self.fugacity_coeff) * (units.kB * self.T)  # In J
+        mu_i *= units.J / units.mol  # Convert to eV
 
         return mu_i
 
@@ -578,7 +617,7 @@ Start optimizing adsorbate structure...
         # Pacc (N -> N + 1) = min(1, β * V * f * exp(-β ΔE) / (N + 1))
         """
 
-        #if deltaE / (units.kJ / units.mol) < 100:
+        # if deltaE / (units.kJ / units.mol) < 100:
         #    return True  # Always accept if the energy change is too high
 
         exp_value = np.exp(-self.beta * deltaE)
@@ -591,11 +630,11 @@ Start optimizing adsorbate structure...
 
         if self.debug:
             self.debug_movement(
-                movement='Insertion',
+                movement="Insertion",
                 deltaE=deltaE,
                 prefactor=pre_factor,
                 acc=acc,
-                rnd_number=rnd_number
+                rnd_number=rnd_number,
             )
 
         # Apply Metropolis acceptance/rejection rule
@@ -608,7 +647,7 @@ Start optimizing adsorbate structure...
         Pdel (N -> N - 1 ) = min(1, N / (β * V * f) * exp(-β ΔE) )
         """
 
-        #if deltaE / (units.kJ / units.mol) > 100:
+        # if deltaE / (units.kJ / units.mol) > 100:
         #    return True  # Always accept if the energy change is too high
 
         exp_value = np.exp(-self.beta * deltaE)
@@ -621,11 +660,11 @@ Start optimizing adsorbate structure...
 
         if self.debug:
             self.debug_movement(
-                movement='Deletion',
+                movement="Deletion",
                 deltaE=deltaE,
                 prefactor=pre_factor,
                 acc=acc,
-                rnd_number=rnd_number
+                rnd_number=rnd_number,
             )
 
         # Apply Metropolis acceptance/rejection rule
@@ -645,11 +684,7 @@ Start optimizing adsorbate structure...
 
         if self.debug:
             self.debug_movement(
-                movement='Movement',
-                deltaE=deltaE,
-                prefactor=1,
-                acc=acc,
-                rnd_number=rnd_number
+                movement="Movement", deltaE=deltaE, prefactor=1, acc=acc, rnd_number=rnd_number
             )
 
         # Apply Metropolis acceptance/rejection rule
@@ -672,7 +707,7 @@ Start optimizing adsorbate structure...
         atoms_trial.calc = self.model
 
         pos = atoms_trial.get_positions()
-        pos[-self.n_ads:] = random_position(pos[-self.n_ads:], atoms_trial.get_cell())
+        pos[-self.n_ads :] = random_position(pos[-self.n_ads :], atoms_trial.get_cell())
         atoms_trial.set_positions(pos)
         atoms_trial.wrap()
 
@@ -718,7 +753,7 @@ Start optimizing adsorbate structure...
         i_end = self.n_atoms_framework + self.n_ads * (i_ads + 1)
 
         # Delete the adsorbate atoms from the trial structure
-        del atoms_trial[i_start: i_end]
+        del atoms_trial[i_start:i_end]
 
         # Calculate the new potential energy of the trial structure
         e_new = atoms_trial.get_potential_energy()  # type: ignore
@@ -749,7 +784,7 @@ Start optimizing adsorbate structure...
         i_start = self.n_atoms_framework + self.n_ads * i_ads
         i_end = self.n_atoms_framework + self.n_ads * (i_ads + 1)
 
-        pos[i_start: i_end] += 0.5 * (np.random.rand(3) - 0.5)
+        pos[i_start:i_end] += 0.5 * (np.random.rand(3) - 0.5)
 
         atoms_trial.set_positions(pos)  # type: ignore
         if vdw_overlap(atoms_trial, self.vdw, self.n_atoms_framework, self.n_ads, i_ads):
@@ -777,7 +812,7 @@ Start optimizing adsorbate structure...
         i_start = self.n_atoms_framework + self.n_ads * i_ads
         i_end = self.n_atoms_framework + self.n_ads * (i_ads + 1)
 
-        pos[i_start: i_end] = random_rotation(pos[i_start: i_end])
+        pos[i_start:i_end] = random_rotation(pos[i_start:i_end])
         atoms_trial.set_positions(pos)  # type: ignore
 
         if vdw_overlap(atoms_trial, self.vdw, self.n_atoms_framework, self.n_ads, i_ads):
@@ -795,8 +830,7 @@ Start optimizing adsorbate structure...
             return False
 
     def run(self, N) -> None:
-        """ Run the Grand Canonical Monte Carlo simulation for N iterations.
-        """
+        """Run the Grand Canonical Monte Carlo simulation for N iterations."""
 
         header = """
  Iteration |  Number of  |  Uptake  |    Tot En.   |Av. Ads. En.|  Pacc  |  Pdel  |  Ptra  |  Prot  |  Time
@@ -813,62 +847,93 @@ Start optimizing adsorbate structure...
 
             if switch < 0.25:
                 accepted = self.try_insertion()
-                self.mov_dict['insertion'].append(1 if accepted else 0)
+                self.mov_dict["insertion"].append(1 if accepted else 0)
 
             elif switch < 0.5:
                 accepted = self.try_deletion()
-                self.mov_dict['deletion'].append(1 if accepted else 0)
+                self.mov_dict["deletion"].append(1 if accepted else 0)
 
             # Translation
             elif switch < 0.75:
                 accepted = self.try_translation()
-                self.mov_dict['translation'].append(1 if accepted else 0)
+                self.mov_dict["translation"].append(1 if accepted else 0)
 
             # Rotation
             elif switch >= 0.75:
                 accepted = self.try_rotation()
-                self.mov_dict['rotation'].append(1 if accepted else 0)
+                self.mov_dict["rotation"].append(1 if accepted else 0)
 
             self.uptake_list.append(self.N_ads)
             self.total_energy_list.append(self.current_total_energy)
             self.total_ads_list.append(
-                self.current_total_energy - (self.N_ads * self.adsorbate_energy) - self.framework_energy
-                )
+                self.current_total_energy
+                - (self.N_ads * self.adsorbate_energy)
+                - self.framework_energy
+            )
 
             average_ads_energy = (
-                self.current_total_energy - (self.N_ads * self.adsorbate_energy) - self.framework_energy
-                ) / (units.kJ / units.mol)
+                self.current_total_energy
+                - (self.N_ads * self.adsorbate_energy)
+                - self.framework_energy
+            ) / (units.kJ / units.mol)
 
             average_ads_energy = average_ads_energy / self.N_ads if self.N_ads > 0 else 0
 
-            line_str = '{:^11}|{:^13}|{:>9.2f} |{:>13.4f} |{:>11.4f} |{:7.2f} |{:7.2f} |{:7.2f} |{:7.2f} |{:9.2f}'
+            line_str = "{:^11}|{:^13}|{:>9.2f} |{:>13.4f} |{:>11.4f} |{:7.2f} |{:7.2f} |{:7.2f} |{:7.2f} |{:9.2f}"
 
-            print(line_str.format(
-                iteration,
-                self.N_ads,
-                self.N_ads * self.conv_factors['mol/kg'],
-                self.current_total_energy,
-                average_ads_energy,
-                np.average(self.mov_dict['insertion'])*100 if len(self.mov_dict['insertion']) > 0 else 0,
-                np.average(self.mov_dict['deletion'])*100 if len(self.mov_dict['deletion']) > 0 else 0,
-                np.average(self.mov_dict['translation'])*100 if len(self.mov_dict['translation']) > 0 else 0,
-                np.average(self.mov_dict['rotation'])*100 if len(self.mov_dict['rotation']) > 0 else 0,
-                (datetime.datetime.now() - step_time_start).total_seconds()),
-                file=self.out_file)
+            print(
+                line_str.format(
+                    iteration,
+                    self.N_ads,
+                    self.N_ads * self.conv_factors["mol/kg"],
+                    self.current_total_energy,
+                    average_ads_energy,
+                    (
+                        np.average(self.mov_dict["insertion"]) * 100
+                        if len(self.mov_dict["insertion"]) > 0
+                        else 0
+                    ),
+                    (
+                        np.average(self.mov_dict["deletion"]) * 100
+                        if len(self.mov_dict["deletion"]) > 0
+                        else 0
+                    ),
+                    (
+                        np.average(self.mov_dict["translation"]) * 100
+                        if len(self.mov_dict["translation"]) > 0
+                        else 0
+                    ),
+                    (
+                        np.average(self.mov_dict["rotation"]) * 100
+                        if len(self.mov_dict["rotation"]) > 0
+                        else 0
+                    ),
+                    (datetime.datetime.now() - step_time_start).total_seconds(),
+                ),
+                file=self.out_file,
+            )
 
-            if iteration % self.save_every == 0 and self.N_ads > 0:
-                write(os.path.join(self.out_folder, f'Movies/snapshot_{len(self.uptake_list)}_{self.P:.2f}_{self.T:.2f}.xyz'),
-                      self.current_system,
-                      format='extxyz')
+            if iteration % self.save_every == 0:
+                # Save the current state of the system as xyz deactivated for now
+                # write(
+                # os.path.join(self.out_folder,
+                # f'Movies/snapshot_{len(self.uptake_list)}_{self.P:.2f}_{self.T:.2f}.xyz'),
+                #       self.current_system,
+                #       format='extxyz')
 
-                np.save(os.path.join(self.out_folder, f'uptake_{self.P:.5f}.npy'),
-                        np.array(self.uptake_list)
-                        )
+                self.trajectory.write(self.current_system)  # type: ignore
 
-                np.save(os.path.join(self.out_folder, f'total_energy_{self.P:.5f}.npy'),
-                        np.array(self.total_energy_list)
-                        )
+                np.save(
+                    os.path.join(self.out_folder, f"uptake_{self.P:.5f}.npy"),
+                    np.array(self.uptake_list),
+                )
 
-                np.save(os.path.join(self.out_folder, f'total_ads_{self.P:.5f}.npy'),
-                        np.array(self.total_ads_list)
-                        )
+                np.save(
+                    os.path.join(self.out_folder, f"total_energy_{self.P:.5f}.npy"),
+                    np.array(self.total_energy_list),
+                )
+
+                np.save(
+                    os.path.join(self.out_folder, f"total_ads_{self.P:.5f}.npy"),
+                    np.array(self.total_ads_list),
+                )

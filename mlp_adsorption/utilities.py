@@ -163,10 +163,10 @@ def check_overlap(atoms, group1_indices, group2_indices, vdw_radii):
 def vdw_overlap(atoms, vdw, n_frame, n_ads, select_ads):
     nat = len(atoms)
     numbers = atoms.get_atomic_numbers()
-    for i_ads in range(n_frame + n_ads*select_ads, n_frame + n_ads*(select_ads+1)):
+    for i_ads in range(n_frame + n_ads * select_ads, n_frame + n_ads * (select_ads + 1)):
         dists = atoms.get_distances(i_ads, np.arange(nat), mic=True)
         for i, d in enumerate(dists):
-            if i >= n_frame + n_ads*select_ads and i < n_frame + n_ads*(select_ads+1):
+            if i >= n_frame + n_ads * select_ads and i < n_frame + n_ads * (select_ads + 1):
                 continue
             if d < vdw[numbers[i_ads]] + vdw[numbers[i]]:
                 return True
@@ -177,8 +177,8 @@ def vdw_overlap2(atoms, vdw, n_ads):
     numbers = atoms.get_atomic_numbers()
     N = len(atoms)
     for i_ads in range(n_ads):
-        dists = atoms.get_distances(N-i_ads-1, np.arange(N-n_ads), mic=True)
+        dists = atoms.get_distances(N - i_ads - 1, np.arange(N - n_ads), mic=True)
         for i in range(len(dists)):
-            if dists[i] < vdw[numbers[N-i_ads-1]] + vdw[numbers[i]]:
+            if dists[i] < vdw[numbers[N - i_ads - 1]] + vdw[numbers[i]]:
                 return True
     return False

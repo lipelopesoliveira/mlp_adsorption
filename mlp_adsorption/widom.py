@@ -9,25 +9,26 @@ import ase
 import numpy as np
 from ase import units
 from ase.calculators import calculator
-from ase.io import write
-from ase.io.proteindatabank import write_proteindatabank
+from ase.io import Trajectory, write
 from tqdm import tqdm
+
 from mlp_adsorption import VERSION
+from mlp_adsorption.utilities import random_position, vdw_overlap2
 
-from utilities import random_position, vdw_overlap2
 
-
-class Widom():
-    def __init__(self,
-                 framework_atoms: ase.Atoms,
-                 adsorbate_atoms: ase.Atoms,
-                 temperature: float,
-                 model: calculator.Calculator,
-                 vdw_radii: np.ndarray,
-                 device: str = 'cpu',
-                 save_frequency: int = 100,
-                 output_to_file: bool = True,
-                 debug: bool = False) -> None:
+class Widom:
+    def __init__(
+        self,
+        framework_atoms: ase.Atoms,
+        adsorbate_atoms: ase.Atoms,
+        temperature: float,
+        model: calculator.Calculator,
+        vdw_radii: np.ndarray,
+        device: str = "cpu",
+        save_frequency: int = 100,
+        output_to_file: bool = True,
+        debug: bool = False,
+    ) -> None:
         """
         Base class for Widom insertion method using ASE.
 
@@ -55,13 +56,19 @@ class Widom():
 
         self.start_time = datetime.datetime.now()
 
-        os.makedirs(f'results_{temperature:.2f}_0.0', exist_ok=True)
-        os.makedirs(f'results_{temperature:.2f}_0.0/Movies', exist_ok=True)
+        os.makedirs(f"results_{temperature:.2f}_0.0", exist_ok=True)
+        os.makedirs(f"results_{temperature:.2f}_0.0/Movies", exist_ok=True)
 
-        self.out_file: Union[TextIO, None] = None
+        self.out_folder = f"results_{temperature:.2f}_0.0"
 
         if output_to_file:
-            self.out_file: Union[TextIO, None] = open(f'results_{temperature:.2f}_0.0/Widom_Output.out', 'a')
+            self.out_file: Union[TextIO, None] = open(
+                os.path.join(self.out_folder, "Widom_Output.out"), "a"
+            )
+        else:
+            self.out_file = None
+
+        self.trajectory = Trajectory(os.path.join(self.out_folder, "Widom_Trajectory.traj"), "a")  # type: ignore
 
         self.debug: bool = debug
         self.save_every: int = save_frequency
@@ -72,7 +79,7 @@ class Widom():
         self.framework_energy = self.framework.get_potential_energy()
         self.n_atoms_framework = len(self.framework)
         self.cell: np.ndarray = np.array(self.framework.get_cell())
-        self.V: float = np.linalg.det(self.cell) / units.m ** 3  # Convert to m^3
+        self.V: float = np.linalg.det(self.cell) / units.m**3  # Convert to m^3
         self.framework_mass: float = np.sum(self.framework.get_masses()) / units.kg
 
         self.density: float = self.framework_mass / self.V  # kg/m^3
@@ -91,7 +98,8 @@ class Widom():
         self.beta: float = 1 / (units.kB * temperature)
         self.device = device
         self.vdw: np.ndarray = vdw_radii * 0.6  # Adjust van der Waals radii to avoid overlap
-        self.trajectory: list[ase.Atoms] = []
+
+        self.energy_list = np.zeros(100, dtype=float)
 
         self.minimum_configuration: ase.Atoms = self.framework.copy()
         self.minimum_energy: float = 0
@@ -169,22 +177,72 @@ Atomic positions:
 ===========================================================================
 Shortest distances:
 """
-        atomic_numbers = set(list(self.framework.get_atomic_numbers()) + list(self.adsorbate.get_atomic_numbers()))
+        atomic_numbers = set(
+            list(self.framework.get_atomic_numbers()) + list(self.adsorbate.get_atomic_numbers())
+        )
 
         for i, j in list(itertools.combinations(atomic_numbers, 2)):
-            header += f"  {ase.Atom(i).symbol:2} - {ase.Atom(j).symbol:2}: {self.vdw[i] + self.vdw[j]:.3f} Å\n"
+            header += f"  {ase.Atom(i).symbol:2} - {ase.Atom(j).symbol:2}: {self.vdw[i] + self.vdw[j]:.3f} A\n"
 
         header += """
 ===========================================================================
 """
         print(header, file=self.out_file)
 
+    def print_finish(self):
+        """
+        Print the footer for the simulation output.
+        This method is called at the end of the simulation to display the final results and elapsed time.
+        """
+
+        boltz_fac = np.exp(-self.beta * self.energy_list)
+
+        # kH = β <exp(-β ΔE)> [mol kg-1 bar-1]
+        kH = self.beta * boltz_fac.mean() * (units.mol / units.J) / self.density
+        kH *= 1e-5  # Convert from Pa-1 to bar-1
+
+        # Qst = - < ΔE * exp(-β ΔE) > / <exp(-β ΔE)>  + kB.T # [kJ/mol]
+        Qst = (self.energy_list * boltz_fac).mean() / boltz_fac.mean() - (units.kB * self.T)
+        Qst /= units.kJ * units.mol
+
+        footer = """
+===========================================================================
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Finishing simulation
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+    Average properties of the system:
+    ------------------------------------------------------------------------------
+    Henry coefficient: [mol/kg/bar]                      {:12.5e} +/- {:12.5e} [-]
+    Enthalpy of adsorption: [kJ/mol]                     {:12.5f} +/- {:12.5f} [-]
+
+===========================================================================
+Simulation finished suscessfully!
+===========================================================================
+
+Simulation finished at {}
+Simulation duration: {}
+
+===========================================================================
+
+""".format(
+            kH,
+            0.0,
+            Qst,
+            0.0,
+            datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            datetime.datetime.now() - self.start_time,
+        )
+        print(footer, file=self.out_file)
+
     def debug_movement(self, movement, deltaE, prefactor, acc, rnd_number) -> None:
         """
         Print debug information about the current state of the simulation.
         This method is called to provide detailed information about the current state of the system.
         """
-        print(f"""
+        print(
+            f"""
 =======================================================================================================
 Movement type: {movement}
 Interaction energy: {deltaE} eV, {(deltaE / (units.kJ / units.mol))} kJ/mol
@@ -195,7 +253,9 @@ Acceptance probability: {acc:.3f}
 Random number:          {rnd_number:.3f}
 Accepted: {rnd_number < acc}
 =======================================================================================================
-""", file=self.out_file)
+""",
+            file=self.out_file,
+        )
 
     def try_insertion(self):
         """
@@ -214,7 +274,7 @@ Accepted: {rnd_number < acc}
         atoms_trial.calc = self.model
 
         pos = atoms_trial.get_positions()
-        pos[-self.n_ads:] = random_position(pos[-self.n_ads:], atoms_trial.get_cell())
+        pos[-self.n_ads :] = random_position(pos[-self.n_ads :], atoms_trial.get_cell())
         atoms_trial.set_positions(pos)
         atoms_trial.wrap()
 
@@ -230,14 +290,12 @@ Accepted: {rnd_number < acc}
 
     def run(self, N) -> None:
 
-        R = units.kB / units.kJ * units.mol
+        self.energy_list = np.zeros(N, dtype=float)
 
         header = """
-Iteration  |  ΔE (eV)  |  ΔE (kJ/mol)  | kH [mol kg-1 bar-1] |  ΔH (kJ/mol) | Time (s)
+Iteration  |  dE (eV)  |  dE (kJ/mol)  | kH [mol kg-1 bar-1] |  dH (kJ/mol) | Time (s)
 ---------------------------------------------------------------------------------------"""
         print(header, file=self.out_file)
-
-        energiy_list = np.zeros(N, dtype=float)
 
         for i in tqdm(range(1, N + 1), disable=(self.out_file is None), desc="Widom Step"):
 
@@ -258,34 +316,38 @@ Iteration  |  ΔE (eV)  |  ΔE (kJ/mol)  | kH [mol kg-1 bar-1] |  ΔH (kJ/mol) |
                 self.minimum_configuration = atoms_trial.copy()
                 self.minimum_energy = deltaE
 
-                write('results_{:.2f}_0.0/Movies/minimum_configuration_{:.2f}.cif'.format(
-                    self.T, deltaE / (units.kJ / units.mol)
+                write(
+                    "results_{:.2f}_0.0/Movies/minimum_configuration_{:.2f}.cif".format(
+                        self.T, deltaE / (units.kJ / units.mol)
                     ),
-                      atoms_trial,
-                      format='cif')
+                    atoms_trial,
+                    format="cif",
+                )
 
-            self.trajectory.append(atoms_trial.copy())
+            self.trajectory.write(atoms_trial)  # type: ignore
 
-            energiy_list[i - 1] = deltaE
+            self.energy_list[i - 1] = deltaE
 
-            boltz_fac = np.exp(-self.beta * energiy_list)
+            boltz_fac = np.exp(-self.beta * self.energy_list)
 
             # kH = β <exp(-β ΔE)> [mol kg-1 bar-1]
             kH = self.beta * boltz_fac[:i].mean() * (units.mol / units.J) / self.density
             kH *= 1e-5  # Convert from Pa-1 to bar-1
 
-            # Qst = - < ΔE * exp(-β ΔE) > / <exp(-β ΔE)>  + RT # [kJ/mol]
-            Qst = (energiy_list[:i] * boltz_fac[:i]).mean() / boltz_fac[:i].mean() / units.kJ * units.mol - (R * self.T)
+            # Qst = - < ΔE * exp(-β ΔE) > / <exp(-β ΔE)>  + kB.T # [kJ/mol]
+            Qst = (self.energy_list[:i] * boltz_fac[:i]).mean() / boltz_fac[:i].mean() - (
+                units.kB * self.T
+            )
+            Qst /= units.kJ * units.mol
 
-            if i % self.save_every == 0:
-                # write(f'results_{self.T:.2f}_{0.0:.2f}/Movies/widom_{i:04d}.traj', atoms_trial)
-                write_proteindatabank(f'results_{self.T:.2f}_0.0/Movies/widom.pdb', self.trajectory)
-
-            print('{:^10} | {:^9.6f} | {:>13.2f} | {:>19.3e} | {:12.2f} | {:8.2f}'.format(
-                i,
-                deltaE,
-                deltaE / (units.kJ / units.mol),
-                kH,
-                Qst,
-                (datetime.datetime.now() - step_time_start).total_seconds()),
-                 file=self.out_file)
+            print(
+                "{:^10} | {:^9.6f} | {:>13.2f} | {:>19.3e} | {:12.2f} | {:8.2f}".format(
+                    i,
+                    deltaE,
+                    deltaE / (units.kJ / units.mol),
+                    kH,
+                    Qst,
+                    (datetime.datetime.now() - step_time_start).total_seconds(),
+                ),
+                file=self.out_file,
+            )
