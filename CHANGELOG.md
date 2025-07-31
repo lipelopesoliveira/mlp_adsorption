@@ -1,5 +1,24 @@
 # Changelog
 
+## v[0.3.0] - 2025-07-12
+
+### New Features 🎉
+
+- Now GCMC has three different methods for NPT Molecular Dynamics (MD):
+  - Isotropic volume change and fixed shape with Berendsen thermostat/barostat
+  - Anisotropic volume change and fixed shape with Berendsen thermostat/barostat
+  - Anisotropic volume change and flexible shape with Nose-Hoover/Parrinello-Rahman thermostat/barostat
+
+### Fixed 🐛
+
+### Enhanced ✨
+
+### Documentation 📖
+
+### Removed 🗑️
+
+- Unused imports and commented-out code in `widom.py`.
+
 ## v[0.2.0] - 2025-07-12
 
 ### New Features 🎉
