@@ -11,7 +11,11 @@
 
 ### Fixed 🐛
 
+[#10](https://github.com/lipelopesoliveira/mlp_adsorption/issues/10) - The cell angles are not changing during the MD simulation.
+
 ### Enhanced ✨
+
+- Now the NPT MD simulation log also prints the cell volume.
 
 ### Documentation 📖
 
