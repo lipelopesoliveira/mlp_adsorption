@@ -546,7 +546,7 @@ def nPT_NoseHoover(
     output_interval: int = 100,
     movie_interval: int = 10,
     ttime: float = 25.0,
-    pfactor: float = 75.0,
+    ptime: float = 75.0,
     B_guess: float = 30.0,
     isotropic: bool = True,
     mask: tuple[int, int, int] = (1, 1, 1),
@@ -602,6 +602,9 @@ def nPT_NoseHoover(
         The final atomic structure after the MD simulation.
     """
 
+    # Calculate the pressure factor based on the time constant and bulk modulus
+    pfactor = (ptime * units.fs)**2 * B_guess * units.GPa
+
     atoms.calc = model
     header = """
 ======================================================================================
@@ -612,7 +615,7 @@ def nPT_NoseHoover(
         Pressure: {:.2f} Pa
         Isotropic: {}
         Time Constant (ttime): {:.2f} fs
-        Pressure Factor (pfactor): {:.2f}
+        Pressure Factor (pfactor): {:.2f} fs
         Guess of Bulk Modulus (B_guess): {:.2f} GPa
         Time Step: {:.2f} fs
         Number of MD Steps: {}
@@ -664,9 +667,9 @@ def nPT_NoseHoover(
         atoms=atoms,
         timestep=time_step * units.fs,
         temperature_K=temperature,
-        ttime=ttime * units.fs,  # Time constant for temperature control
-        pfactor=pfactor**2 * units.fs * B_guess * units.GPa,  # Time constant for pressure control
-        externalstress=pressure * units.bar,  # External stress applied
+        ttime=ttime * units.fs,
+        pfactor=pfactor,
+        externalstress=pressure * units.bar,
         trajectory=trajectory if trajectory else traj_filename,
         logfile=log_filename,
         loginterval=output_interval,
