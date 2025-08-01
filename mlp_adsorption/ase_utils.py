@@ -598,7 +598,7 @@ def nPT_NoseHoover(
     """
 
     # Calculate the pressure factor based on the time constant and bulk modulus
-    pfactor = (ptime * units.fs)**2 * B_guess * units.GPa
+    pfactor = (ptime * units.fs) ** 2 * B_guess * units.GPa
 
     atoms.calc = model
     header = """
@@ -631,7 +631,7 @@ def nPT_NoseHoover(
         time_step,
         num_md_steps,
         output_interval,
-        movie_interval
+        movie_interval,
     )
 
     print(header, file=out_file)
