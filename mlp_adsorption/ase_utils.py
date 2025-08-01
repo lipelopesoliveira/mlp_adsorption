@@ -328,7 +328,7 @@ def nVT_Berendsen(
 
     dyn.attach(print_md_log, interval=output_interval)
     dyn.attach(
-        MDLogger(dyn, atoms, log_filename, header=True, stress=True, peratom=True, mode="a"),
+        MDLogger(dyn, atoms, log_filename, header=True, stress=True, peratom=False, mode="a"),
         interval=movie_interval,
     )
 
@@ -510,7 +510,7 @@ def nPT_Berendsen(
 
     dyn.attach(print_md_log, interval=output_interval)
     dyn.attach(
-        MDLogger(dyn, atoms, log_filename, header=True, stress=True, peratom=True, mode="a"),
+        MDLogger(dyn, atoms, log_filename, header=True, stress=True, peratom=False, mode="a"),
         interval=movie_interval,
     )
 
@@ -691,7 +691,7 @@ def nPT_NoseHoover(
 
     dyn.attach(print_md_log, interval=output_interval)
     dyn.attach(
-        MDLogger(dyn, atoms, log_filename, header=True, stress=True, peratom=True, mode="a"),
+        MDLogger(dyn, atoms, log_filename, header=True, stress=True, peratom=False, mode="a"),
         interval=movie_interval,
     )
 
