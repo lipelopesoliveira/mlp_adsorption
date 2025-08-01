@@ -405,7 +405,7 @@ def nPT_Berendsen(
     taup : float, optional
         The time constant for the Berendsen barostat in femtoseconds (default is 500.0 fs).
     isotropic : bool, optional
-        If True, the barostat is isotropic, i.e., changes on the unit cell changes equally in all directions
+        If True, the barostat is isotropic, i.e., the unit cell changes equally in all directions
         Default is True.
     mask : tuple[int]
         Specifies which axes participate in the barostat.  Default (1, 1, 1)
@@ -549,7 +549,6 @@ def nPT_NoseHoover(
     ptime: float = 75.0,
     B_guess: float = 30.0,
     isotropic: bool = True,
-    mask: tuple[int, int, int] = (1, 1, 1),
     out_folder: str = ".",
     out_file: TextIO = sys.stdout,
     trajectory=None,
@@ -559,8 +558,8 @@ def nPT_NoseHoover(
 
     Combined Nose-Hoover and Parrinello-Rahman dynamics, creating an NPT (or N,stress,T) ensemble.
 
-    Warning: The Nose-Hoover-Parrinello-Rahman method change the shape of the simulation cell, i.e.,
-    it change the cell angles. If you do not want to change the shape of the cell, use the NPT-Barendsen instead.
+    Warning: The Nose-Hoover-Parrinello-Rahman method changes the shape of the simulation cell, i.e.,
+    it changes the cell angles. If you do not want to change the shape of the cell, use the NPT-Barendsen instead.
 
     Parameters
     ----------
@@ -570,8 +569,6 @@ def nPT_NoseHoover(
         The target temperature in Kelvin.
     pressure : float, optional
         The desired pressure, in bar (1 bar = 1e5 Pa).
-    compressibility : float, optional
-        The compressibility of the material, in bar-1.
     time_step : float, optional
         The time step for the simulation in femtoseconds (default is 0.5 fs).
     num_md_steps : int, optional
@@ -580,17 +577,15 @@ def nPT_NoseHoover(
         The interval for logging output (default is 100 steps).
     movie_interval : int, optional
         The interval for saving trajectory frames (default is 1 step).
-    taut : float, optional
-        The time constant for the Berendsen thermostat in femtoseconds (default is 10.0 fs).
-    taup : float, optional
-        The time constant for the Berendsen barostat in femtoseconds (default is 500.0 fs).
+    ttime : float, optional
+        Characteristic timescale of the thermostat, in femtoseconds. Set to None to disable the thermostat.
+        Default is 25.0 fs.
+    ptime : float, optional
+        A constant in the barostat differential equation in femtoseconds. Set to None to disable the barostat.
+        Default is 500.0 fs.
     isotropic : bool, optional
-        If True, the barostat is isotropic, i.e., changes on the unit cell changes equally in all directions
+        If True, the barostat is isotropic, i.e., the unit cell changes equally in all directions
         Default is True.
-    mask : tuple[int]
-        Specifies which axes participate in the barostat.  Default (1, 1, 1)
-        means that all axes participate, set any of them to zero to disable
-        the barostat in that direction.
     out_folder : str, optional
         The folder where the output files will be saved (default is the current directory).
     out_file : TextIO, optional
@@ -621,7 +616,6 @@ def nPT_NoseHoover(
         Number of MD Steps: {}
         Output Interval: {} steps
         Movie Interval: {} steps
-        Mask: {}
 
 ======================================================================================
     Step   |  Total Energy  |  Temperature  |  Stress  |   Volume    | Elapsed Time
@@ -637,8 +631,7 @@ def nPT_NoseHoover(
         time_step,
         num_md_steps,
         output_interval,
-        movie_interval,
-        mask,
+        movie_interval
     )
 
     print(header, file=out_file)
