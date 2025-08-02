@@ -544,7 +544,7 @@ Start optimizing adsorbate structure...
         self.adsorbate.calc = self.model
         self.adsorbate_energy = self.adsorbate.get_potential_energy()
 
-    def npt(self, nsteps, time_step: float = 0.5, mode: str = 'iso_shape'):
+    def npt(self, nsteps, time_step: float = 0.5, mode: str = "iso_shape"):
         """
         Run a NPT simulation using the Berendsen thermostat and barostat.
 
@@ -552,12 +552,17 @@ Start optimizing adsorbate structure...
         ----------
         nsteps : int
             Number of steps to run the NPT simulation.
+        time_step : float, optional
+            Time step for the NPT simulation (default is 0.5 fs).
+        mode : str, optional
+            The mode of the NPT simulation (default is "iso_shape").
+            Can be one of "iso_shape", "aniso_shape", or "aniso_flex".
         """
 
-        allowed_modes = ['iso_shape', 'aniso_shape', 'aniso_flex']
+        allowed_modes = ["iso_shape", "aniso_shape", "aniso_flex"]
         assert mode in allowed_modes, f"Mode must be one of {allowed_modes}."
 
-        if mode == 'iso_shape' or mode == 'aniso_shape':
+        if mode == "iso_shape" or mode == "aniso_shape":
 
             new_state = nPT_Berendsen(
                 atoms=self.current_system,
@@ -567,7 +572,7 @@ Start optimizing adsorbate structure...
                 compressibility=1e-4,
                 time_step=time_step,
                 num_md_steps=nsteps,
-                isotropic=True if mode == 'iso_shape' else False,
+                isotropic=True if mode == "iso_shape" else False,
                 out_folder=self.out_folder,
                 out_file=self.out_file,  # type: ignore
                 trajectory=self.trajectory,
