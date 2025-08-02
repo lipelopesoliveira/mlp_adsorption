@@ -14,7 +14,12 @@ from ase.optimize import LBFGS
 from tqdm import tqdm
 
 from mlp_adsorption import VERSION
-from mlp_adsorption.ase_utils import crystalOptmization, nPT_Berendsen, nPT_NoseHoover
+from mlp_adsorption.ase_utils import (
+    crystalOptmization,
+    nPT_Berendsen,
+    nPT_NoseHoover,
+    nVT_Berendsen,
+)
 from mlp_adsorption.utilities import (
     enthalpy_of_adsorption,
     random_position,
@@ -601,6 +606,33 @@ Start optimizing adsorbate structure...
         self.set_state(new_state)
 
         self.set_framework(new_state[: self.n_atoms_framework].copy())  # type: ignore
+
+    def nvt(self, nsteps, time_step: float = 0.5):
+        """
+        Run a NVT simulation using the Berendsen thermostat.
+
+        Parameters
+        ----------
+        nsteps : int
+            Number of steps to run the NVT simulation.
+        time_step : float, optional
+            Time step for the NVT simulation (default is 0.5 fs).
+        """
+
+        new_state = nVT_Berendsen(
+            atoms=self.current_system,
+            model=self.model,
+            temperature=self.T,
+            time_step=time_step,
+            num_md_steps=nsteps,
+            out_folder=self.out_folder,
+            out_file=self.out_file,  # type: ignore
+            trajectory=self.trajectory,
+            output_interval=self.save_every,
+            movie_interval=self.save_every,
+        )
+
+        self.set_state(new_state)
 
     def get_ideal_chemical_potential(self) -> float:
         """

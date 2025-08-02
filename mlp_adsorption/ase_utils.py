@@ -228,13 +228,14 @@ def nVT_Berendsen(
     atoms: ase.Atoms,
     model: Calculator,
     temperature: float,
-    pressure: float = 0.0,
     time_step: float = 0.5,
     num_md_steps: int = 1000000,
     output_interval: int = 100,
     movie_interval: int = 1,
     taut: float = 1.0,
+    out_folder: str = ".",
     out_file: TextIO = sys.stdout,
+    trajectory=None,
 ) -> ase.Atoms:
     """
     Run NVT molecular dynamics simulation using the Berendsen thermostat.
@@ -249,8 +250,6 @@ def nVT_Berendsen(
         The atomic structure to simulate.
     temperature : float
         The target temperature in Kelvin.
-    pressure : float, optional
-        The target pressure in Pa (default is 0.0 Pa). Not used in NVT simulations!
     time_step : float, optional
         The time step for the simulation in femtoseconds (default is 0.5 fs).
     num_md_steps : int, optional
@@ -261,6 +260,10 @@ def nVT_Berendsen(
         The interval for saving trajectory frames (default is 1 step).
     taut : float, optional
         The time constant for the Berendsen thermostat in femtoseconds (default is 1.0 fs).
+    out_folder : str, optional
+        The folder where the output files will be saved (default is the current directory).
+    out_file : TextIO, optional
+        The output file to write the simulation log to (default is sys.stdout).
 
     Returns
     -------
@@ -276,7 +279,6 @@ def nVT_Berendsen(
 
     Parameters:
         Temperature: {:.2f} K
-        Pressure: {:.2f} Pa (Not used in NVT!)
         Time Step: {:.2f} fs
         Number of MD Steps: {}
         Output Interval: {} steps
@@ -285,16 +287,20 @@ def nVT_Berendsen(
 
 ===========================================================================
 """.format(
-        temperature, pressure, time_step, num_md_steps, output_interval, movie_interval, taut
+        temperature, time_step, num_md_steps, output_interval, movie_interval, taut
     )
 
     print(header, file=out_file)
 
     existing_md_traj = [
-        i for i in os.listdir(".") if i.startswith("NVT-Berendsen") and i.endswith(".traj")
+        i for i in os.listdir(out_folder) if i.startswith("NVT-Berendsen") and i.endswith(".traj")
     ]
-    traj_filename = f"NVT-Berendsen_{temperature:.2f}K_{len(existing_md_traj)}.traj"
-    log_filename = f"NVT-Berendsen_{temperature:.2f}K_{len(existing_md_traj)}.log"
+    traj_filename = os.path.join(
+        out_folder, f"NVT-Berendsen_{temperature:.2f}K_{len(existing_md_traj)}.traj"
+    )
+    log_filename = os.path.join(
+        out_folder, f"NVT-Berendsen_{temperature:.2f}K_{len(existing_md_traj)}.log"
+    )
 
     # Set the momenta corresponding to the given "temperature"
     MaxwellBoltzmannDistribution(atoms, temperature_K=temperature, force_temp=True)
@@ -308,7 +314,7 @@ def nVT_Berendsen(
         temperature_K=temperature,
         taut=taut * units.fs,
         loginterval=output_interval,
-        trajectory=traj_filename,
+        trajectory=trajectory if trajectory else traj_filename,
     )
 
     # Print statements
