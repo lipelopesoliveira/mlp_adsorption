@@ -370,7 +370,6 @@ def nPT_Berendsen(
     taut: float = 10.0,
     taup: float = 500.0,
     isotropic: bool = True,
-    mask: tuple[int, int, int] = (1, 1, 1),
     out_folder: str = ".",
     out_file: TextIO = sys.stdout,
     trajectory=None,
@@ -407,10 +406,6 @@ def nPT_Berendsen(
     isotropic : bool, optional
         If True, the barostat is isotropic, i.e., the unit cell changes equally in all directions
         Default is True.
-    mask : tuple[int]
-        Specifies which axes participate in the barostat.  Default (1, 1, 1)
-        means that all axes participate, set any of them to zero to disable
-        the barostat in that direction.
     out_folder : str, optional
         The folder where the output files will be saved (default is the current directory).
     out_file : TextIO, optional
@@ -437,7 +432,6 @@ def nPT_Berendsen(
         Number of MD Steps: {}
         Output Interval: {} steps
         Movie Interval: {} steps
-        Mask: {}
 
 ======================================================================================
     Step   |  Total Energy  |  Temperature  |  Stress  |   Volume    | Elapsed Time
@@ -453,7 +447,6 @@ def nPT_Berendsen(
         num_md_steps,
         output_interval,
         movie_interval,
-        mask,
     )
 
     print(header, file=out_file)
@@ -485,7 +478,6 @@ def nPT_Berendsen(
         "taup": taup * units.fs,
         "loginterval": movie_interval,
         "trajectory": trajectory if trajectory else traj_filename,
-        "mask": mask,
     }
 
     # Select the appropriate dynamics class based on isotropic flag
