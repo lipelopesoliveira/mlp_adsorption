@@ -540,7 +540,6 @@ def nPT_NoseHoover(
     ttime: float = 25.0,
     ptime: float = 75.0,
     B_guess: float = 30.0,
-    isotropic: bool = True,
     out_folder: str = ".",
     out_file: TextIO = sys.stdout,
     trajectory=None,
@@ -575,9 +574,6 @@ def nPT_NoseHoover(
     ptime : float, optional
         A constant in the barostat differential equation in femtoseconds. Set to None to disable the barostat.
         Default is 500.0 fs.
-    isotropic : bool, optional
-        If True, the barostat is isotropic, i.e., the unit cell changes equally in all directions
-        Default is True.
     out_folder : str, optional
         The folder where the output files will be saved (default is the current directory).
     out_file : TextIO, optional
@@ -600,7 +596,6 @@ def nPT_NoseHoover(
     Parameters:
         Temperature: {:.2f} K
         Pressure: {:.2f} Pa
-        Isotropic: {}
         Time Constant (ttime): {:.2f} fs
         Pressure Factor (pfactor): {:.2f} fs
         Guess of Bulk Modulus (B_guess): {:.2f} GPa
@@ -616,7 +611,6 @@ def nPT_NoseHoover(
 """.format(
         temperature,
         pressure,
-        isotropic,
         ttime,
         pfactor,
         B_guess,
