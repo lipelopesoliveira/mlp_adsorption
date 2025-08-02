@@ -571,6 +571,7 @@ Start optimizing adsorbate structure...
                 out_folder=self.out_folder,
                 out_file=self.out_file,  # type: ignore
                 trajectory=self.trajectory,
+                output_interval=self.save_every,
                 movie_interval=self.save_every,
             )
         else:
@@ -588,6 +589,7 @@ Start optimizing adsorbate structure...
                 out_folder=self.out_folder,
                 out_file=self.out_file,  # type: ignore
                 trajectory=self.trajectory,
+                output_interval=self.save_every,
                 movie_interval=self.save_every,
             )
 
