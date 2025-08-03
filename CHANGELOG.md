@@ -20,6 +20,7 @@
   - Isotropic volume change and fixed shape with Berendsen thermostat/barostat (`mode=iso_shape`)
   - Anisotropic volume change and fixed shape with Berendsen thermostat/barostat (`mode=aniso_shape`)
   - Anisotropic volume change and flexible shape with Nose-Hoover/Parrinello-Rahman thermostat/barostat (`mode=aniso_flex`).
+- Added a new method `nvt` to the GCMC class for running NVT MD simulations.
 
 ### Fixed 🐛
 
