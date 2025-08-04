@@ -1,5 +1,40 @@
 # Changelog
 
+## Unreleased
+
+### New Features 🎉
+
+### Fixed 🐛
+
+### Enhanced ✨
+
+### Documentation 📖
+
+### Removed 🗑️
+
+## v[0.3.0] - 2025-07-31
+
+### New Features 🎉
+
+- Now GCMC has three different methods for NPT Molecular Dynamics (MD):
+  - Isotropic volume change and fixed shape with Berendsen thermostat/barostat (`mode=iso_shape`)
+  - Anisotropic volume change and fixed shape with Berendsen thermostat/barostat (`mode=aniso_shape`)
+  - Anisotropic volume change and flexible shape with Nose-Hoover/Parrinello-Rahman thermostat/barostat (`mode=aniso_flex`).
+- Added a new method `nvt` to the GCMC class for running NVT MD simulations.
+
+### Fixed 🐛
+
+[#10](https://github.com/lipelopesoliveira/mlp_adsorption/issues/10) - The cell angles are not changing during the MD simulation.
+
+### Enhanced ✨
+
+- Now the NPT MD simulation log also prints the cell volume.
+- Now it is possible to control the type of NPT MD simulation through the use of a keyword argument on the `npt` method of GCMC simulation.
+
+### Documentation 📖
+
+### Removed 🗑️
+
 ## v[0.2.0] - 2025-07-12
 
 ### New Features 🎉

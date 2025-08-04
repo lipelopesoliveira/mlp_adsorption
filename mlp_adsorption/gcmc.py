@@ -14,7 +14,12 @@ from ase.optimize import LBFGS
 from tqdm import tqdm
 
 from mlp_adsorption import VERSION
-from mlp_adsorption.ase_utils import crystalOptmization, nPT_Berendsen
+from mlp_adsorption.ase_utils import (
+    crystalOptmization,
+    nPT_Berendsen,
+    nPT_NoseHoover,
+    nVT_Berendsen,
+)
 from mlp_adsorption.utilities import (
     enthalpy_of_adsorption,
     random_position,
@@ -544,7 +549,7 @@ Start optimizing adsorbate structure...
         self.adsorbate.calc = self.model
         self.adsorbate_energy = self.adsorbate.get_potential_energy()
 
-    def npt(self, nsteps, time_step=0.5):
+    def npt(self, nsteps, time_step: float = 0.5, mode: str = "iso_shape"):
         """
         Run a NPT simulation using the Berendsen thermostat and barostat.
 
@@ -552,25 +557,82 @@ Start optimizing adsorbate structure...
         ----------
         nsteps : int
             Number of steps to run the NPT simulation.
+        time_step : float, optional
+            Time step for the NPT simulation (default is 0.5 fs).
+        mode : str, optional
+            The mode of the NPT simulation (default is "iso_shape").
+            Can be one of "iso_shape", "aniso_shape", or "aniso_flex".
         """
 
-        new_state = nPT_Berendsen(
+        allowed_modes = ["iso_shape", "aniso_shape", "aniso_flex"]
+        assert mode in allowed_modes, f"Mode must be one of {allowed_modes}."
+
+        if mode == "iso_shape" or mode == "aniso_shape":
+
+            new_state = nPT_Berendsen(
+                atoms=self.current_system,
+                model=self.model,
+                temperature=self.T,
+                pressure=self.P * 1e-5,
+                compressibility=1e-4,
+                time_step=time_step,
+                num_md_steps=nsteps,
+                isotropic=True if mode == "iso_shape" else False,
+                out_folder=self.out_folder,
+                out_file=self.out_file,  # type: ignore
+                trajectory=self.trajectory,
+                output_interval=self.save_every,
+                movie_interval=self.save_every,
+            )
+        else:
+
+            new_state = nPT_NoseHoover(
+                atoms=self.current_system,
+                model=self.model,
+                temperature=self.T,
+                pressure=self.P * 1e-5,
+                time_step=time_step,
+                num_md_steps=nsteps,
+                ttime=25.0,
+                ptime=75.0,
+                B_guess=30,
+                out_folder=self.out_folder,
+                out_file=self.out_file,  # type: ignore
+                trajectory=self.trajectory,
+                output_interval=self.save_every,
+                movie_interval=self.save_every,
+            )
+
+        self.set_state(new_state)
+
+        self.set_framework(new_state[: self.n_atoms_framework].copy())  # type: ignore
+
+    def nvt(self, nsteps, time_step: float = 0.5):
+        """
+        Run a NVT simulation using the Berendsen thermostat.
+
+        Parameters
+        ----------
+        nsteps : int
+            Number of steps to run the NVT simulation.
+        time_step : float, optional
+            Time step for the NVT simulation (default is 0.5 fs).
+        """
+
+        new_state = nVT_Berendsen(
             atoms=self.current_system,
             model=self.model,
             temperature=self.T,
-            pressure=self.P * 1e-5,
-            compressibility=1e-4,
             time_step=time_step,
             num_md_steps=nsteps,
             out_folder=self.out_folder,
             out_file=self.out_file,  # type: ignore
             trajectory=self.trajectory,
+            output_interval=self.save_every,
             movie_interval=self.save_every,
         )
 
         self.set_state(new_state)
-
-        self.set_framework(new_state[: self.n_atoms_framework].copy())  # type: ignore
 
     def get_ideal_chemical_potential(self) -> float:
         """
