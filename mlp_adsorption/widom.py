@@ -197,13 +197,12 @@ Shortest distances:
 
         boltz_fac = np.exp(-self.beta * self.energy_list)
 
-        # kH = β <exp(-β ΔE)> [mol kg-1 bar-1]
-        kH = self.beta * boltz_fac.mean() * (units.mol / units.J) / self.density
-        kH *= 1e-5  # Convert from Pa-1 to bar-1
+        # kH = β <exp(-β ΔE)> [mol kg-1 Pa-1]
+        kH = self.beta * boltz_fac.mean() * (units.J / units.mol) / self.density
 
         # Qst = - < ΔE * exp(-β ΔE) > / <exp(-β ΔE)>  + kB.T # [kJ/mol]
         Qst = (self.energy_list * boltz_fac).mean() / boltz_fac.mean() - (units.kB * self.T)
-        Qst /= units.kJ * units.mol
+        Qst /= (units.kJ / units.mol)
 
         footer = """
 ===========================================================================
@@ -330,15 +329,14 @@ Iteration  |  dE (eV)  |  dE (kJ/mol)  | kH [mol kg-1 bar-1] |  dH (kJ/mol) | Ti
 
             boltz_fac = np.exp(-self.beta * self.energy_list)
 
-            # kH = β <exp(-β ΔE)> [mol kg-1 bar-1]
-            kH = self.beta * boltz_fac[:i].mean() * (units.mol / units.J) / self.density
-            kH *= 1e-5  # Convert from Pa-1 to bar-1
+            # kH = β <exp(-β ΔE)> [mol kg-1 Pa-1]
+            kH = self.beta * boltz_fac[:i].mean() * (units.J / units.mol) / self.density
 
             # Qst = - < ΔE * exp(-β ΔE) > / <exp(-β ΔE)>  + kB.T # [kJ/mol]
             Qst = (self.energy_list[:i] * boltz_fac[:i]).mean() / boltz_fac[:i].mean() - (
                 units.kB * self.T
             )
-            Qst /= units.kJ * units.mol
+            Qst /= (units.kJ / units.mol)
 
             print(
                 "{:^10} | {:^9.6f} | {:>13.2f} | {:>19.3e} | {:12.2f} | {:8.2f}".format(
