@@ -202,7 +202,7 @@ Shortest distances:
 
         # Qst = - < ΔE * exp(-β ΔE) > / <exp(-β ΔE)>  + kB.T # [kJ/mol]
         Qst = (self.energy_list * boltz_fac).mean() / boltz_fac.mean() - (units.kB * self.T)
-        Qst /= (units.kJ / units.mol)
+        Qst /= units.kJ / units.mol
 
         footer = """
 ===========================================================================
@@ -336,7 +336,7 @@ Iteration  |  dE (eV)  |  dE (kJ/mol)  | kH [mol kg-1 bar-1] |  dH (kJ/mol) | Ti
             Qst = (self.energy_list[:i] * boltz_fac[:i]).mean() / boltz_fac[:i].mean() - (
                 units.kB * self.T
             )
-            Qst /= (units.kJ / units.mol)
+            Qst /= units.kJ / units.mol
 
             print(
                 "{:^10} | {:^9.6f} | {:>13.2f} | {:>19.3e} | {:12.2f} | {:8.2f}".format(
