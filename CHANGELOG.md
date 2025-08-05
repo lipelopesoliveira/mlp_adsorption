@@ -12,6 +12,20 @@
 
 ### Removed 🗑️
 
+## v[0.3.1] - 2025-08-05
+
+### New Features 🎉
+
+### Fixed 🐛
+- Fixed the calculation of Henry's law constant in the Widom insertion method to ensure it is correctly computed in units of [mol kg-1 Pa-1].
+- Fixed the calculation of the heat of adsorption (Qst) in the Widom insertion method to ensure it is correctly computed in units of [kJ/mol].
+
+### Enhanced ✨
+
+### Documentation 📖
+
+### Removed 🗑️
+
 ## v[0.3.0] - 2025-07-31
 
 ### New Features 🎉
