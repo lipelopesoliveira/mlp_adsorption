@@ -1002,12 +1002,6 @@ Start optimizing adsorbate structure...
             )
 
             if iteration % self.save_every == 0:
-                # Save the current state of the system as xyz deactivated for now
-                # write(
-                # os.path.join(self.out_folder,
-                # f'Movies/snapshot_{len(self.uptake_list)}_{self.P:.2f}_{self.T:.2f}.xyz'),
-                #       self.current_system,
-                #       format='extxyz')
 
                 self.trajectory.write(self.current_system)  # type: ignore
 
