@@ -214,7 +214,14 @@ class GCMC:
             Path to the file containing the saved state of the simulation.
         """
         print(f"Loading state from {state_file}...")
-        state: ase.Atoms = read(state_file)  # type: ignore
+
+        if not os.path.exists(state_file):
+            raise FileNotFoundError(f"State file '{state_file}' does not exist.")
+
+        if state_file.endswith(".traj"):
+            state = Trajectory(state_file, "r")[-1]  # type: ignore
+        else:
+            state: ase.Atoms = read(state_file)  # type: ignore
 
         self.set_state(state)
 
