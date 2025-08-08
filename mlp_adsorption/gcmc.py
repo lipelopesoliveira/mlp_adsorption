@@ -157,6 +157,9 @@ class GCMC:
 
         self.mov_dict: dict = {"insertion": [], "deletion": [], "translation": [], "rotation": []}
 
+        # Base iteration for restarting the simulation. This is for tracking the iteration count only
+        self.base_iteration: int = 0
+
     def set_framework(self, framework_atoms: ase.Atoms) -> None:
         """
         Set the framework structure for the simulation.
@@ -206,7 +209,7 @@ class GCMC:
 
     def restart(self):
         """
-        Restart the simulation from the last state. 
+        Restart the simulation from the last state.
 
         This method loads the last saved state from the trajectory file and restores the simulation to that state.
         It also loads the uptake, total energy, and total adsorbates lists from the saved files if they exist.
@@ -222,6 +225,17 @@ class GCMC:
 
         if os.path.exists(os.path.join(self.out_folder, f"total_ads_{self.P:.5f}.npy")):
             self.total_ads_list = np.load(os.path.join(self.out_folder, f"total_ads_{self.P:.5f}.npy")).tolist()
+
+        # Check if the len of all restart elements are the same:
+        if not (
+            len(self.uptake_list) == len(self.total_energy_list) == len(self.total_ads_list)
+        ):
+            raise Warning(
+                "The lengths of uptake, total energy, and total adsorbates lists do not match. "
+                "Please check the saved files."
+            )
+
+        self.base_iteration = len(self.uptake_list)  # Set the base iteration to the length of the uptake list
 
     def load_state(self, state_file: str):
         """
@@ -928,6 +942,8 @@ Start optimizing adsorbate structure...
         print(header, file=self.out_file)
 
         for iteration in tqdm(range(1, N + 1), disable=(self.out_file is None), desc="GCMC Step"):
+
+            iteration += self.base_iteration
 
             step_time_start = datetime.datetime.now()
 
