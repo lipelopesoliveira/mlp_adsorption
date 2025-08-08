@@ -12,11 +12,31 @@
 
 ### Removed 🗑️
 
+## v[0.3.2] - 2025-08-05
+
+### New Features 🎉
+
+- New `restart` method in the `GCMC` class to allow restarting a GCMC simulation from a saved state.
+  - It reads the state from an existing `Trajectory` object, enabling the continuation of simulations without losing progress.
+  - It reads the total uptake, total energy, and adsorption energy `npy` files for seamless simulation restoration.
+
+### Fixed 🐛
+
+### Enhanced ✨
+
+- Restart of a GCMC simulation:
+  - Now the `load_state` method in the `GCMC` class can load the state from a `Trajectory` object, allowing for restarting simulations from saved states.
+
+### Documentation 📖
+
+### Removed 🗑️
+
 ## v[0.3.1] - 2025-08-05
 
 ### New Features 🎉
 
 ### Fixed 🐛
+
 - Fixed the calculation of Henry's law constant in the Widom insertion method to ensure it is correctly computed in units of [mol kg-1 Pa-1].
 - Fixed the calculation of the heat of adsorption (Qst) in the Widom insertion method to ensure it is correctly computed in units of [kJ/mol].
 
