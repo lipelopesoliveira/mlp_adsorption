@@ -204,6 +204,25 @@ class GCMC:
         self.current_system.calc = self.model
         self.current_total_energy = self.current_system.get_potential_energy()
 
+    def restart(self):
+        """
+        Restart the simulation from the last state. 
+
+        This method loads the last saved state from the trajectory file and restores the simulation to that state.
+        It also loads the uptake, total energy, and total adsorbates lists from the saved files if they exist.
+        """
+
+        self.load_state(os.path.join(self.out_folder, "GCMC_Trajectory.traj"))
+
+        if os.path.exists(os.path.join(self.out_folder, f"uptake_{self.P:.5f}.npy")):
+            self.uptake_list = np.load(os.path.join(self.out_folder, f"uptake_{self.P:.5f}.npy")).tolist()
+
+        if os.path.exists(os.path.join(self.out_folder, f"total_energy_{self.P:.5f}.npy")):
+            self.total_energy_list = np.load(os.path.join(self.out_folder, f"total_energy_{self.P:.5f}.npy")).tolist()
+
+        if os.path.exists(os.path.join(self.out_folder, f"total_ads_{self.P:.5f}.npy")):
+            self.total_ads_list = np.load(os.path.join(self.out_folder, f"total_ads_{self.P:.5f}.npy")).tolist()
+
     def load_state(self, state_file: str):
         """
         Load the state of the simulation from a file.
@@ -224,15 +243,6 @@ class GCMC:
             state: ase.Atoms = read(state_file)  # type: ignore
 
         self.set_state(state)
-
-        if os.path.exists(os.path.join(self.out_folder, f"uptake_{self.P:.5f}.npy")):
-            self.uptake_list = np.load(os.path.join(self.out_folder, f"uptake_{self.P:.5f}.npy")).tolist()
-
-        if os.path.exists(os.path.join(self.out_folder, f"total_energy_{self.P:.5f}.npy")):
-            self.total_energy_list = np.load(os.path.join(self.out_folder, f"total_energy_{self.P:.5f}.npy")).tolist()
-
-        if os.path.exists(os.path.join(self.out_folder, f"total_ads_{self.P:.5f}.npy")):
-            self.total_ads_list = np.load(os.path.join(self.out_folder, f"total_ads_{self.P:.5f}.npy")).tolist()
 
         self.N_ads = int((len(state) - self.n_atoms_framework) / len(self.adsorbate))
         average_binding_energy = (
