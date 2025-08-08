@@ -22,6 +22,8 @@
 
 ### Fixed 🐛
 
+- Fixed the import orders on `run_widom.py`.
+
 ### Enhanced ✨
 
 - Restart of a GCMC simulation:
