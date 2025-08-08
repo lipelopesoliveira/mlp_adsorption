@@ -1,15 +1,15 @@
 import os
 import sys
 
+# Hide UserWarning and RuntimeWarning messages
+import warnings
+
 import ase
 import torch
 from ase.data import vdw_radii
 from ase.io import read
 from ase.optimize import LBFGS
 from mace.calculators import mace_mp
-
-# Hide UserWarning and RuntimeWarning messages
-import warnings
 
 from mlp_adsorption.ase_utils import crystalOptmization
 from mlp_adsorption.widom import Widom
