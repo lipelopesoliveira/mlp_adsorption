@@ -207,7 +207,7 @@ class GCMC:
         self.current_system.calc = self.model
         self.current_total_energy = self.current_system.get_potential_energy()
 
-    def restart(self):
+    def restart(self) -> None:
         """
         Restart the simulation from the last state.
 
@@ -252,7 +252,7 @@ class GCMC:
 
         self.load_state(os.path.join(self.out_folder, "GCMC_Trajectory.traj"))
 
-    def load_state(self, state_file: str):
+    def load_state(self, state_file: str) -> None:
         """
         Load the state of the simulation from a file.
 
