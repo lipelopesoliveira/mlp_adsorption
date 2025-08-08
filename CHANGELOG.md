@@ -31,6 +31,8 @@
 
 ### Removed 🗑️
 
+- Removed commented-out code for saving the system state in xyz format in the `gcmc.py` file to clean up the codebase.
+
 ## v[0.3.1] - 2025-08-05
 
 ### New Features 🎉
