@@ -215,17 +215,23 @@ class GCMC:
         It also loads the uptake, total energy, and total adsorbates lists from the saved files if they exist.
         """
 
-        print('Restarting simulation...')
+        print("Restarting simulation...")
         uptake_restart, total_energy_restart, total_ads_restart = [], [], []
 
         if os.path.exists(os.path.join(self.out_folder, f"uptake_{self.P:.5f}.npy")):
-            uptake_restart = np.load(os.path.join(self.out_folder, f"uptake_{self.P:.5f}.npy")).tolist()
+            uptake_restart = np.load(
+                os.path.join(self.out_folder, f"uptake_{self.P:.5f}.npy")
+            ).tolist()
 
         if os.path.exists(os.path.join(self.out_folder, f"total_energy_{self.P:.5f}.npy")):
-            total_energy_restart = np.load(os.path.join(self.out_folder, f"total_energy_{self.P:.5f}.npy")).tolist()
+            total_energy_restart = np.load(
+                os.path.join(self.out_folder, f"total_energy_{self.P:.5f}.npy")
+            ).tolist()
 
         if os.path.exists(os.path.join(self.out_folder, f"total_ads_{self.P:.5f}.npy")):
-            total_ads_restart = np.load(os.path.join(self.out_folder, f"total_ads_{self.P:.5f}.npy")).tolist()
+            total_ads_restart = np.load(
+                os.path.join(self.out_folder, f"total_ads_{self.P:.5f}.npy")
+            ).tolist()
 
         # Check if the len of all restart elements are the same:
         if not (len(uptake_restart) == len(total_energy_restart) == len(total_ads_restart)):
@@ -240,7 +246,9 @@ class GCMC:
         self.total_energy_list = total_energy_restart
         self.total_ads_list = total_ads_restart
 
-        self.base_iteration = len(self.uptake_list)  # Set the base iteration to the length of the uptake list
+        self.base_iteration = len(
+            self.uptake_list
+        )  # Set the base iteration to the length of the uptake list
 
         self.load_state(os.path.join(self.out_folder, "GCMC_Trajectory.traj"))
 
@@ -294,7 +302,7 @@ Current steps are: {}
                 self.current_total_energy,
                 self.N_ads,
                 average_binding_energy,
-                self.base_iteration
+                self.base_iteration,
             ),
             file=self.out_file,
         )
