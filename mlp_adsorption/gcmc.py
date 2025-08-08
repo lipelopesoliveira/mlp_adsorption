@@ -225,6 +225,15 @@ class GCMC:
 
         self.set_state(state)
 
+        if os.path.exists(os.path.join(self.out_folder, f"uptake_{self.P:.5f}.npy")):
+            self.uptake_list = np.load(os.path.join(self.out_folder, f"uptake_{self.P:.5f}.npy")).tolist()
+
+        if os.path.exists(os.path.join(self.out_folder, f"total_energy_{self.P:.5f}.npy")):
+            self.total_energy_list = np.load(os.path.join(self.out_folder, f"total_energy_{self.P:.5f}.npy")).tolist()
+
+        if os.path.exists(os.path.join(self.out_folder, f"total_ads_{self.P:.5f}.npy")):
+            self.total_ads_list = np.load(os.path.join(self.out_folder, f"total_ads_{self.P:.5f}.npy")).tolist()
+
         self.N_ads = int((len(state) - self.n_atoms_framework) / len(self.adsorbate))
         average_binding_energy = (
             (self.current_total_energy - self.framework_energy - self.N_ads * self.adsorbate_energy)
