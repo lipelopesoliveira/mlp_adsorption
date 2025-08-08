@@ -20,8 +20,6 @@ warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
-sys.path.append("C:\\Users\\flopes\\Documents\\PRs\\mlp_adsorption")
-
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 FrameworkPath = ""

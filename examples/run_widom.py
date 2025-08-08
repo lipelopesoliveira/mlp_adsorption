@@ -14,8 +14,6 @@ import warnings
 from mlp_adsorption.ase_utils import crystalOptmization
 from mlp_adsorption.widom import Widom
 
-sys.path.append("C:\\Users\\flopes\\Documents\\PRs\\mlp_adsorption")
-
 warnings.filterwarnings("ignore", category=UserWarning)
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 

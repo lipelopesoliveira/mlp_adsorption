@@ -20,9 +20,6 @@ warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-
-
 parser = argparse.ArgumentParser(description="Run GCMC-MD simulation with MACE.")
 # Required arguments
 parser.add_argument("output_path", type=str, help="Path to save the GCMC output files.")
