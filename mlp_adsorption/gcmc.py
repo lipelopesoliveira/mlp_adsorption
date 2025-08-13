@@ -39,6 +39,7 @@ class GCMC:
         fugacity_coeff: float,
         device: str,
         vdw_radii: np.ndarray,
+        vdw_factor: float = 0.6,
         save_frequency: int = 100,
         output_to_file: bool = True,
         debug: bool = False,
@@ -72,6 +73,8 @@ class GCMC:
         vdw_radii : np.ndarray
             Van der Waals radii for the atoms in the framework and adsorbate.
             Should be an array of the same length as the number of atomic numbers in ASE.
+        vdw_factor : float, optional
+            Factor to scale the Van der Waals radii (default is 0.6).
         save_frequency : int, optional
             Frequency at which to save the simulation state and results (default is 100).
         output_to_file : bool, optional
@@ -142,7 +145,10 @@ class GCMC:
             "cm^3 STP/cm^3": 1e6 * mol2cm3 / units.mol / (self.framework.get_volume() * (1e-8**3)),
         }
 
-        self.vdw: np.ndarray = vdw_radii * 0.6  # Adjust van der Waals radii to avoid overlap
+        self.vdw: np.ndarray = vdw_radii * vdw_factor  # Adjust van der Waals radii to avoid overlap
+
+        # Replace any NaN value by 1.5 on self.vdw to avoid potential problems
+        self.vdw[np.isnan(self.vdw)] = 1.5
 
         # Define the current state of the system that will be updated during the simulation
         self.current_system: ase.Atoms = self.framework.copy()

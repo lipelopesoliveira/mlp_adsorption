@@ -19,10 +19,11 @@
 - New `restart` method in the `GCMC` class to allow restarting a GCMC simulation from a saved state.
   - It reads the state from an existing `Trajectory` object, enabling the continuation of simulations without losing progress.
   - It reads the total uptake, total energy, and adsorption energy `npy` files for seamless simulation restoration.
+- Now the `vdw_factor` can be set when initializing the `GCMC` class, allowing for more flexible control over the Van der Waals radii scaling. By default, it is set to 0.6.
 
 ### Fixed 🐛
 
-- Fixed the import orders on `run_widom.py`.
+- Fixed the handling of NaN values in the Van der Waals radii in both `gcmc.py` and `widom.py` files to ensure that any NaN value is replaced by 1.5, preventing potential issues during simulations.
 
 ### Enhanced ✨
 

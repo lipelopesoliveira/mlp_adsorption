@@ -24,6 +24,7 @@ class Widom:
         temperature: float,
         model: calculator.Calculator,
         vdw_radii: np.ndarray,
+        vdw_factor: float = 0.6,
         device: str = "cpu",
         save_frequency: int = 100,
         output_to_file: bool = True,
@@ -50,6 +51,8 @@ class Widom:
             ASE-compatible calculator for energy calculations.
         vdw_radii : np.ndarray
             Van der Waals radii of the atoms in the framework and adsorbate.
+        vdw_factor : float, optional
+            Factor to scale the Van der Waals radii (default is 0.6).
         device : str, optional
             Device to run the calculations on, either 'cpu' or 'cuda'. Default is 'cpu'.
         """
@@ -97,7 +100,10 @@ class Widom:
         self.model = model
         self.beta: float = 1 / (units.kB * temperature)
         self.device = device
-        self.vdw: np.ndarray = vdw_radii * 0.6  # Adjust van der Waals radii to avoid overlap
+        self.vdw: np.ndarray = vdw_radii * vdw_factor  # Adjust van der Waals radii to avoid overlap
+
+        # Replace any NaN value by 1.5 on self.vdw to avoid potential problems
+        self.vdw[np.isnan(self.vdw)] = 1.5
 
         self.energy_list = np.zeros(100, dtype=float)
 
