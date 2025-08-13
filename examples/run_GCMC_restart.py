@@ -188,5 +188,11 @@ gcmc = GCMC(
 if args.restart:
     gcmc.restart()
 
-gcmc.run(max(0, args.MCSteps - gcmc.base_iteration))
+if gcmc.base_iteration >= args.MCSteps:
+    raise ValueError(
+        f"Base iteration ({gcmc.base_iteration}) is greater than or equal to the total number of MC steps ({args.MCSteps}). "
+        "No steps will be run. Please check your restart and MCSteps settings."
+    )
+
+gcmc.run(args.MCSteps - gcmc.base_iteration)
 gcmc.print_finish()
