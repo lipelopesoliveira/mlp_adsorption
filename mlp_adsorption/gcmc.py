@@ -241,7 +241,8 @@ class GCMC:
 
         # Check if the len of all restart elements are the same:
         if not (len(uptake_restart) == len(total_energy_restart) == len(total_ads_restart)):
-            raise ValueError(f"""
+            raise ValueError(
+                f"""
             The lengths of uptake, total energy, and total adsorbates lists do not match.
             Please check the saved files.
             Found lengths: {len(uptake_restart)}, {len(total_energy_restart)}, {len(total_ads_restart)}
