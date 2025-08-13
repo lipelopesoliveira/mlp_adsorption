@@ -219,7 +219,7 @@ Finishing simulation
 
     Average properties of the system:
     ------------------------------------------------------------------------------
-    Henry coefficient: [mol/kg/bar]                      {:12.5e} +/- {:12.5e} [-]
+    Henry coefficient: [mol/kg/Pa]                       {:12.5e} +/- {:12.5e} [-]
     Enthalpy of adsorption: [kJ/mol]                     {:12.5f} +/- {:12.5f} [-]
 
 ===========================================================================
@@ -298,7 +298,7 @@ Accepted: {rnd_number < acc}
         self.energy_list = np.zeros(N, dtype=float)
 
         header = """
-Iteration  |  dE (eV)  |  dE (kJ/mol)  | kH [mol kg-1 bar-1] |  dH (kJ/mol) | Time (s)
+Iteration  |  dE (eV)  |  dE (kJ/mol)  | kH [mol kg-1 Pa-1]  |  dH (kJ/mol) | Time (s)
 ---------------------------------------------------------------------------------------"""
         print(header, file=self.out_file)
 

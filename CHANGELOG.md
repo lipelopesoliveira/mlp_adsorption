@@ -24,6 +24,7 @@
 ### Fixed 🐛
 
 - Fixed the handling of NaN values in the Van der Waals radii in both `gcmc.py` and `widom.py` files to ensure that any NaN value is replaced by 1.5, preventing potential issues during simulations.
+- Fixed unit for Henry constant on header and footer of Widom output. Now it correctly reports the unit as [mol kg-1 Pa-1].
 
 ### Enhanced ✨
 
