@@ -241,11 +241,11 @@ class GCMC:
 
         # Check if the len of all restart elements are the same:
         if not (len(uptake_restart) == len(total_energy_restart) == len(total_ads_restart)):
-            raise ValueError(
-                "The lengths of uptake, total energy, and total adsorbates lists do not match. "
-                "Please check the saved files."
-                f" Found lengths: {len(uptake_restart)}, {len(total_energy_restart)}, {len(total_ads_restart)}"
-                "for uptake, total energy, and total ads respectively."
+            raise ValueError(f"""
+            The lengths of uptake, total energy, and total adsorbates lists do not match.
+            Please check the saved files.
+            Found lengths: {len(uptake_restart)}, {len(total_energy_restart)}, {len(total_ads_restart)}
+            for uptake, total energy, and total ads respectively."""
             )
 
         self.uptake_list = uptake_restart
@@ -967,7 +967,7 @@ Start optimizing adsorbate structure...
 
         for iteration in tqdm(range(1, N + 1), disable=(self.out_file is None), desc="GCMC Step"):
 
-            iteration += self.base_iteration
+            actual_iteration = iteration + self.base_iteration
 
             step_time_start = datetime.datetime.now()
 
@@ -1011,7 +1011,7 @@ Start optimizing adsorbate structure...
 
             print(
                 line_str.format(
-                    iteration,
+                    actual_iteration,
                     self.N_ads,
                     self.N_ads * self.conv_factors["mol/kg"],
                     self.current_total_energy,
@@ -1041,7 +1041,7 @@ Start optimizing adsorbate structure...
                 file=self.out_file,
             )
 
-            if iteration % self.save_every == 0:
+            if actual_iteration % self.save_every == 0:
 
                 self.trajectory.write(self.current_system)  # type: ignore
 

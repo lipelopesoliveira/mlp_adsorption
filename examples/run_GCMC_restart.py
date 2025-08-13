@@ -27,13 +27,13 @@ parser.add_argument(
     "--FrameworkPath",
     type=str,
     required=True,
-    help="Path to the framework structure file in any formate readable to ASE.",
+    help="Path to the framework structure file in any format readable to ASE.",
 )
 parser.add_argument(
     "--AdsorbatePath",
     type=str,
     required=True,
-    help="Path to the adsorbate structure file in any formate readable to ASE.",
+    help="Path to the adsorbate structure file in any format readable to ASE.",
 )
 parser.add_argument(
     "--Temperature",
@@ -188,5 +188,5 @@ gcmc = GCMC(
 if args.restart:
     gcmc.restart()
 
-gcmc.run(args.MCSteps - gcmc.base_iteration)
+gcmc.run(max(0, args.MCSteps - gcmc.base_iteration))
 gcmc.print_finish()
