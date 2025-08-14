@@ -193,7 +193,7 @@ Shortest distances:
         header += """
 ===========================================================================
 """
-        print(header, file=self.out_file)
+        print(header, file=self.out_file, flush=True)
 
     def print_finish(self):
         """
@@ -239,7 +239,7 @@ Simulation duration: {}
             datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             datetime.datetime.now() - self.start_time,
         )
-        print(footer, file=self.out_file)
+        print(footer, file=self.out_file, flush=True)
 
     def debug_movement(self, movement, deltaE, prefactor, acc, rnd_number) -> None:
         """
@@ -260,6 +260,7 @@ Accepted: {rnd_number < acc}
 =======================================================================================================
 """,
             file=self.out_file,
+            flush=True,
         )
 
     def try_insertion(self):
@@ -300,7 +301,7 @@ Accepted: {rnd_number < acc}
         header = """
 Iteration  |  dE (eV)  |  dE (kJ/mol)  | kH [mol kg-1 Pa-1]  |  dH (kJ/mol) | Time (s)
 ---------------------------------------------------------------------------------------"""
-        print(header, file=self.out_file)
+        print(header, file=self.out_file, flush=True)
 
         for i in tqdm(range(1, N + 1), disable=(self.out_file is None), desc="Widom Step"):
 
@@ -354,4 +355,5 @@ Iteration  |  dE (eV)  |  dE (kJ/mol)  | kH [mol kg-1 Pa-1]  |  dH (kJ/mol) | Ti
                     (datetime.datetime.now() - step_time_start).total_seconds(),
                 ),
                 file=self.out_file,
+                flush=True,
             )

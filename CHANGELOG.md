@@ -20,6 +20,7 @@
   - It reads the state from an existing `Trajectory` object, enabling the continuation of simulations without losing progress.
   - It reads the total uptake, total energy, and adsorption energy `npy` files for seamless simulation restoration.
 - Now the `vdw_factor` can be set when initializing the `GCMC` class, allowing for more flexible control over the Van der Waals radii scaling. By default, it is set to 0.6.
+- Add `flush=True` to print statements for immediate output in optimization and simulation logs
 
 ### Fixed 🐛
 

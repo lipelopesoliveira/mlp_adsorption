@@ -312,6 +312,7 @@ Current steps are: {}
                 self.base_iteration,
             ),
             file=self.out_file,
+            flush=True,
         )
 
     def print_introduction(self):
@@ -418,7 +419,7 @@ Partial pressure:
            {self.P / (101325 * 760):>15.5f} Torr
 ===========================================================================
 """
-        print(header, file=self.out_file)
+        print(header, file=self.out_file, flush=True)
 
     def print_finish(self):
         """
@@ -483,6 +484,7 @@ Simulation duration: {}
                 datetime.datetime.now() - self.start_time,
             ),
             file=self.out_file,
+            flush=True,
         )
 
     def debug_movement(self, movement, deltaE, prefactor, acc, rnd_number) -> None:
@@ -505,6 +507,7 @@ Accepted: {rnd_number < acc}
 =======================================================================================================
 """,
             file=self.out_file,
+            flush=True,
         )
 
     def optimize_framework(
@@ -539,6 +542,7 @@ Start optimizing framework structure...
 =======================================================================================================
               """,
             file=self.out_file,
+            flush=True,
         )
 
         resultsDict, optFramework = crystalOptmization(
@@ -589,6 +593,7 @@ Start optimizing adsorbate structure...
 =======================================================================================================
               """,
             file=self.out_file,
+            flush=True,
         )
 
         resultsDict, optAdsorbate = crystalOptmization(
@@ -964,7 +969,7 @@ Start optimizing adsorbate structure...
       -    |  Molecules  | [mmol/g] |     [eV]     |  [kJ/mol]  |    %   |    %   |   %    |   %    |   [s]
 ---------- | ----------- | -------- | ------------ | ---------- | ------ | ------ | ------ | ------ | ------
 """
-        print(header, file=self.out_file)
+        print(header, file=self.out_file, flush=True)
 
         for iteration in tqdm(range(1, N + 1), disable=(self.out_file is None), desc="GCMC Step"):
 
@@ -1040,6 +1045,7 @@ Start optimizing adsorbate structure...
                     (datetime.datetime.now() - step_time_start).total_seconds(),
                 ),
                 file=self.out_file,
+                flush=True,
             )
 
             if actual_iteration % self.save_every == 0:
