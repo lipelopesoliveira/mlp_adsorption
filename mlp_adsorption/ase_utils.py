@@ -153,6 +153,7 @@ def crystalOptmization(
                 (datetime.datetime.now() - start_time).total_seconds() / 60,
             ),
             file=out_file,
+            flush=True,
         )
 
     opt.attach(custom_ase_log, interval=1)
@@ -176,6 +177,7 @@ def crystalOptmization(
             *headers
         ),
         file=out_file,
+        flush=True,
     )
 
     opt.run(fmax=fmax, steps=max_steps)
@@ -188,6 +190,7 @@ def crystalOptmization(
             (datetime.datetime.now() - start_time).total_seconds() / 60
         ),
         file=out_file,
+        flush=True,
     )
 
     print(f"Optimization {'' if opt.converged() else 'did not '}converged.")
@@ -210,10 +213,10 @@ def crystalOptmization(
         symm = check_symmetry(atoms, symprec=symm_tol, verbose=False)
 
         if symm is not None:
-            print("Symmetry information:", file=out_file)
-            print("no      : ", symm.number, file=out_file)
-            print("symbol  : ", symm.international, file=out_file)
-            print("lattice : ", atoms.cell.get_bravais_lattice().longname, file=out_file)
+            print("Symmetry information:", file=out_file, flush=True)
+            print("no      : ", symm.number, file=out_file, flush=True)
+            print("symbol  : ", symm.international, file=out_file, flush=True)
+            print("lattice : ", atoms.cell.get_bravais_lattice().longname, file=out_file, flush=True)
 
         resultsDict["symmetryInformation"] = {
             "number": symm.number if symm else None,
@@ -290,7 +293,7 @@ def nVT_Berendsen(
         temperature, time_step, num_md_steps, output_interval, movie_interval, taut
     )
 
-    print(header, file=out_file)
+    print(header, file=out_file, flush=True)
 
     existing_md_traj = [
         i for i in os.listdir(out_folder) if i.startswith("NVT-Berendsen") and i.endswith(".traj")
@@ -330,6 +333,7 @@ def nVT_Berendsen(
                 step, etot, temp_K, stress_ave, elapsed_time
             ),
             file=out_file,
+            flush=True,
         )
 
     dyn.attach(print_md_log, interval=output_interval)
@@ -340,9 +344,9 @@ def nVT_Berendsen(
 
     # Now run the dynamics
     start_time = datetime.datetime.now()
-    print("    Step   |  Total Energy  |  Temperature  |  Stress  | Elapsed Time ", file=out_file)
-    print("    [-]    |      [eV]      |      [K]      |   [GPa]  |     [s]      ", file=out_file)
-    print(" --------- | -------------- | ------------- | -------- | -------------", file=out_file)
+    print("    Step   |  Total Energy  |  Temperature  |  Stress  | Elapsed Time ", file=out_file, flush=True)
+    print("    [-]    |      [eV]      |      [K]      |   [GPa]  |     [s]      ", file=out_file, flush=True)
+    print(" --------- | -------------- | ------------- | -------- | -------------", file=out_file, flush=True)
 
     dyn.run(num_md_steps)
 
@@ -358,7 +362,7 @@ def nVT_Berendsen(
         (datetime.datetime.now() - start_time).total_seconds(),
     )
 
-    print(footer, file=out_file)
+    print(footer, file=out_file, flush=True)
 
     return atoms
 
@@ -455,7 +459,7 @@ def nPT_Berendsen(
         movie_interval,
     )
 
-    print(header, file=out_file)
+    print(header, file=out_file, flush=True)
 
     existing_md_traj = [
         i for i in os.listdir(out_folder) if i.startswith("NPT-Berendsen") and i.endswith(".traj")
@@ -529,7 +533,7 @@ def nPT_Berendsen(
         (datetime.datetime.now() - start_time).total_seconds(),
     )
 
-    print(footer, file=out_file)
+    print(footer, file=out_file, flush=True)
 
     return atoms
 
@@ -626,7 +630,7 @@ def nPT_NoseHoover(
         movie_interval,
     )
 
-    print(header, file=out_file)
+    print(header, file=out_file, flush=True)
 
     existing_md_traj = [
         i
@@ -700,6 +704,6 @@ def nPT_NoseHoover(
         (datetime.datetime.now() - start_time).total_seconds(),
     )
 
-    print(footer, file=out_file)
+    print(footer, file=out_file, flush=True)
 
     return atoms
