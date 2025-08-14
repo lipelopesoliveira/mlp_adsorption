@@ -285,7 +285,7 @@ Accepted: {rnd_number < acc}
         atoms_trial.wrap()
 
         if vdw_overlap2(atoms_trial, self.vdw, self.n_ads):
-            return 0, atoms_trial  # Return zero energy to indicate overlap
+            return 1000, atoms_trial  # Return 1000 energy to indicate overlap
 
         atoms_trial.calc = self.model
         e_new = atoms_trial.get_potential_energy()
@@ -315,7 +315,7 @@ Iteration  |  dE (eV)  |  dE (kJ/mol)  | kH [mol kg-1 Pa-1]  |  dH (kJ/mol) | Ti
 
             while not accepted:
                 deltaE, atoms_trial = self.try_insertion()
-                if deltaE < 0:
+                if deltaE < 1000:
                     accepted = True
 
             if deltaE < self.minimum_energy:
