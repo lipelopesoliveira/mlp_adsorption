@@ -26,7 +26,7 @@
 
 - Fixed the handling of NaN values in the Van der Waals radii in both `gcmc.py` and `widom.py` files to ensure that any NaN value is replaced by 1.5, preventing potential issues during simulations.
 - Fixed unit for Henry constant on header and footer of Widom output. Now it correctly reports the unit as [mol kg-1 Pa-1].
-- Change the energy return value in the `try_insertion` method of the `Widom` class to 1000 when there is a Van der Waals overlap. This change ensures that the method clearly indicates an overlap condition, preventing an infinite loop in the simulation.
+- Change the energy return value in the `try_insertion` method of the `Widom` class to 1000 eV when there is a Van der Waals overlap and limit the number of insertion attempts to 100. This change ensures that the method prevents an infinite loop in the simulation.
 
 ### Enhanced ✨
 

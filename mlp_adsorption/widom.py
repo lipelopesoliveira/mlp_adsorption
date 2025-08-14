@@ -313,9 +313,12 @@ Iteration  |  dE (eV)  |  dE (kJ/mol)  | kH [mol kg-1 Pa-1]  |  dH (kJ/mol) | Ti
 
             atoms_trial = self.framework.copy()
 
+            insert_iter = 0
+
             while not accepted:
+                insert_iter += 1
                 deltaE, atoms_trial = self.try_insertion()
-                if deltaE < 1000:
+                if deltaE < 1000 or insert_iter > 100:
                     accepted = True
 
             if deltaE < self.minimum_energy:
