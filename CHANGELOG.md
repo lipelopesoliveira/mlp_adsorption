@@ -33,6 +33,16 @@
 - Restart of a GCMC simulation:
   - Now the `load_state` method in the `GCMC` class can load the state from a `Trajectory` object, allowing for restarting simulations from saved states.
 
+- Add new examples for running GCMC simulations with different configurations, including:
+
+  - Basic
+    - Widom Insertion
+    - Rigid GCMC
+    - Rigid GCMC Isotherm
+  - Intermediate
+    - Geometry Optimization + GCMC
+    - Flexible GCMC: Molecular Dynamics + GCMC
+  
 ### Documentation 📖
 
 ### Removed 🗑️

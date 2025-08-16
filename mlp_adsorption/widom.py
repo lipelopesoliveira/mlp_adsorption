@@ -110,7 +110,7 @@ class Widom:
         self.minimum_configuration: ase.Atoms = self.framework.copy()
         self.minimum_energy: float = 0
 
-    def print_introduction(self):
+    def print_header(self):
         """
         Print the header for the simulation output.
         This method is called at the beginning of the simulation to display the initial parameters.
@@ -195,7 +195,7 @@ Shortest distances:
 """
         print(header, file=self.out_file, flush=True)
 
-    def print_finish(self):
+    def print_footer(self):
         """
         Print the footer for the simulation output.
         This method is called at the end of the simulation to display the final results and elapsed time.
