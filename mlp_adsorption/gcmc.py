@@ -137,10 +137,9 @@ class GCMC:
                 acentricFactor=self.acentricFactor,  # type: ignore
                 molarMass=self.adsorbate_mass,
             )
-            self.fugacity_coeff = self.eos.get_fugacity_coefficient()
+            fugacity_coeff = self.eos.get_fugacity_coefficient()
 
-        else:
-            self.fugacity_coeff: float = fugacity_coeff
+        self.fugacity_coeff: float = fugacity_coeff
 
         self.fugacity = (
             self.P * self.fugacity_coeff * units.J
