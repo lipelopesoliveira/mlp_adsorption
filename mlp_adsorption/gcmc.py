@@ -14,6 +14,7 @@ from ase.optimize import LBFGS
 from tqdm import tqdm
 
 from mlp_adsorption import VERSION
+from mlp_adsorption.eos import PengRobinsonEOS
 from mlp_adsorption.ase_utils import (
     crystalOptmization,
     nPT_Berendsen,
@@ -43,6 +44,7 @@ class GCMC:
         save_frequency: int = 100,
         output_to_file: bool = True,
         debug: bool = False,
+        **kwargs
     ):
         """
         Base class for Grand Canonical Monte Carlo (GCMC) simulations using ASE.
@@ -109,34 +111,40 @@ class GCMC:
         # Adsorbate setup
         self.set_adsorbate(adsorbate_atoms)
 
+        # Parameters for calculateing the Peng-Robinson equation of state
+        self.criticalTemperature: float | None = kwargs.get("criticalTemperature", None)  # K
+        self.criticalPressure: float | None = kwargs.get("criticalPressure", None)  # Pa
+        self.acentricFactor: float | None = kwargs.get("acentricFactor", None)  # dimensionless
+
+        # Check if any critical parameters are not None
+        if all([self.criticalTemperature, self.criticalPressure, self.acentricFactor]):
+            self.eos = PengRobinsonEOS(
+                temperature=self.T,
+                pressure=self.P,
+                criticalTemperature=self.criticalTemperature,  # type: ignore
+                criticalPressure=self.criticalPressure,  # type: ignore
+                acentricFactor=self.acentricFactor,  # type: ignore
+                molarMass=self.adsorbate_mass
+            )
+            self.fugacity_coeff = self.eos.get_fugacity_coefficient()
+
+        else:
+            self.fugacity_coeff: float = fugacity_coeff
+
         # Simulation parameters
         self.T: float = temperature
         self.P: float = pressure
-        self.fugacity_coeff: float = fugacity_coeff
-        self.fugacity: float = (
-            pressure * fugacity_coeff * units.J
-        )  # Convert fugacity from Pa (J/m^3) to eV / m^3
+        self.fugacity = self.P * self.fugacity_coeff * units.J  # Convert fugacity from Pa (J/m^3) to eV / m^3
 
         self.model = model
         self.device = device
         self.beta: float = 1 / (units.kB * temperature)  # Boltzmann weight, 1 / [eV/K * K]
 
-        kB = 1.380649e-23  # m2 kg s-2 K-1 = J K-1
-        h = 6.62607015e-34  # m2 kg / s = J s
-
-        beta = 1 / (kB * self.T)  # J^-1
-        self.lmbd = np.sqrt(h**2 * beta / (2 * np.pi * self.adsorbate_mass))  # unit: m
-
         self.save_every = save_frequency
         self.debug = debug
 
-        # Constants
-        R = 8.31446261815324  # Gas constant (J⋅mol^-1⋅K^-1) or (m^3⋅Pa⋅K^-1⋅mol^-1)
-
-        self.mu_i = self.get_ideal_chemical_potential()  # Ideal chemical potential in eV
-
         atm2pa = 101325
-        mol2cm3 = R * 273.15 / atm2pa
+        mol2cm3 = units.kB / units.J * units.mol * 273.15 / atm2pa
 
         self.conv_factors = {
             "mol/kg": (1 / units.mol) / self.framework_mass,
@@ -350,7 +358,6 @@ Constants used:
 Boltzmann constant:     {units.kB} eV/K
 Beta (1/kT):            {self.beta:.3f} eV^-1
 Fugacity coefficient:   {self.fugacity_coeff} (dimensionless)
-Critical Lenght scale:  {self.lmbd:.3e} m
 
 ===========================================================================
 
@@ -359,9 +366,7 @@ Temperature: {self.T} K
 Pressure: {self.P / 1e5} bar
 Fugacity: {self.fugacity / units.J:.3} Pa
 Fugacity: {self.fugacity} eV/m^3
-Chemical potential: {self.mu_i} eV | {self.mu_i / (units.kJ / units.mol):.3f} kJ/mol
 β * V * f = {self.V * self.beta * self.fugacity} [-]
-V * exp(β μ_i) / Λ^3 = {self.V * np.exp(self.beta * self.mu_i) / (self.lmbd ** 3):.3e} [-]
 
 ===========================================================================
 
@@ -704,44 +709,6 @@ Start optimizing adsorbate structure...
 
         self.set_state(new_state)
 
-    def get_ideal_chemical_potential(self) -> float:
-        """
-        Calculate the ideal chemical potential for the adsorbate at the given
-        temperature and pressure.
-
-        The ideal chemical potential is calculated using the formula:
-        μ_i = ln(λ^3 * β * P * f) * kB * T
-
-        where:
-        λ = sqrt(h^2 * β / (2 * π * m))
-        β = 1 / (kB * T)
-
-        P = Pressure in Pa
-        f = Fugacity coefficient (dimensionless)
-        kB = Boltzmann constant (J/K)
-        h = Planck's constant (J·s)
-        m = Mass of the adsorbate molecule in kg
-        T = Temperature in Kelvin
-
-        Returns
-        -------
-        float
-            The ideal chemical potential in eV.
-        """
-
-        # Constants
-        kB = 1.380649e-23  # m2 kg s-2 K-1 = J K-1
-        h = 6.62607015e-34  # m2 kg / s = J s
-
-        beta = 1 / (kB * self.T)  # J^-1
-
-        lmbd = np.sqrt(h**2 * beta / (2 * np.pi * self.adsorbate_mass))  # unit: m
-
-        mu_i = np.log(lmbd**3 * beta * self.P * self.fugacity_coeff) * (units.kB * self.T)  # In J
-        mu_i *= units.J / units.mol  # Convert to eV
-
-        return mu_i
-
     def _insertion_acceptance(self, deltaE) -> bool:
         """
         Calculate the acceptance probability for insertion of an adsorbate molecule as
@@ -839,7 +806,7 @@ Start optimizing adsorbate structure...
         atoms_trial.calc = self.model
 
         pos = atoms_trial.get_positions()
-        pos[-self.n_ads :] = random_position(pos[-self.n_ads :], atoms_trial.get_cell())
+        pos[-self.n_ads:] = random_position(pos[-self.n_ads:], atoms_trial.get_cell())
         atoms_trial.set_positions(pos)
         atoms_trial.wrap()
 

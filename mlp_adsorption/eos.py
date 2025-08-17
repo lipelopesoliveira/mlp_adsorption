@@ -1,4 +1,5 @@
 import numpy as np
+from ase import units
 
 
 class PengRobinsonEOS():
@@ -38,7 +39,7 @@ class PengRobinsonEOS():
 
         # Constants
 
-        self.R = 8.31446261815324  # J/(mol*K), universal gas constant
+        self.R = units.kB / units.J * units.mol  # J/(mol*K), universal gas constant
 
         nc = (1 + (4 - np.sqrt(8))**(1/3) + (4 + np.sqrt(8))**(1/3))**(-1)
         self.omega_a = (8 + 40 * nc) / (49 - 37 * nc)
@@ -50,7 +51,7 @@ class PengRobinsonEOS():
         self.kappa = 0.37464 + 1.54226 * self.omega - 0.26992 * self.omega**2
         self.alpha = (1 + self.kappa * (1 - np.sqrt(self.reducedTemperature)))**2
 
-    def get_parameters(self) -> tuple[float, float]:
+    def calculate_eos_parameters(self) -> tuple[float, float]:
         """
         Calculate the parameters A and B for the Peng-Robinson EOS.
 
@@ -80,10 +81,10 @@ class PengRobinsonEOS():
         Z: float
             Compressibility factor Z
         """
-        A, B = self.get_parameters()
+        A, B = self.calculate_eos_parameters()
 
         # Calculate the compressibility factor Z by solving the cubic equation
-        coefficients = [1, -(1 - B), (A - 2 * B - 3 * B **2), -(A * B - B**2 - B**3)]
+        coefficients = [1, -(1 - B), (A - 2 * B - 3 * B ** 2), -(A * B - B ** 2 - B ** 3)]
         roots = np.roots(coefficients)
 
         # Select the largest real root as the compressibility factor Z
@@ -91,7 +92,7 @@ class PengRobinsonEOS():
 
         return float(Z)
 
-    def get_fugacity(self) -> float:
+    def get_fugacity_coefficient(self) -> float:
         """
         Calculate the fugacity coefficient using the Peng-Robinson EOS.
 
@@ -111,7 +112,7 @@ class PengRobinsonEOS():
         """
 
         Z = self.get_compressibility()
-        A, B = self.get_parameters()
+        A, B = self.calculate_eos_parameters()
 
         ln_phi = (Z - 1) - \
             np.log(Z - B) - \
