@@ -12,7 +12,22 @@
 
 ### Removed 🗑️
 
-## v[0.3.2] - 2025-08-05
+## v[0.4.0] - 2025-08-17
+
+### New Features 🎉
+
+- Added the Peng-Robinson equation of state (EOS) to the `mlp_adsorption.eos` module.
+  - This allows for the calculation of fugacity coefficients and bulk phase density using the Peng-Robinson EOS.
+
+### Fixed 🐛
+
+### Enhanced ✨
+
+### Documentation 📖
+
+### Removed 🗑️
+
+## v[0.3.2] - 2025-08-17
 
 ### New Features 🎉
 
@@ -44,6 +59,8 @@
     - Flexible GCMC: Molecular Dynamics + GCMC
   
 ### Documentation 📖
+
+- New examples are documented in the README file, providing clear instructions on how to run GCMC simulations and Widom insertion tests.
 
 ### Removed 🗑️
 
