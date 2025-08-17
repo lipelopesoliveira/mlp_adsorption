@@ -39,6 +39,7 @@ class GCMC:
         fugacity_coeff: float,
         device: str,
         vdw_radii: np.ndarray,
+        vdw_factor: float = 0.6,
         save_frequency: int = 100,
         output_to_file: bool = True,
         debug: bool = False,
@@ -72,6 +73,8 @@ class GCMC:
         vdw_radii : np.ndarray
             Van der Waals radii for the atoms in the framework and adsorbate.
             Should be an array of the same length as the number of atomic numbers in ASE.
+        vdw_factor : float, optional
+            Factor to scale the Van der Waals radii (default is 0.6).
         save_frequency : int, optional
             Frequency at which to save the simulation state and results (default is 100).
         output_to_file : bool, optional
@@ -142,7 +145,10 @@ class GCMC:
             "cm^3 STP/cm^3": 1e6 * mol2cm3 / units.mol / (self.framework.get_volume() * (1e-8**3)),
         }
 
-        self.vdw: np.ndarray = vdw_radii * 0.6  # Adjust van der Waals radii to avoid overlap
+        self.vdw: np.ndarray = vdw_radii * vdw_factor  # Adjust van der Waals radii to avoid overlap
+
+        # Replace any NaN value by 1.5 on self.vdw to avoid potential problems
+        self.vdw[np.isnan(self.vdw)] = 1.5
 
         # Define the current state of the system that will be updated during the simulation
         self.current_system: ase.Atoms = self.framework.copy()
@@ -156,6 +162,9 @@ class GCMC:
         self.total_ads_list: list[float] = []
 
         self.mov_dict: dict = {"insertion": [], "deletion": [], "translation": [], "rotation": []}
+
+        # Base iteration for restarting the simulation. This is for tracking the iteration count only
+        self.base_iteration: int = 0
 
     def set_framework(self, framework_atoms: ase.Atoms) -> None:
         """
@@ -204,7 +213,53 @@ class GCMC:
         self.current_system.calc = self.model
         self.current_total_energy = self.current_system.get_potential_energy()
 
-    def load_state(self, state_file: str):
+    def restart(self) -> None:
+        """
+        Restart the simulation from the last state.
+
+        This method loads the last saved state from the trajectory file and restores the simulation to that state.
+        It also loads the uptake, total energy, and total adsorbates lists from the saved files if they exist.
+        """
+
+        print("Restarting simulation...")
+        uptake_restart, total_energy_restart, total_ads_restart = [], [], []
+
+        if os.path.exists(os.path.join(self.out_folder, f"uptake_{self.P:.5f}.npy")):
+            uptake_restart = np.load(
+                os.path.join(self.out_folder, f"uptake_{self.P:.5f}.npy")
+            ).tolist()
+
+        if os.path.exists(os.path.join(self.out_folder, f"total_energy_{self.P:.5f}.npy")):
+            total_energy_restart = np.load(
+                os.path.join(self.out_folder, f"total_energy_{self.P:.5f}.npy")
+            ).tolist()
+
+        if os.path.exists(os.path.join(self.out_folder, f"total_ads_{self.P:.5f}.npy")):
+            total_ads_restart = np.load(
+                os.path.join(self.out_folder, f"total_ads_{self.P:.5f}.npy")
+            ).tolist()
+
+        # Check if the len of all restart elements are the same:
+        if not (len(uptake_restart) == len(total_energy_restart) == len(total_ads_restart)):
+            raise ValueError(
+                f"""
+            The lengths of uptake, total energy, and total adsorbates lists do not match.
+            Please check the saved files.
+            Found lengths: {len(uptake_restart)}, {len(total_energy_restart)}, {len(total_ads_restart)}
+            for uptake, total energy, and total ads respectively."""
+            )
+
+        self.uptake_list = uptake_restart
+        self.total_energy_list = total_energy_restart
+        self.total_ads_list = total_ads_restart
+
+        self.base_iteration = len(
+            self.uptake_list
+        )  # Set the base iteration to the length of the uptake list
+
+        self.load_state(os.path.join(self.out_folder, "GCMC_Trajectory.traj"))
+
+    def load_state(self, state_file: str) -> None:
         """
         Load the state of the simulation from a file.
 
@@ -214,7 +269,14 @@ class GCMC:
             Path to the file containing the saved state of the simulation.
         """
         print(f"Loading state from {state_file}...")
-        state: ase.Atoms = read(state_file)  # type: ignore
+
+        if not os.path.exists(state_file):
+            raise FileNotFoundError(f"State file '{state_file}' does not exist.")
+
+        if state_file.endswith(".traj"):
+            state = Trajectory(state_file, "r")[-1]  # type: ignore
+        else:
+            state: ase.Atoms = read(state_file)  # type: ignore
 
         self.set_state(state)
 
@@ -239,14 +301,18 @@ Curent total energy: {:.3f} eV
 Current number of adsorbates: {}
 Current average binding energy: {:.3f} kJ/mol
 
+Current steps are: {}
+
 ===========================================================================
 """.format(
                 len(state),
                 self.current_total_energy,
                 self.N_ads,
                 average_binding_energy,
+                self.base_iteration,
             ),
             file=self.out_file,
+            flush=True,
         )
 
     def print_introduction(self):
@@ -353,7 +419,7 @@ Partial pressure:
            {self.P / (101325 * 760):>15.5f} Torr
 ===========================================================================
 """
-        print(header, file=self.out_file)
+        print(header, file=self.out_file, flush=True)
 
     def print_finish(self):
         """
@@ -418,6 +484,7 @@ Simulation duration: {}
                 datetime.datetime.now() - self.start_time,
             ),
             file=self.out_file,
+            flush=True,
         )
 
     def debug_movement(self, movement, deltaE, prefactor, acc, rnd_number) -> None:
@@ -440,6 +507,7 @@ Accepted: {rnd_number < acc}
 =======================================================================================================
 """,
             file=self.out_file,
+            flush=True,
         )
 
     def optimize_framework(
@@ -474,6 +542,7 @@ Start optimizing framework structure...
 =======================================================================================================
               """,
             file=self.out_file,
+            flush=True,
         )
 
         resultsDict, optFramework = crystalOptmization(
@@ -524,6 +593,7 @@ Start optimizing adsorbate structure...
 =======================================================================================================
               """,
             file=self.out_file,
+            flush=True,
         )
 
         resultsDict, optAdsorbate = crystalOptmization(
@@ -899,9 +969,11 @@ Start optimizing adsorbate structure...
       -    |  Molecules  | [mmol/g] |     [eV]     |  [kJ/mol]  |    %   |    %   |   %    |   %    |   [s]
 ---------- | ----------- | -------- | ------------ | ---------- | ------ | ------ | ------ | ------ | ------
 """
-        print(header, file=self.out_file)
+        print(header, file=self.out_file, flush=True)
 
         for iteration in tqdm(range(1, N + 1), disable=(self.out_file is None), desc="GCMC Step"):
+
+            actual_iteration = iteration + self.base_iteration
 
             step_time_start = datetime.datetime.now()
 
@@ -945,7 +1017,7 @@ Start optimizing adsorbate structure...
 
             print(
                 line_str.format(
-                    iteration,
+                    actual_iteration,
                     self.N_ads,
                     self.N_ads * self.conv_factors["mol/kg"],
                     self.current_total_energy,
@@ -973,15 +1045,10 @@ Start optimizing adsorbate structure...
                     (datetime.datetime.now() - step_time_start).total_seconds(),
                 ),
                 file=self.out_file,
+                flush=True,
             )
 
-            if iteration % self.save_every == 0:
-                # Save the current state of the system as xyz deactivated for now
-                # write(
-                # os.path.join(self.out_folder,
-                # f'Movies/snapshot_{len(self.uptake_list)}_{self.P:.2f}_{self.T:.2f}.xyz'),
-                #       self.current_system,
-                #       format='extxyz')
+            if actual_iteration % self.save_every == 0:
 
                 self.trajectory.write(self.current_system)  # type: ignore
 

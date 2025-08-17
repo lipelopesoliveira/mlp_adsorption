@@ -12,11 +12,49 @@
 
 ### Removed 🗑️
 
+## v[0.3.2] - 2025-08-05
+
+### New Features 🎉
+
+- New `restart` method in the `GCMC` class to allow restarting a GCMC simulation from a saved state.
+  - It reads the state from an existing `Trajectory` object, enabling the continuation of simulations without losing progress.
+  - It reads the total uptake, total energy, and adsorption energy `npy` files for seamless simulation restoration.
+- Now the `vdw_factor` can be set when initializing the `GCMC` class, allowing for more flexible control over the Van der Waals radii scaling. By default, it is set to 0.6.
+- Add `flush=True` to print statements for immediate output in optimization and simulation logs
+
+### Fixed 🐛
+
+- Fixed the handling of NaN values in the Van der Waals radii in both `gcmc.py` and `widom.py` files to ensure that any NaN value is replaced by 1.5, preventing potential issues during simulations.
+- Fixed unit for Henry constant on header and footer of Widom output. Now it correctly reports the unit as [mol kg-1 Pa-1].
+- Change the energy return value in the `try_insertion` method of the `Widom` class to 1000 eV when there is a Van der Waals overlap and limit the number of insertion attempts to 100. This change ensures that the method prevents an infinite loop in the simulation.
+
+### Enhanced ✨
+
+- Restart of a GCMC simulation:
+  - Now the `load_state` method in the `GCMC` class can load the state from a `Trajectory` object, allowing for restarting simulations from saved states.
+
+- Add new examples for running GCMC simulations with different configurations, including:
+
+  - Basic
+    - Widom Insertion
+    - Rigid GCMC
+    - Rigid GCMC Isotherm
+  - Intermediate
+    - Geometry Optimization + GCMC
+    - Flexible GCMC: Molecular Dynamics + GCMC
+  
+### Documentation 📖
+
+### Removed 🗑️
+
+- Removed commented-out code for saving the system state in xyz format in the `gcmc.py` file to clean up the codebase.
+
 ## v[0.3.1] - 2025-08-05
 
 ### New Features 🎉
 
 ### Fixed 🐛
+
 - Fixed the calculation of Henry's law constant in the Widom insertion method to ensure it is correctly computed in units of [mol kg-1 Pa-1].
 - Fixed the calculation of the heat of adsorption (Qst) in the Widom insertion method to ensure it is correctly computed in units of [kJ/mol].
 

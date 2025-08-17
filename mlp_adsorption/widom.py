@@ -24,6 +24,7 @@ class Widom:
         temperature: float,
         model: calculator.Calculator,
         vdw_radii: np.ndarray,
+        vdw_factor: float = 0.6,
         device: str = "cpu",
         save_frequency: int = 100,
         output_to_file: bool = True,
@@ -50,6 +51,8 @@ class Widom:
             ASE-compatible calculator for energy calculations.
         vdw_radii : np.ndarray
             Van der Waals radii of the atoms in the framework and adsorbate.
+        vdw_factor : float, optional
+            Factor to scale the Van der Waals radii (default is 0.6).
         device : str, optional
             Device to run the calculations on, either 'cpu' or 'cuda'. Default is 'cpu'.
         """
@@ -97,14 +100,17 @@ class Widom:
         self.model = model
         self.beta: float = 1 / (units.kB * temperature)
         self.device = device
-        self.vdw: np.ndarray = vdw_radii * 0.6  # Adjust van der Waals radii to avoid overlap
+        self.vdw: np.ndarray = vdw_radii * vdw_factor  # Adjust van der Waals radii to avoid overlap
+
+        # Replace any NaN value by 1.5 on self.vdw to avoid potential problems
+        self.vdw[np.isnan(self.vdw)] = 1.5
 
         self.energy_list = np.zeros(100, dtype=float)
 
         self.minimum_configuration: ase.Atoms = self.framework.copy()
         self.minimum_energy: float = 0
 
-    def print_introduction(self):
+    def print_header(self):
         """
         Print the header for the simulation output.
         This method is called at the beginning of the simulation to display the initial parameters.
@@ -187,9 +193,9 @@ Shortest distances:
         header += """
 ===========================================================================
 """
-        print(header, file=self.out_file)
+        print(header, file=self.out_file, flush=True)
 
-    def print_finish(self):
+    def print_footer(self):
         """
         Print the footer for the simulation output.
         This method is called at the end of the simulation to display the final results and elapsed time.
@@ -213,7 +219,7 @@ Finishing simulation
 
     Average properties of the system:
     ------------------------------------------------------------------------------
-    Henry coefficient: [mol/kg/bar]                      {:12.5e} +/- {:12.5e} [-]
+    Henry coefficient: [mol/kg/Pa]                       {:12.5e} +/- {:12.5e} [-]
     Enthalpy of adsorption: [kJ/mol]                     {:12.5f} +/- {:12.5f} [-]
 
 ===========================================================================
@@ -233,7 +239,7 @@ Simulation duration: {}
             datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             datetime.datetime.now() - self.start_time,
         )
-        print(footer, file=self.out_file)
+        print(footer, file=self.out_file, flush=True)
 
     def debug_movement(self, movement, deltaE, prefactor, acc, rnd_number) -> None:
         """
@@ -254,6 +260,7 @@ Accepted: {rnd_number < acc}
 =======================================================================================================
 """,
             file=self.out_file,
+            flush=True,
         )
 
     def try_insertion(self):
@@ -278,7 +285,7 @@ Accepted: {rnd_number < acc}
         atoms_trial.wrap()
 
         if vdw_overlap2(atoms_trial, self.vdw, self.n_ads):
-            return 0, atoms_trial  # Return zero energy to indicate overlap
+            return 1000, atoms_trial  # Return 1000 energy to indicate overlap
 
         atoms_trial.calc = self.model
         e_new = atoms_trial.get_potential_energy()
@@ -292,9 +299,9 @@ Accepted: {rnd_number < acc}
         self.energy_list = np.zeros(N, dtype=float)
 
         header = """
-Iteration  |  dE (eV)  |  dE (kJ/mol)  | kH [mol kg-1 bar-1] |  dH (kJ/mol) | Time (s)
+Iteration  |  dE (eV)  |  dE (kJ/mol)  | kH [mol kg-1 Pa-1]  |  dH (kJ/mol) | Time (s)
 ---------------------------------------------------------------------------------------"""
-        print(header, file=self.out_file)
+        print(header, file=self.out_file, flush=True)
 
         for i in tqdm(range(1, N + 1), disable=(self.out_file is None), desc="Widom Step"):
 
@@ -306,9 +313,12 @@ Iteration  |  dE (eV)  |  dE (kJ/mol)  | kH [mol kg-1 bar-1] |  dH (kJ/mol) | Ti
 
             atoms_trial = self.framework.copy()
 
+            insert_iter = 0
+
             while not accepted:
+                insert_iter += 1
                 deltaE, atoms_trial = self.try_insertion()
-                if deltaE < 0:
+                if deltaE < 1000 or insert_iter > 100:
                     accepted = True
 
             if deltaE < self.minimum_energy:
@@ -348,4 +358,5 @@ Iteration  |  dE (eV)  |  dE (kJ/mol)  | kH [mol kg-1 bar-1] |  dH (kJ/mol) | Ti
                     (datetime.datetime.now() - step_time_start).total_seconds(),
                 ),
                 file=self.out_file,
+                flush=True,
             )

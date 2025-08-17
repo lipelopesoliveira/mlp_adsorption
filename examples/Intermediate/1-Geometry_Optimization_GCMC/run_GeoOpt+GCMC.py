@@ -1,6 +1,9 @@
 import os
 import sys
 
+# Hide UserWarning and RuntimeWarning messages
+import warnings
+
 import ase
 import torch
 from ase.data import vdw_radii
@@ -8,13 +11,8 @@ from ase.io import read
 from ase.optimize import LBFGS
 from mace.calculators import mace_mp
 
-sys.path.append("C:\\Users\\flopes\\Documents\\PRs\\mlp_adsorption")
-
-# Hide UserWarning and RuntimeWarning messages
-import warnings
-
 from mlp_adsorption.ase_utils import crystalOptmization
-from mlp_adsorption.widom import Widom
+from mlp_adsorption.gcmc import GCMC
 
 warnings.filterwarnings("ignore", category=UserWarning)
 warnings.filterwarnings("ignore", category=RuntimeWarning)
@@ -23,13 +21,13 @@ os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
-FrameworkPath = "cau-10.cif"
-AdsorbatePath = "H2O.xyz"
+FrameworkPath = "mg-mof-74.cif"
+AdsorbatePath = "co2.xyz"
 
 model = mace_mp(
-    model="CAU-10_pbe_10samples.model",
+    model="medium-0b2",
     dispersion=True,
-    damping="zero",
+    damping="zero",  # choices: ["zero", "bj", "zerom", "bjm"]
     dispersion_xc="pbe",
     default_dtype="float32",
     device=device,
@@ -61,7 +59,7 @@ frameworkOpt.set_constraint(None)
 # Load the adsorbate structure
 adsorbate: ase.Atoms = read(AdsorbatePath)  # type: ignore
 
-resultsDict, adsorbatekOpt = crystalOptmization(
+resultsDict, adsorbateOpt = crystalOptmization(
     atoms_in=adsorbate,
     calculator=model,
     optimizer=LBFGS,  # type: ignore
@@ -78,24 +76,36 @@ resultsDict, adsorbatekOpt = crystalOptmization(
 )
 
 # Remove constrains from adsorbateOpt
-adsorbatekOpt.set_constraint(None)
+adsorbateOpt.set_constraint(None)
 
-Temperature = 298.0
 
-NSteps = 30000
+Temperature = 298.0  # in Kelvin
+pressure = 100_000  # in Pa = 1 bar
+MCSteps = 30_000
 
-widom = Widom(
+
+print(
+    f"Running GCMC simulation for pressure: {pressure:.2f} Pa at temperature: {Temperature:.2f} K"
+)
+
+gcmc = GCMC(
     model=model,
     framework_atoms=frameworkOpt,
-    adsorbate_atoms=adsorbatekOpt,
+    adsorbate_atoms=adsorbateOpt,
     temperature=Temperature,
+    pressure=pressure,
+    fugacity_coeff=1,
     device=device,
     vdw_radii=vdw_radii,
-    debug=False,
+    vdw_factor=0.6,
+    save_frequency=1,
+    debug=True,
     output_to_file=True,
 )
 
-widom.print_introduction()
 
-widom.run(NSteps)
-widom.print_finish()
+gcmc.print_introduction()
+
+gcmc.run(MCSteps)
+
+gcmc.print_finish()
