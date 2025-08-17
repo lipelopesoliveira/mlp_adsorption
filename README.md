@@ -1,4 +1,8 @@
-# MLP Adsorption
+# <span style="font-size:larger;">MLP Adsorption</span>
+
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+
+## About MLP Adsorption
 
 This repository contains the MLP Adsorption package, which provides tools for molecular simulations and adsorption studies using machine learning potentials.
 
