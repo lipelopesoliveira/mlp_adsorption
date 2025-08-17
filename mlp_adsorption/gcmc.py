@@ -118,6 +118,10 @@ class GCMC:
         # Adsorbate setup
         self.set_adsorbate(adsorbate_atoms)
 
+        # Simulation parameters
+        self.T: float = temperature
+        self.P: float = pressure
+
         # Parameters for calculateing the Peng-Robinson equation of state
         self.criticalTemperature: float | None = kwargs.get("criticalTemperature", None)  # K
         self.criticalPressure: float | None = kwargs.get("criticalPressure", None)  # Pa
@@ -138,9 +142,6 @@ class GCMC:
         else:
             self.fugacity_coeff: float = fugacity_coeff
 
-        # Simulation parameters
-        self.T: float = temperature
-        self.P: float = pressure
         self.fugacity = self.P * self.fugacity_coeff * units.J  # Convert fugacity from Pa (J/m^3) to eV / m^3
 
         self.model = model
@@ -364,15 +365,15 @@ Running on device: {self.device}
 Constants used:
 Boltzmann constant:     {units.kB} eV/K
 Beta (1/kT):            {self.beta:.3f} eV^-1
-Fugacity coefficient:   {self.fugacity_coeff} (dimensionless)
+Fugacity coefficient:   {self.fugacity_coeff:.9f} (dimensionless)
 
 ===========================================================================
 
 Simulation Parameters:
 Temperature: {self.T} K
-Pressure: {self.P / 1e5} bar
-Fugacity: {self.fugacity / units.J:.3} Pa
-Fugacity: {self.fugacity} eV/m^3
+Pressure: {self.P / 1e5:.5f} bar
+Fugacity: {self.fugacity / units.J:.3f} Pa
+Fugacity: {self.fugacity:.5e} eV/m^3
 β * V * f = {self.V * self.beta * self.fugacity} [-]
 
 ===========================================================================
