@@ -1,20 +1,14 @@
 import os
-import sys
 
 # Hide UserWarning and RuntimeWarning messages
 import warnings
 
 import ase
-import numpy as np
 import torch
 from ase.data import vdw_radii
-from ase.io import Trajectory, read
-from ase.optimize import LBFGS
+from ase.io import read
 from mace.calculators import mace_mp
 
-sys.path.append("/home/felipe/PRs/mlp_adsorption/")
-
-from mlp_adsorption.ase_utils import crystalOptmization
 from mlp_adsorption.gcmc import GCMC
 
 warnings.filterwarnings("ignore", category=UserWarning)

@@ -11,8 +11,6 @@ from ase.io import read
 from ase.optimize import LBFGS
 from mace.calculators import mace_mp
 
-sys.path.append("/home/felipe/PRs/mlp_adsorption/")
-
 from mlp_adsorption.ase_utils import crystalOptmization
 from mlp_adsorption.gcmc import GCMC
 
