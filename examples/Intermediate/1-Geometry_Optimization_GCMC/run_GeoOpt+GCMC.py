@@ -94,13 +94,15 @@ gcmc = GCMC(
     adsorbate_atoms=adsorbateOpt,
     temperature=Temperature,
     pressure=pressure,
-    fugacity_coeff=1,
     device=device,
     vdw_radii=vdw_radii,
     vdw_factor=0.6,
     save_frequency=1,
     debug=True,
     output_to_file=True,
+    criticalTemperature=304.1282,
+    criticalPressure=7377300.0,
+    acentricFactor=0.22394,
 )
 
 

@@ -63,11 +63,13 @@ for i, pressure in enumerate(pressure_list):
         adsorbate_atoms=adsorbate,
         temperature=Temperature,
         pressure=pressure,
-        fugacity_coeff=1,
         device=device,
         vdw_radii=vdw_radii,
         debug=False,
         output_to_file=True,
+        criticalTemperature=304.1282,
+        criticalPressure=7377300.0,
+        acentricFactor=0.22394,
     )
 
     gcmc.print_introduction()
