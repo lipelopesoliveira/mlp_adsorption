@@ -28,7 +28,7 @@ You can install the MLP Adsorption package using pip:
 pip install git+https://github.com/lipelopesoliveira/mlp_adsorption.git
 ```
 
-Alternatively, you can use pyCOFBuilder by manually importing it using the `sys` module, as exemplified below:
+Alternatively, you can use MLP Adsorption by manually importing it using the `sys` module, as exemplified below:
 
 ```python
 # importing module
