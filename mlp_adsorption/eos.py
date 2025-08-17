@@ -2,14 +2,16 @@ import numpy as np
 from ase import units
 
 
-class PengRobinsonEOS():
-    def __init__(self,
-                 temperature: float,
-                 pressure: float,
-                 criticalTemperature: float,
-                 criticalPressure: float,
-                 acentricFactor: float,
-                 molarMass: float) -> None:
+class PengRobinsonEOS:
+    def __init__(
+        self,
+        temperature: float,
+        pressure: float,
+        criticalTemperature: float,
+        criticalPressure: float,
+        acentricFactor: float,
+        molarMass: float,
+    ) -> None:
         """
         Peng-Robinson Equation of State
 
@@ -41,7 +43,7 @@ class PengRobinsonEOS():
 
         self.R = units.kB / units.J * units.mol  # J/(mol*K), universal gas constant
 
-        nc = (1 + (4 - np.sqrt(8))**(1/3) + (4 + np.sqrt(8))**(1/3))**(-1)
+        nc = (1 + (4 - np.sqrt(8)) ** (1 / 3) + (4 + np.sqrt(8)) ** (1 / 3)) ** (-1)
         self.omega_a = (8 + 40 * nc) / (49 - 37 * nc)
         self.omega_b = nc / (3 + nc)
 
@@ -49,7 +51,7 @@ class PengRobinsonEOS():
         self.b = self.omega_b * self.R * self.Tc / self.Pc
 
         self.kappa = 0.37464 + 1.54226 * self.omega - 0.26992 * self.omega**2
-        self.alpha = (1 + self.kappa * (1 - np.sqrt(self.reducedTemperature)))**2
+        self.alpha = (1 + self.kappa * (1 - np.sqrt(self.reducedTemperature))) ** 2
 
     def calculate_eos_parameters(self) -> tuple[float, float]:
         """
@@ -84,7 +86,7 @@ class PengRobinsonEOS():
         A, B = self.calculate_eos_parameters()
 
         # Calculate the compressibility factor Z by solving the cubic equation
-        coefficients = [1, -(1 - B), (A - 2 * B - 3 * B ** 2), -(A * B - B ** 2 - B ** 3)]
+        coefficients = [1, -(1 - B), (A - 2 * B - 3 * B**2), -(A * B - B**2 - B**3)]
         roots = np.roots(coefficients)
 
         # Select the largest real root as the compressibility factor Z
@@ -114,9 +116,13 @@ class PengRobinsonEOS():
         Z = self.get_compressibility()
         A, B = self.calculate_eos_parameters()
 
-        ln_phi = (Z - 1) - \
-            np.log(Z - B) - \
-            A / (2 * np.sqrt(2) * B) * np.log((Z + (1 + np.sqrt(2)) * B) / (Z + (1 - np.sqrt(2)) * B))
+        ln_phi = (
+            (Z - 1)
+            - np.log(Z - B)
+            - A
+            / (2 * np.sqrt(2) * B)
+            * np.log((Z + (1 + np.sqrt(2)) * B) / (Z + (1 - np.sqrt(2)) * B))
+        )
         phi = np.exp(ln_phi)
 
         return phi

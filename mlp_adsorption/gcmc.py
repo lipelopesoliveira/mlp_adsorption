@@ -14,13 +14,13 @@ from ase.optimize import LBFGS
 from tqdm import tqdm
 
 from mlp_adsorption import VERSION
-from mlp_adsorption.eos import PengRobinsonEOS
 from mlp_adsorption.ase_utils import (
     crystalOptmization,
     nPT_Berendsen,
     nPT_NoseHoover,
     nVT_Berendsen,
 )
+from mlp_adsorption.eos import PengRobinsonEOS
 from mlp_adsorption.utilities import (
     enthalpy_of_adsorption,
     random_position,
@@ -44,7 +44,7 @@ class GCMC:
         output_to_file: bool = True,
         debug: bool = False,
         fugacity_coeff: float = 1.0,
-        **kwargs
+        **kwargs,
     ):
         """
         Base class for Grand Canonical Monte Carlo (GCMC) simulations using ASE.
@@ -135,14 +135,16 @@ class GCMC:
                 criticalTemperature=self.criticalTemperature,  # type: ignore
                 criticalPressure=self.criticalPressure,  # type: ignore
                 acentricFactor=self.acentricFactor,  # type: ignore
-                molarMass=self.adsorbate_mass
+                molarMass=self.adsorbate_mass,
             )
             self.fugacity_coeff = self.eos.get_fugacity_coefficient()
 
         else:
             self.fugacity_coeff: float = fugacity_coeff
 
-        self.fugacity = self.P * self.fugacity_coeff * units.J  # Convert fugacity from Pa (J/m^3) to eV / m^3
+        self.fugacity = (
+            self.P * self.fugacity_coeff * units.J
+        )  # Convert fugacity from Pa (J/m^3) to eV / m^3
 
         self.model = model
         self.device = device
@@ -814,7 +816,7 @@ Start optimizing adsorbate structure...
         atoms_trial.calc = self.model
 
         pos = atoms_trial.get_positions()
-        pos[-self.n_ads:] = random_position(pos[-self.n_ads:], atoms_trial.get_cell())
+        pos[-self.n_ads :] = random_position(pos[-self.n_ads :], atoms_trial.get_cell())
         atoms_trial.set_positions(pos)
         atoms_trial.wrap()
 

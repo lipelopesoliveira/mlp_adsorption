@@ -12,7 +12,7 @@
 
 ### Removed 🗑️
 
-## v[0.4.0] - 2025-08-17
+## v[0.4.0] - Unreleased
 
 ### New Features 🎉
 
@@ -24,6 +24,8 @@
 ### Enhanced ✨
 
 ### Documentation 📖
+
+- Add the critical parameters on the examples.
 
 ### Removed 🗑️
 
