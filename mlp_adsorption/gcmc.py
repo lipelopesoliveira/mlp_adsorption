@@ -37,13 +37,13 @@ class GCMC:
         adsorbate_atoms: ase.Atoms,
         temperature: float,
         pressure: float,
-        fugacity_coeff: float,
         device: str,
         vdw_radii: np.ndarray,
         vdw_factor: float = 0.6,
         save_frequency: int = 100,
         output_to_file: bool = True,
         debug: bool = False,
+        fugacity_coeff: float = 1.0,
         **kwargs
     ):
         """
@@ -68,8 +68,6 @@ class GCMC:
             Temperature of the ideal reservoir in Kelvin.
         pressure : float
             Pressure of the ideal reservoir in Pascal.
-        fugacity_coeff : float
-            Fugacity coefficient to correct the pressure.
         device : str
             Device to run the simulation on, e.g., 'cpu' or 'cuda'.
         vdw_radii : np.ndarray
@@ -83,6 +81,15 @@ class GCMC:
             If True, writes the output to a file named 'GCMC_Output.out' in the 'results' directory
         debug : bool, optional
             If True, prints detailed debug information during the simulation (default is False).
+        fugacity_coeff : float, optional
+            Fugacity coefficient to correct the pressure. Default is 1.0.
+            Only used if `criticalTemperature`, `criticalPressure`, and `acentricFactor` are not provided.
+
+        **kwargs : dict, optional
+            Additional keyword arguments for the Peng-Robinson EOS parameters:
+            - criticalTemperature: float, critical temperature in Kelvin
+            - criticalPressure: float, critical pressure in Pascal
+            - acentricFactor: float, acentric factor of the adsorbate
         """
 
         self.start_time = datetime.datetime.now()
