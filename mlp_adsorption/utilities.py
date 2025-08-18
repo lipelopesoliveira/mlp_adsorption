@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.spatial.transform import Rotation
+from ase.cell import Cell
 
 
 def enthalpy_of_adsorption(energy, number_of_molecules, temperature):
@@ -182,3 +183,64 @@ def vdw_overlap2(atoms, vdw, n_ads):
             if dists[i] < vdw[numbers[N - i_ads - 1]] + vdw[numbers[i]]:
                 return True
     return False
+
+
+def get_perpendicular_lengths(cell: Cell) -> tuple[float, float, float]:
+    """
+    Calculate the perpendicular lengths of a unit cell.
+
+    Parameters
+    ----------
+    cell : ase.Cell
+        The unit cell for which to calculate the perpendicular lengths.
+
+    Returns
+    -------
+    tuple[float, float, float]
+        The perpendicular lengths in the x, y, and z directions.
+    """
+
+    a, b, c = cell.array
+
+    axb = np.cross(a, b)
+    bxc = np.cross(b, c)
+    cxa = np.cross(c, a)
+
+    # Calculate perpendicular widths
+    cx = float(cell.volume / np.linalg.norm(bxc))
+    cy = float(cell.volume / np.linalg.norm(cxa))
+    cz = float(cell.volume / np.linalg.norm(axb))
+
+    return cx, cy, cz
+
+
+def calculate_UnitCells(cell: Cell, cutoff: float = 12.6) -> list[int]:
+    """
+    Calculate the number of unit cell repetitions so that all supercell lengths are larger than
+    twice the interaction potential cut-off radius.
+
+    RASPA considers the perpendicular directions the directions perpendicular to the `ab`, `bc`,
+    and `ca` planes. Thus, the directions depend on who the crystallographic vectors `a`, `b`,
+    and `c` are and the length in the perpendicular directions would be the projections
+    of the crystallographic vectors on the vectors `a x b`, `b x c`, and `c x a`.
+    (here `x` means cross product)
+
+    Parameters
+    ----------
+    cell : ase.Cell
+        The unit cell for which to calculate the perpendicular lengths.
+    cutoff : float
+        The interaction potential cut-off radius.
+
+    Returns
+    -------
+    supercell : list[int]
+        (3,1) list containg the number of repeating units in `x`, `y`, `z` directions.
+    """
+
+    cx, cy, cz = get_perpendicular_lengths(cell)
+
+    # Calculate UnitCells array
+    supercell = [int(i) for i in np.ceil(2.0 * cutoff / np.array([cx, cy, cz]))]
+
+    return supercell
