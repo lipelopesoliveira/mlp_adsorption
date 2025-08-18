@@ -11,6 +11,7 @@ from ase import units
 from ase.calculators import calculator
 from ase.io import Trajectory, read
 from ase.optimize import LBFGS
+from ase.build import make_supercell
 from tqdm import tqdm
 
 from mlp_adsorption import VERSION
@@ -198,13 +199,18 @@ class GCMC:
             The new framework structure as an ASE Atoms object.
         """
         self.framework = framework_atoms
-        self.framework.calc = self.model
-        self.framework_energy = self.framework.get_potential_energy()
-        self.n_atoms_framework = len(self.framework)
+
+        ideal_supercell = calculate_unit_cells(self.framework.get_cell(), cutoff=self.cutoff)
+        if ideal_supercell != [1, 1, 1]:
+            print(f"Making supercell: {ideal_supercell}")
+            self.framework = make_supercell(self.framework, np.eye(3) * ideal_supercell)
 
         self.cell = np.array(self.framework.get_cell())
         self.perpendicular_cell = get_perpendicular_lengths(self.framework.get_cell()) * np.eye(3)
-        self.ideal_supercell = calculate_unit_cells(self.framework.get_cell(), cutoff=self.cutoff)
+
+        self.framework.calc = self.model
+        self.framework_energy = self.framework.get_potential_energy()
+        self.n_atoms_framework = len(self.framework)
 
         self.V = np.linalg.det(self.cell) / units.m**3
         self.framework_mass = np.sum(self.framework.get_masses()) / units.kg
