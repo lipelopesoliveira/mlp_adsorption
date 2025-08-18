@@ -214,7 +214,7 @@ def get_perpendicular_lengths(cell: Cell) -> tuple[float, float, float]:
     return cx, cy, cz
 
 
-def calculate_UnitCells(cell: Cell, cutoff: float = 12.6) -> list[int]:
+def calculate_unit_cells(cell: Cell, cutoff: float = 12.6) -> list[int]:
     """
     Calculate the number of unit cell repetitions so that all supercell lengths are larger than
     twice the interaction potential cut-off radius.

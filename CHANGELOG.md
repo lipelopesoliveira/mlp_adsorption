@@ -18,6 +18,7 @@
 
 - Added the Peng-Robinson equation of state (EOS) to the `mlp_adsorption.eos` module.
   - This allows for the calculation of fugacity coefficients and bulk phase density using the Peng-Robinson EOS.
+- Add functions to calculate perpendicular lengths and unit cell repetitions in `utilities`.
 
 ### Fixed 🐛
 

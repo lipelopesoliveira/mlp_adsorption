@@ -26,6 +26,8 @@ from mlp_adsorption.utilities import (
     random_position,
     random_rotation,
     vdw_overlap,
+    get_perpendicular_lengths,
+    calculate_unit_cells
 )
 
 
@@ -90,6 +92,7 @@ class GCMC:
             - criticalTemperature: float, critical temperature in Kelvin
             - criticalPressure: float, critical pressure in Pascal
             - acentricFactor: float, acentric factor of the adsorbate
+            - cutoff: float, interaction potential cut-off radius
         """
 
         self.start_time = datetime.datetime.now()
@@ -145,6 +148,8 @@ class GCMC:
             self.P * self.fugacity_coeff * units.J
         )  # Convert fugacity from Pa (J/m^3) to eV / m^3
 
+        self.cutoff: float = kwargs.get("cutoff", 1.0)  # Default cutoff radius in Angstroms
+
         self.model = model
         self.device = device
         self.beta: float = 1 / (units.kB * temperature)  # Boltzmann weight, 1 / [eV/K * K]
@@ -196,7 +201,11 @@ class GCMC:
         self.framework.calc = self.model
         self.framework_energy = self.framework.get_potential_energy()
         self.n_atoms_framework = len(self.framework)
+
         self.cell = np.array(self.framework.get_cell())
+        self.perpendicular_cell = get_perpendicular_lengths(self.framework.get_cell()) * np.eye(3)
+        self.ideal_supercell = calculate_unit_cells(self.framework.get_cell(), cutoff=self.cutoff)
+
         self.V = np.linalg.det(self.cell) / units.m**3
         self.framework_mass = np.sum(self.framework.get_masses()) / units.kg
 
@@ -390,6 +399,13 @@ Framework cell:
     {self.cell[0, 0]:12.7f} {self.cell[0, 1]:12.7f} {self.cell[0, 2]:12.7f}
     {self.cell[1, 0]:12.7f} {self.cell[1, 1]:12.7f} {self.cell[1, 2]:12.7f}
     {self.cell[2, 0]:12.7f} {self.cell[2, 1]:12.7f} {self.cell[2, 2]:12.7f}
+
+Perpendicular cell:
+    {self.perpendicular_cell[0, 0]:12.7f} {self.perpendicular_cell[0, 1]:12.7f} {self.perpendicular_cell[0, 2]:12.7f}
+    {self.perpendicular_cell[1, 0]:12.7f} {self.perpendicular_cell[1, 1]:12.7f} {self.perpendicular_cell[1, 2]:12.7f}
+    {self.perpendicular_cell[2, 0]:12.7f} {self.perpendicular_cell[2, 1]:12.7f} {self.perpendicular_cell[2, 2]:12.7f}
+
+Ideal supercell size is {self.ideal_supercell} (x, y, z).
 
 Atomic positions:
 """
