@@ -13,7 +13,7 @@ from ase.io import Trajectory, write
 from tqdm import tqdm
 
 from mlp_adsorption import VERSION
-from mlp_adsorption.utilities import random_position, vdw_overlap2
+from mlp_adsorption.utilities import random_position, vdw_overlap2, get_perpendicular_lengths
 
 
 class Widom:
@@ -82,6 +82,7 @@ class Widom:
         self.framework_energy = self.framework.get_potential_energy()
         self.n_atoms_framework = len(self.framework)
         self.cell: np.ndarray = np.array(self.framework.get_cell())
+        self.perpendicular_cell = get_perpendicular_lengths(self.framework.get_cell()) * np.eye(3)
         self.V: float = np.linalg.det(self.cell) / units.m**3  # Convert to m^3
         self.framework_mass: float = np.sum(self.framework.get_masses()) / units.kg
 
@@ -163,6 +164,11 @@ Framework cell:
     {self.cell[0, 0]:12.7f} {self.cell[0, 1]:12.7f} {self.cell[0, 2]:12.7f}
     {self.cell[1, 0]:12.7f} {self.cell[1, 1]:12.7f} {self.cell[1, 2]:12.7f}
     {self.cell[2, 0]:12.7f} {self.cell[2, 1]:12.7f} {self.cell[2, 2]:12.7f}
+
+Perpendicular cell:
+    {self.perpendicular_cell[0, 0]:12.7f} {self.perpendicular_cell[0, 1]:12.7f} {self.perpendicular_cell[0, 2]:12.7f}
+    {self.perpendicular_cell[1, 0]:12.7f} {self.perpendicular_cell[1, 1]:12.7f} {self.perpendicular_cell[1, 2]:12.7f}
+    {self.perpendicular_cell[2, 0]:12.7f} {self.perpendicular_cell[2, 1]:12.7f} {self.perpendicular_cell[2, 2]:12.7f}
 
 Atomic positions:
 """
@@ -318,7 +324,7 @@ Iteration  |  dE (eV)  |  dE (kJ/mol)  | kH [mol kg-1 Pa-1]  |  dH (kJ/mol) | Ti
             while not accepted:
                 insert_iter += 1
                 deltaE, atoms_trial = self.try_insertion()
-                if deltaE < 1000 or insert_iter > 100:
+                if deltaE < 1000 or insert_iter > 1000:
                     accepted = True
 
             if deltaE < self.minimum_energy:
