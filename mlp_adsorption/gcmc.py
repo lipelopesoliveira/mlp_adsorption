@@ -173,6 +173,9 @@ class GCMC:
         # Replace any NaN value by 1.5 on self.vdw to avoid potential problems
         self.vdw[np.isnan(self.vdw)] = 1.5
 
+        # Get the ideal supercell. This will be updated by the set_framework method
+        self.ideal_supercell = [1, 1, 1]
+
         # Define the current state of the system that will be updated during the simulation
         self.current_system: ase.Atoms = self.framework.copy()
         self.current_system.calc = self.model
@@ -201,6 +204,7 @@ class GCMC:
         self.framework = framework_atoms
 
         ideal_supercell = calculate_unit_cells(self.framework.get_cell(), cutoff=self.cutoff)
+
         if ideal_supercell != [1, 1, 1]:
             print(f"Making supercell: {ideal_supercell}")
             self.framework = make_supercell(self.framework, np.eye(3) * ideal_supercell)
