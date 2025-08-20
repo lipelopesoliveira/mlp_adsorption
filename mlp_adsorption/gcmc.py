@@ -8,10 +8,10 @@ from typing import TextIO, Union
 import ase
 import numpy as np
 from ase import units
+from ase.build import make_supercell
 from ase.calculators import calculator
 from ase.io import Trajectory, read
 from ase.optimize import LBFGS
-from ase.build import make_supercell
 from tqdm import tqdm
 
 from mlp_adsorption import VERSION
@@ -23,12 +23,12 @@ from mlp_adsorption.ase_utils import (
 )
 from mlp_adsorption.eos import PengRobinsonEOS
 from mlp_adsorption.utilities import (
+    calculate_unit_cells,
     enthalpy_of_adsorption,
+    get_perpendicular_lengths,
     random_position,
     random_rotation,
     vdw_overlap,
-    get_perpendicular_lengths,
-    calculate_unit_cells
 )
 
 

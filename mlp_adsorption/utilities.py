@@ -1,6 +1,6 @@
 import numpy as np
-from scipy.spatial.transform import Rotation
 from ase.cell import Cell
+from scipy.spatial.transform import Rotation
 
 
 def enthalpy_of_adsorption(energy, number_of_molecules, temperature):

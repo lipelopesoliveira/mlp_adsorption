@@ -13,7 +13,11 @@ from ase.io import Trajectory, write
 from tqdm import tqdm
 
 from mlp_adsorption import VERSION
-from mlp_adsorption.utilities import random_position, vdw_overlap2, get_perpendicular_lengths
+from mlp_adsorption.utilities import (
+    get_perpendicular_lengths,
+    random_position,
+    vdw_overlap2,
+)
 
 
 class Widom:
