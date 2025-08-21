@@ -1,4 +1,5 @@
 import numpy as np
+from ase import units
 from ase.cell import Cell
 from scipy.spatial.transform import Rotation
 
@@ -36,7 +37,7 @@ def enthalpy_of_adsorption(energy, number_of_molecules, temperature):
         Enthalpy of adsorption in units of kJ⋅mol-1
     """
     # Define basic constants
-    R = 8.31446261815324 * 1e-3  # kJ⋅K−1⋅mol−1
+    R = units.kB / (units.kJ / units.mol)  # kJ⋅K−1⋅mol−1
 
     # Convert energy from Kelvin to kJ/mol
     E = np.array(energy) * R
