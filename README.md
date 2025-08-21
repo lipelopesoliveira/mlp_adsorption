@@ -2,9 +2,7 @@
 
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-## About MLP Adsorption
-
-This repository contains the MLP Adsorption package, which provides tools for molecular simulations and adsorption studies using machine learning potentials.
+MLP Adsorption is a general purpose adsorption simulation toolbox built around the Atomic Simulation Environment (ASE), which provides tools for molecular simulations and adsorption studies using machine learning potentials, classical force fields, and other advanced techniques.
 
 ## Requirements
 
