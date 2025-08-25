@@ -25,11 +25,11 @@ from mlp_adsorption.eos import PengRobinsonEOS
 from mlp_adsorption.utilities import (
     calculate_unit_cells,
     enthalpy_of_adsorption,
+    get_density,
     get_perpendicular_lengths,
     random_position,
     random_rotation,
     vdw_overlap,
-    get_density
 )
 
 

@@ -1,10 +1,11 @@
 import numpy as np
-from ase import units, Atoms
+from ase import Atoms, units
 from ase.cell import Cell
-from scipy.spatial.transform import Rotation
-
 from pymatgen.core import Structure
-from pymatgen.transformations.advanced_transformations import CubicSupercellTransformation
+from pymatgen.transformations.advanced_transformations import (
+    CubicSupercellTransformation,
+)
+from scipy.spatial.transform import Rotation
 
 
 def enthalpy_of_adsorption(energy, number_of_molecules, temperature):
@@ -194,11 +195,12 @@ def get_density(structure: Atoms) -> float:
     Get the density of the framework in g/cm^3
     """
 
-    mass = np.sum(structure.get_masses()) / units.kg * 1e3    # Convert from amu to g
-    volume = structure.get_volume() * (1e-8 ** 3)  # Convert from Angs^3 to cm^3
+    mass = np.sum(structure.get_masses()) / units.kg * 1e3  # Convert from amu to g
+    volume = structure.get_volume() * (1e-8**3)  # Convert from Angs^3 to cm^3
 
     return mass / volume
-    
+
+
 def get_perpendicular_lengths(cell: Cell) -> tuple[float, float, float]:
     """
     Calculate the perpendicular lengths of a unit cell.
@@ -259,13 +261,16 @@ def calculate_unit_cells(cell: Cell, cutoff: float = 12.6) -> list[int]:
 
     return supercell
 
-def make_cubic(structure: Atoms,
-               min_length: int = 10,
-               force_diagonal: bool = False,
-               force_90_degrees: bool = False,
-               min_atoms: int = 0,
-               max_atoms: int = 10000,
-               angle_tolerance: float = 1e-3) -> Atoms:
+
+def make_cubic(
+    structure: Atoms,
+    min_length: int = 10,
+    force_diagonal: bool = False,
+    force_90_degrees: bool = False,
+    min_atoms: int = 0,
+    max_atoms: int = 10000,
+    angle_tolerance: float = 1e-3,
+) -> Atoms:
     """
     Transform the primitive structure into a supercell with alpha, beta, and
     gamma equal, or close, to 90 degrees. The algorithm will iteratively increase the size
@@ -298,8 +303,8 @@ def make_cubic(structure: Atoms,
         force_diagonal=force_diagonal,
         min_atoms=min_atoms,
         max_atoms=max_atoms,
-        angle_tolerance=angle_tolerance
-        ).apply_transformation(pmg_structure)
+        angle_tolerance=angle_tolerance,
+    ).apply_transformation(pmg_structure)
 
     ase_structure = cubic_dict.to_ase_atoms()
 

@@ -14,10 +14,10 @@ from tqdm import tqdm
 
 from mlp_adsorption import VERSION
 from mlp_adsorption.utilities import (
+    get_density,
     get_perpendicular_lengths,
     random_position,
     vdw_overlap2,
-    get_density
 )
 
 
@@ -116,7 +116,6 @@ class Widom:
 
         self.minimum_configuration: ase.Atoms = self.framework.copy()
         self.minimum_energy: float = 0
-
 
     def print_header(self):
         """
@@ -353,7 +352,12 @@ Iteration  |  dE (eV)  |  dE (kJ/mol)  | kH [mol kg-1 Pa-1]  |  dH (kJ/mol) | Ti
             boltz_fac = np.exp(-self.beta * self.energy_list)
 
             # kH = β <exp(-β ΔE)> [mol kg-1 Pa-1]
-            kH = self.beta * boltz_fac[:i].mean() * (units.J / units.mol) / (self.framework_density * 1e3)
+            kH = (
+                self.beta
+                * boltz_fac[:i].mean()
+                * (units.J / units.mol)
+                / (self.framework_density * 1e3)
+            )
 
             # Qst = - < ΔE * exp(-β ΔE) > / <exp(-β ΔE)>  + kB.T # [kJ/mol]
             Qst = (self.energy_list[:i] * boltz_fac[:i]).mean() / boltz_fac[:i].mean() - (
