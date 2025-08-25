@@ -23,10 +23,10 @@ from mlp_adsorption.ase_utils import (
 )
 from mlp_adsorption.eos import PengRobinsonEOS
 from mlp_adsorption.operations import (
+    check_overlap,
     random_insertion_cell,
     random_rotation,
     random_translation,
-    vdw_overlap,
 )
 from mlp_adsorption.utilities import (
     calculate_unit_cells,
@@ -106,6 +106,7 @@ class GCMC:
         self.start_time = datetime.datetime.now()
 
         self.rnd_generator = np.random.default_rng(random_seed)
+        self.cutoff: float = kwargs.get("cutoff", 1.0)  # Default cutoff radius in Angstroms
 
         self.out_folder = f"results_{temperature:.2f}_{pressure:.2f}"
         os.makedirs(self.out_folder, exist_ok=True)
@@ -160,8 +161,6 @@ class GCMC:
         self.fugacity = (
             self.P * self.fugacity_coeff * units.J
         )  # Convert fugacity from Pa (J/m^3) to eV / m^3
-
-        self.cutoff: float = kwargs.get("cutoff", 1.0)  # Default cutoff radius in Angstroms
 
         self.model = model
         self.device = device
@@ -406,7 +405,7 @@ Temperature: {self.T} K
 Pressure: {self.P / 1e5:.5f} bar
 Fugacity: {self.fugacity / units.J:.3f} Pa
 Fugacity: {self.fugacity:.5e} eV/m^3
-β * V * f = {self.V * self.beta * self.fugacity} [-]
+(1/kB.T) * V * f = {self.V * self.beta * self.fugacity} [-]
 
 ===========================================================================
 
@@ -863,7 +862,14 @@ Start optimizing adsorbate structure...
         atoms_trial.set_positions(pos)
         atoms_trial.wrap()
 
-        if vdw_overlap(atoms_trial, self.vdw, self.n_atoms_framework, self.n_ads, self.N_ads):
+        overlaped = check_overlap(
+            atoms=atoms_trial,
+            group1_indices=np.arange(self.n_atoms_framework),
+            group2_indices=np.arange(self.n_atoms_framework, self.n_atoms_framework + self.n_ads),
+            vdw_radii=self.vdw,
+        )
+
+        if overlaped:
             return False
 
         atoms_trial.calc = self.model
@@ -944,7 +950,16 @@ Start optimizing adsorbate structure...
 
         atoms_trial.set_positions(pos)  # type: ignore
 
-        if vdw_overlap(atoms_trial, self.vdw, self.n_atoms_framework, self.n_ads, i_ads):
+        overlaped = check_overlap(
+            atoms=atoms_trial,
+            group1_indices=np.concatenate(
+                [np.arange(0, i_start), np.arange(i_end, len(atoms_trial))]
+            ),
+            group2_indices=np.arange(i_start, i_end),
+            vdw_radii=self.vdw,
+        )
+
+        if overlaped:
             return False
 
         e_trial = atoms_trial.get_potential_energy()  # type: ignore
@@ -972,7 +987,16 @@ Start optimizing adsorbate structure...
         pos[i_start:i_end] = random_rotation(pos[i_start:i_end], rnd_generator=self.rnd_generator)
         atoms_trial.set_positions(pos)  # type: ignore
 
-        if vdw_overlap(atoms_trial, self.vdw, self.n_atoms_framework, self.n_ads, i_ads):
+        overlaped = check_overlap(
+            atoms=atoms_trial,
+            group1_indices=np.concatenate(
+                [np.arange(0, i_start), np.arange(i_end, len(atoms_trial))]
+            ),
+            group2_indices=np.arange(i_start, i_end),
+            vdw_radii=self.vdw,
+        )
+
+        if overlaped:
             return False
 
         e_trial = atoms_trial.get_potential_energy()  # type: ignore

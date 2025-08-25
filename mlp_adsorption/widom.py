@@ -10,10 +10,10 @@ import numpy as np
 from ase import units
 from ase.calculators import calculator
 from ase.io import Trajectory, write
-from operations import random_insertion_cell, vdw_overlap2
 from tqdm import tqdm
 
 from mlp_adsorption import VERSION
+from mlp_adsorption.operations import check_overlap, random_insertion_cell
 from mlp_adsorption.utilities import get_density, get_perpendicular_lengths
 
 
@@ -303,7 +303,14 @@ Accepted: {rnd_number < acc}
         atoms_trial.set_positions(pos)
         atoms_trial.wrap()
 
-        if vdw_overlap2(atoms_trial, self.vdw, self.n_ads):
+        overlaped = check_overlap(
+            atoms=atoms_trial,
+            group1_indices=np.arange(self.n_atoms_framework),
+            group2_indices=np.arange(self.n_atoms_framework, self.n_atoms_framework + self.n_ads),
+            vdw_radii=self.vdw,
+        )
+
+        if overlaped:
             return 1000, atoms_trial  # Return 1000 energy to indicate overlap
 
         atoms_trial.calc = self.model
@@ -337,7 +344,7 @@ Iteration  |  dE (eV)  |  dE (kJ/mol)  | kH [mol kg-1 Pa-1]  |  dH (kJ/mol) | Ti
             while not accepted:
                 insert_iter += 1
                 deltaE, atoms_trial = self.try_insertion()
-                if deltaE < 1000 or insert_iter > 1000:
+                if deltaE < units.kB * self.T or insert_iter > 1000:
                     accepted = True
 
             if deltaE < self.minimum_energy:

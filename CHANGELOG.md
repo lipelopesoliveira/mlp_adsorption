@@ -23,6 +23,7 @@
 - Add the `get_density` function to the `utilities` module.
 - Add a `make_cubic` function that can create a cubic (or close to) supercell from a given structure.
 - Now all movements are based on a `numpy.random.Generator` to ensure reproducibility. A `random_seed` can be provided to the `GCMC` and `Widom` classes for this purpose.
+- New module for checking the overlap between atoms (`operations.check_overlap`)
 
 ### Fixed 🐛
 
@@ -37,6 +38,8 @@
 - Add the critical parameters to the examples.
 
 ### Removed 🗑️
+
+- Old `vdw_overlap` and `vdw_overlap2` functions.
 
 ## v[0.3.2] - 2025-08-17
 

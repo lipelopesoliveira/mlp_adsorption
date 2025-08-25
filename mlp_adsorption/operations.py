@@ -1,3 +1,4 @@
+import ase
 import numpy as np
 from scipy.spatial.transform import Rotation
 
@@ -141,7 +142,9 @@ def random_insertion_cell(
     return new_position
 
 
-def check_overlap(atoms, group1_indices, group2_indices, vdw_radii):
+def check_overlap(
+    atoms: ase.Atoms, group1_indices: np.ndarray, group2_indices: np.ndarray, vdw_radii: np.ndarray
+):
     """
     Checks for van der Waals overlap between two specified groups of atoms.
 
@@ -162,10 +165,6 @@ def check_overlap(atoms, group1_indices, group2_indices, vdw_radii):
     Returns:
         bool: True if any atom in group1 overlaps with an atom in group2, False otherwise.
     """
-    # Ensure indices are numpy arrays for efficient processing
-    group1_indices = np.asarray(group1_indices)
-    group2_indices = np.asarray(group2_indices)
-
     # Get all necessary atomic numbers and vdW radii at once
     numbers = atoms.get_atomic_numbers()
     radii1 = np.array([vdw_radii[numbers[i]] for i in group1_indices])
@@ -176,34 +175,12 @@ def check_overlap(atoms, group1_indices, group2_indices, vdw_radii):
     vdw_sum_matrix = radii1[:, np.newaxis] + radii2
 
     # Get the distance matrix between the two groups in a single, efficient call
-    distance_matrix = atoms.get_distances(group1_indices, group2_indices, mic=True)
+    distance_matrix = np.array(
+        [atoms.get_distances(group1_indices, i, mic=True) for i in group2_indices]
+    ).T
 
     # Check for any overlap using a fast vectorized comparison
     if np.any(distance_matrix < vdw_sum_matrix):
         return True
 
-    return False
-
-
-def vdw_overlap(atoms, vdw, n_frame, n_ads, select_ads):
-    nat = len(atoms)
-    numbers = atoms.get_atomic_numbers()
-    for i_ads in range(n_frame + n_ads * select_ads, n_frame + n_ads * (select_ads + 1)):
-        dists = atoms.get_distances(i_ads, np.arange(nat), mic=True)
-        for i, d in enumerate(dists):
-            if i >= n_frame + n_ads * select_ads and i < n_frame + n_ads * (select_ads + 1):
-                continue
-            if d < vdw[numbers[i_ads]] + vdw[numbers[i]]:
-                return True
-    return False
-
-
-def vdw_overlap2(atoms, vdw, n_ads):
-    numbers = atoms.get_atomic_numbers()
-    N = len(atoms)
-    for i_ads in range(n_ads):
-        dists = atoms.get_distances(N - i_ads - 1, np.arange(N - n_ads), mic=True)
-        for i in range(len(dists)):
-            if dists[i] < vdw[numbers[N - i_ads - 1]] + vdw[numbers[i]]:
-                return True
     return False
