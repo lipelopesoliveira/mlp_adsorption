@@ -163,7 +163,8 @@ def check_overlap(
             A n array mapping atomic numbers to van der Waals radii.
 
     Returns:
-        bool: True if any atom in group1 overlaps with an atom in group2, False otherwise.
+        has_overlap (bool):
+            True if any atom in group1 overlaps with an atom in group2, False otherwise.
     """
     # Get all necessary atomic numbers and vdW radii at once
     numbers = atoms.get_atomic_numbers()
@@ -180,7 +181,6 @@ def check_overlap(
     ).T
 
     # Check for any overlap using a fast vectorized comparison
-    if np.any(distance_matrix < vdw_sum_matrix):
-        return True
+    has_overlap = np.any(distance_matrix < vdw_sum_matrix)
 
-    return False
+    return has_overlap
