@@ -90,7 +90,8 @@ class Widom:
         self.V: float = np.linalg.det(self.cell) / units.m**3  # Convert to m^3
         self.framework_mass: float = np.sum(self.framework.get_masses()) / units.kg
 
-        self.density: float = self.framework_mass / self.V  # kg/m^3
+        # Get the framework density in g/cm^3
+        self.framework_density: float = self.get_framework_density()
 
         # Adsorbate setup
         self.adsorbate = adsorbate_atoms
@@ -115,6 +116,16 @@ class Widom:
         self.minimum_configuration: ase.Atoms = self.framework.copy()
         self.minimum_energy: float = 0
 
+    def get_framework_density(self) -> float:
+        """
+        Get the density of the framework in g/cm^3
+        """
+
+        mass = np.sum(self.framework.get_masses()) / units.kg * 1e3    # Convert from amu to g
+        volume = self.V * (1e-8 ** 3)  # Convert from Angs^3 to cm^3
+
+        return mass / volume
+    
     def print_header(self):
         """
         Print the header for the simulation output.
@@ -163,7 +174,7 @@ Framework: {self.n_atoms_framework} atoms,
 Framework mass: {np.sum(self.framework.get_masses())} g/mol, {self.framework_mass} kg
 Framework energy: {self.framework_energy} eV
 Framework volume: {self.V} m^3
-Framework density: {self.density} kg/m^3
+Framework density: {self.framework_density * 1e3} kg/m^3, {self.framework_density} g/cm^3
 Framework cell:
     {self.cell[0, 0]:12.7f} {self.cell[0, 1]:12.7f} {self.cell[0, 2]:12.7f}
     {self.cell[1, 0]:12.7f} {self.cell[1, 1]:12.7f} {self.cell[1, 2]:12.7f}
@@ -214,7 +225,7 @@ Shortest distances:
         boltz_fac = np.exp(-self.beta * self.energy_list)
 
         # kH = β <exp(-β ΔE)> [mol kg-1 Pa-1]
-        kH = self.beta * boltz_fac.mean() * (units.J / units.mol) / self.density
+        kH = self.beta * boltz_fac.mean() * (units.J / units.mol) / (self.framework_density * 1e3)
 
         # Qst = - < ΔE * exp(-β ΔE) > / <exp(-β ΔE)>  + kB.T # [kJ/mol]
         Qst = (self.energy_list * boltz_fac).mean() / boltz_fac.mean() - (units.kB * self.T)
@@ -350,7 +361,7 @@ Iteration  |  dE (eV)  |  dE (kJ/mol)  | kH [mol kg-1 Pa-1]  |  dH (kJ/mol) | Ti
             boltz_fac = np.exp(-self.beta * self.energy_list)
 
             # kH = β <exp(-β ΔE)> [mol kg-1 Pa-1]
-            kH = self.beta * boltz_fac[:i].mean() * (units.J / units.mol) / self.density
+            kH = self.beta * boltz_fac[:i].mean() * (units.J / units.mol) / (self.framework_density * 1e3)
 
             # Qst = - < ΔE * exp(-β ΔE) > / <exp(-β ΔE)>  + kB.T # [kJ/mol]
             Qst = (self.energy_list[:i] * boltz_fac[:i]).mean() / boltz_fac[:i].mean() - (

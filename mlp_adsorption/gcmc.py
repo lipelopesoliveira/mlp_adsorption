@@ -118,7 +118,7 @@ class GCMC:
 
         # Framework setup
         self.set_framework(framework_atoms)
-        
+
         # Get the framework density in g/cm^3
         self.framework_density: float = self.get_framework_density()
 
@@ -417,7 +417,7 @@ Framework: {self.n_atoms_framework} atoms,
 Framework mass: {np.sum(self.framework.get_masses())} g/mol, {self.framework_mass} kg
 Framework energy: {self.framework_energy} eV
 Framework volume: {self.V} m^3
-Framework density: {self.framework_density * 1e-3} kg/m^3, {self.framework_density} g/cm^3
+Framework density: {self.framework_density * 1e3} kg/m^3, {self.framework_density} g/cm^3
 Framework cell:
     {self.cell[0, 0]:12.7f} {self.cell[0, 1]:12.7f} {self.cell[0, 2]:12.7f}
     {self.cell[1, 0]:12.7f} {self.cell[1, 1]:12.7f} {self.cell[1, 2]:12.7f}
