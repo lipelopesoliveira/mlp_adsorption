@@ -21,6 +21,7 @@
 - Add functions to calculate perpendicular lengths and unit cell repetitions in `utilities`.
 - Add a new parameter `cutoff` on the `mlp.gcmc` class for controlling the supercell check based on a cutoff radius for the potential.
 - Add the `get_density` function to the `utilities` module.
+- Add a `make_cubic` function that can create a cubic (or close to) supercell from a given structure.
 
 ### Fixed 🐛
 
