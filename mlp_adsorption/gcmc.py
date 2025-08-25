@@ -855,8 +855,9 @@ Start optimizing adsorbate structure...
         pos[-self.n_ads :] = random_insertion_cell(
             original_positions=pos[-self.n_ads :],
             lattice_vectors=atoms_trial.get_cell(),
-            rnd_generator=self.rnd_generator)
-        
+            rnd_generator=self.rnd_generator,
+        )
+
         atoms_trial.set_positions(pos)
         atoms_trial.wrap()
 
@@ -933,9 +934,11 @@ Start optimizing adsorbate structure...
         i_start = self.n_atoms_framework + self.n_ads * i_ads
         i_end = self.n_atoms_framework + self.n_ads * (i_ads + 1)
 
-        pos[i_start:i_end] = random_translation(original_positions=pos[i_start:i_end],
-                                                max_translation=1.0,
-                                                rnd_generator=self.rnd_generator)
+        pos[i_start:i_end] = random_translation(
+            original_positions=pos[i_start:i_end],
+            max_translation=1.0,
+            rnd_generator=self.rnd_generator,
+        )
 
         atoms_trial.set_positions(pos)  # type: ignore
 

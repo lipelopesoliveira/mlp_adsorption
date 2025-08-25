@@ -34,7 +34,7 @@ class Widom:
         save_frequency: int = 100,
         output_to_file: bool = True,
         debug: bool = False,
-        random_seed: Union[int, None] = None
+        random_seed: Union[int, None] = None,
     ) -> None:
         """
         Base class for Widom insertion method using ASE.
@@ -301,8 +301,9 @@ Accepted: {rnd_number < acc}
         pos[-self.n_ads :] = random_insertion_cell(
             original_positions=pos[-self.n_ads :],
             lattice_vectors=atoms_trial.get_cell(),
-            rnd_generator=self.rnd_generator)
-        
+            rnd_generator=self.rnd_generator,
+        )
+
         atoms_trial.set_positions(pos)
         atoms_trial.wrap()
 

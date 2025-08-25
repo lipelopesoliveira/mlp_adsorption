@@ -55,16 +55,18 @@ def enthalpy_of_adsorption(energy, number_of_molecules, temperature):
     return H
 
 
-def random_rotation(original_position: np.ndarray, rnd_generator: np.random.Generator) -> np.ndarray:
+def random_rotation(
+    original_position: np.ndarray, rnd_generator: np.random.Generator
+) -> np.ndarray:
     """
     Generates a random rotation of the original position vector using a provided generator.
-    
+
     Parameters
     ----------
     original_position (np.ndarray):
         The original position of the atom or molecule to be rotated as a 3D vector.
         Can be a single point (shape `(3,)`) or multiple points (shape `(N, 3)`).
-    
+
     rnd_generator (np.random.Generator):
         A random number generator instance for reproducibility.
 
@@ -92,9 +94,12 @@ def random_rotation(original_position: np.ndarray, rnd_generator: np.random.Gene
 
     return rotated_points
 
-def random_translation(original_positions: np.ndarray, max_translation: float, rnd_generator: np.random.Generator) -> np.ndarray:
+
+def random_translation(
+    original_positions: np.ndarray, max_translation: float, rnd_generator: np.random.Generator
+) -> np.ndarray:
     """
-    Generates a random translation vector for the original positions on the interval [-max_translation/2, max_translation/2] 
+    Generates a random translation vector for the original positions on the interval [-max_translation/2, max_translation/2]
     using a provided generator.
 
     Parameters
@@ -102,7 +107,7 @@ def random_translation(original_positions: np.ndarray, max_translation: float, r
     original_positions (np.ndarray):
         The original positions of the atoms or molecules to be translated as a 3D vector.
         Can be a single point (shape `(3,)`) or multiple points (shape `(N, 3)`).
-    
+
     max_shift (float):
         The maximum shift for the translation.
 
@@ -115,7 +120,9 @@ def random_translation(original_positions: np.ndarray, max_translation: float, r
             A 3D vector or array of vectors representing the translated position(s).
     """
     # 1. Generate random translation vectors on the interval [-0.5, 0.5].
-    translation_vectors = rnd_generator.uniform(-max_translation / 2, max_translation / 2, size=original_positions.shape)
+    translation_vectors = rnd_generator.uniform(
+        -max_translation / 2, max_translation / 2, size=original_positions.shape
+    )
 
     # 2. Apply the translation to the original positions.
     translated_positions = original_positions + translation_vectors
@@ -123,9 +130,9 @@ def random_translation(original_positions: np.ndarray, max_translation: float, r
     return translated_positions
 
 
-def random_position_cell(original_position: np.ndarray,
-                       lattice_vectors: np.ndarray,
-                       rnd_generator: np.random.Generator) -> np.ndarray:
+def random_position_cell(
+    original_position: np.ndarray, lattice_vectors: np.ndarray, rnd_generator: np.random.Generator
+) -> np.ndarray:
     """
     Generates a random translation vector within the parallelepiped
     defined by the lattice vectors, using a specific seed for reproducibility.
@@ -161,9 +168,9 @@ def random_position_cell(original_position: np.ndarray,
     return original_position + translation_vector
 
 
-def random_insertion_cell(original_positions: np.ndarray,
-                         lattice_vectors: np.ndarray,
-                         rnd_generator: np.random.Generator) -> np.ndarray:
+def random_insertion_cell(
+    original_positions: np.ndarray, lattice_vectors: np.ndarray, rnd_generator: np.random.Generator
+) -> np.ndarray:
     """
     Generates a random position within the unit cell defined by the lattice vectors.
 
