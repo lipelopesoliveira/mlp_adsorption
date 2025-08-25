@@ -17,6 +17,7 @@ from mlp_adsorption.utilities import (
     get_perpendicular_lengths,
     random_position,
     vdw_overlap2,
+    get_density
 )
 
 
@@ -91,7 +92,7 @@ class Widom:
         self.framework_mass: float = np.sum(self.framework.get_masses()) / units.kg
 
         # Get the framework density in g/cm^3
-        self.framework_density: float = self.get_framework_density()
+        self.framework_density: float = get_density(self.framework)
 
         # Adsorbate setup
         self.adsorbate = adsorbate_atoms
@@ -116,16 +117,7 @@ class Widom:
         self.minimum_configuration: ase.Atoms = self.framework.copy()
         self.minimum_energy: float = 0
 
-    def get_framework_density(self) -> float:
-        """
-        Get the density of the framework in g/cm^3
-        """
 
-        mass = np.sum(self.framework.get_masses()) / units.kg * 1e3    # Convert from amu to g
-        volume = self.V * (1e-8 ** 3)  # Convert from Angs^3 to cm^3
-
-        return mass / volume
-    
     def print_header(self):
         """
         Print the header for the simulation output.

@@ -20,8 +20,11 @@
   - This allows for the calculation of fugacity coefficients and bulk phase density using the Peng-Robinson EOS.
 - Add functions to calculate perpendicular lengths and unit cell repetitions in `utilities`.
 - Add a new parameter `cutoff` on the `mlp.gcmc` class for controlling the supercell check based on a cutoff radius for the potential.
+- Add the `get_density` function to the `utilities` module.
 
 ### Fixed 🐛
+
+- Fix the framework density calculation on `GCMC` and `Widom` class.
 
 ### Enhanced ✨
 

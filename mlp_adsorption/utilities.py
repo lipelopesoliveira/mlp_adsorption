@@ -1,5 +1,5 @@
 import numpy as np
-from ase import units
+from ase import units, Atoms
 from ase.cell import Cell
 from scipy.spatial.transform import Rotation
 
@@ -186,6 +186,16 @@ def vdw_overlap2(atoms, vdw, n_ads):
     return False
 
 
+def get_density(structure: Atoms) -> float:
+    """
+    Get the density of the framework in g/cm^3
+    """
+
+    mass = np.sum(structure.get_masses()) / units.kg * 1e3    # Convert from amu to g
+    volume = structure.get_volume() * (1e-8 ** 3)  # Convert from Angs^3 to cm^3
+
+    return mass / volume
+    
 def get_perpendicular_lengths(cell: Cell) -> tuple[float, float, float]:
     """
     Calculate the perpendicular lengths of a unit cell.
