@@ -27,8 +27,9 @@ from mlp_adsorption.utilities import (
     enthalpy_of_adsorption,
     get_density,
     get_perpendicular_lengths,
-    random_position,
+    random_insertion_cell,
     random_rotation,
+    random_translation,
     vdw_overlap,
 )
 
@@ -48,6 +49,7 @@ class GCMC:
         output_to_file: bool = True,
         debug: bool = False,
         fugacity_coeff: float = 1.0,
+        random_seed: Union[int, None] = None,
         **kwargs,
     ):
         """
@@ -88,6 +90,8 @@ class GCMC:
         fugacity_coeff : float, optional
             Fugacity coefficient to correct the pressure. Default is 1.0.
             Only used if `criticalTemperature`, `criticalPressure`, and `acentricFactor` are not provided.
+        random_seed : int | None
+            Random seed for reproducibility (default is None).
 
         **kwargs : dict, optional
             Additional keyword arguments for the Peng-Robinson EOS parameters:
@@ -98,6 +102,8 @@ class GCMC:
         """
 
         self.start_time = datetime.datetime.now()
+
+        self.rnd_generator = np.random.default_rng(random_seed)
 
         self.out_folder = f"results_{temperature:.2f}_{pressure:.2f}"
         os.makedirs(self.out_folder, exist_ok=True)
@@ -845,7 +851,12 @@ Start optimizing adsorbate structure...
         atoms_trial.calc = self.model
 
         pos = atoms_trial.get_positions()
-        pos[-self.n_ads :] = random_position(pos[-self.n_ads :], atoms_trial.get_cell())
+
+        pos[-self.n_ads :] = random_insertion_cell(
+            original_positions=pos[-self.n_ads :],
+            lattice_vectors=atoms_trial.get_cell(),
+            rnd_generator=self.rnd_generator)
+        
         atoms_trial.set_positions(pos)
         atoms_trial.wrap()
 
@@ -922,9 +933,12 @@ Start optimizing adsorbate structure...
         i_start = self.n_atoms_framework + self.n_ads * i_ads
         i_end = self.n_atoms_framework + self.n_ads * (i_ads + 1)
 
-        pos[i_start:i_end] += 0.5 * (np.random.rand(3) - 0.5)
+        pos[i_start:i_end] = random_translation(original_positions=pos[i_start:i_end],
+                                                max_translation=1.0,
+                                                rnd_generator=self.rnd_generator)
 
         atoms_trial.set_positions(pos)  # type: ignore
+
         if vdw_overlap(atoms_trial, self.vdw, self.n_atoms_framework, self.n_ads, i_ads):
             return False
 
@@ -950,7 +964,7 @@ Start optimizing adsorbate structure...
         i_start = self.n_atoms_framework + self.n_ads * i_ads
         i_end = self.n_atoms_framework + self.n_ads * (i_ads + 1)
 
-        pos[i_start:i_end] = random_rotation(pos[i_start:i_end])
+        pos[i_start:i_end] = random_rotation(pos[i_start:i_end], rnd_generator=self.rnd_generator)
         atoms_trial.set_positions(pos)  # type: ignore
 
         if vdw_overlap(atoms_trial, self.vdw, self.n_atoms_framework, self.n_ads, i_ads):

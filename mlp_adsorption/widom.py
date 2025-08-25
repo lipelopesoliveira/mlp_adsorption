@@ -16,7 +16,7 @@ from mlp_adsorption import VERSION
 from mlp_adsorption.utilities import (
     get_density,
     get_perpendicular_lengths,
-    random_position,
+    random_insertion_cell,
     vdw_overlap2,
 )
 
@@ -34,6 +34,7 @@ class Widom:
         save_frequency: int = 100,
         output_to_file: bool = True,
         debug: bool = False,
+        random_seed: Union[int, None] = None
     ) -> None:
         """
         Base class for Widom insertion method using ASE.
@@ -60,14 +61,19 @@ class Widom:
             Factor to scale the Van der Waals radii (default is 0.6).
         device : str, optional
             Device to run the calculations on, either 'cpu' or 'cuda'. Default is 'cpu'.
+        random_seed : int | None
+            Random seed for reproducibility (default is None).
         """
 
         self.start_time = datetime.datetime.now()
 
-        os.makedirs(f"results_{temperature:.2f}_0.0", exist_ok=True)
-        os.makedirs(f"results_{temperature:.2f}_0.0/Movies", exist_ok=True)
+        self.rnd_generator = np.random.default_rng(random_seed)
 
+        # Create the results folder if it does not exists
         self.out_folder = f"results_{temperature:.2f}_0.0"
+
+        os.makedirs(self.out_folder, exist_ok=True)
+        os.makedirs(os.path.join(self.out_folder, "Movies"), exist_ok=True)
 
         if output_to_file:
             self.out_file: Union[TextIO, None] = open(
@@ -292,7 +298,11 @@ Accepted: {rnd_number < acc}
         atoms_trial.calc = self.model
 
         pos = atoms_trial.get_positions()
-        pos[-self.n_ads :] = random_position(pos[-self.n_ads :], atoms_trial.get_cell())
+        pos[-self.n_ads :] = random_insertion_cell(
+            original_positions=pos[-self.n_ads :],
+            lattice_vectors=atoms_trial.get_cell(),
+            rnd_generator=self.rnd_generator)
+        
         atoms_trial.set_positions(pos)
         atoms_trial.wrap()
 
