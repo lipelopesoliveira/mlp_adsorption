@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v[X.Y.Z] - YYYY-MM-DD (Unreleased)
 
 ### New Features 🎉
 
@@ -29,6 +29,8 @@
 - Fix the framework density calculation on `GCMC` and `Widom` class.
 
 ### Enhanced ✨
+
+- Move the random operations (insertion, rotation, translation) to a separate `operations.py` module for better organization and reusability.
 
 ### Documentation 📖
 

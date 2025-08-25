@@ -10,15 +10,11 @@ import numpy as np
 from ase import units
 from ase.calculators import calculator
 from ase.io import Trajectory, write
+from operations import random_insertion_cell, vdw_overlap2
 from tqdm import tqdm
 
 from mlp_adsorption import VERSION
-from mlp_adsorption.utilities import (
-    get_density,
-    get_perpendicular_lengths,
-    random_insertion_cell,
-    vdw_overlap2,
-)
+from mlp_adsorption.utilities import get_density, get_perpendicular_lengths
 
 
 class Widom:
