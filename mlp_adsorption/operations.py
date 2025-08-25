@@ -144,12 +144,14 @@ def random_insertion_cell(
 
 def check_overlap(
     atoms: ase.Atoms, group1_indices: np.ndarray, group2_indices: np.ndarray, vdw_radii: np.ndarray
-):
+) -> bool:
     """
     Checks for van der Waals overlap between two specified groups of atoms.
 
     This function is more efficient as it calculates a distance matrix between
     the two groups in a single call rather than looping.
+
+    This function takes between 1 to 10 ms to evaluate the structure and has O(N) complexity.
 
     Parameters:
     ----------
@@ -181,6 +183,6 @@ def check_overlap(
     ).T
 
     # Check for any overlap using a fast vectorized comparison
-    has_overlap = np.any(distance_matrix < vdw_sum_matrix)
+    has_overlap: bool = np.any(distance_matrix < vdw_sum_matrix)  # type: ignore
 
     return has_overlap
