@@ -44,7 +44,7 @@ class BaseSimulator:
         debug: bool = False,
         fugacity_coeff: float = 1.0,
         random_seed: Union[int, None] = None,
-        cutoff: float = 6.0,
+        cutoff_radius: float = 6.0,
     ):
         """
         model : ase.calculators.Calculator
@@ -76,12 +76,12 @@ class BaseSimulator:
             Only used if `criticalTemperature`, `criticalPressure`, and `acentricFactor` are not provided.
         random_seed : int | None
             Random seed for reproducibility (default is None).
-        cutoff : float
+        cutoff_radius : float
             Interaction potential cut-off radius used to estimate the minimum unit cell (default is 6.0).
         """
 
         self.rnd_generator = np.random.default_rng(random_seed)
-        self.cutoff = cutoff
+        self.cutoff = cutoff_radius
 
         # -- General definitions for output --
 
@@ -91,13 +91,13 @@ class BaseSimulator:
 
         if output_to_file:
             self.out_file: Union[TextIO, None] = open(
-                os.path.join(self.out_folder, "GCMC_Output.out"), "a"
+                os.path.join(self.out_folder, "Output.out"), "a"
             )
         else:
             self.out_file = None
 
         self.trajectory = Trajectory(
-            os.path.join(self.out_folder, "GCMC_Trajectory.traj"),
+            os.path.join(self.out_folder, "Movies", "Trajectory.traj"),
             "a",
         )
 

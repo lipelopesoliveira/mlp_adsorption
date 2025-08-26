@@ -36,7 +36,7 @@ class GCMC(BaseSimulator):
         debug: bool = False,
         fugacity_coeff: float = 1.0,
         random_seed: Union[int, None] = None,
-        cutoff: float = 6.0,
+        cutoff_radius: float = 6.0,
         criticalTemperature: Union[float, None] = None,
         criticalPressure: Union[float, None] = None,
         acentricFactor: Union[float, None] = None,
@@ -81,7 +81,7 @@ class GCMC(BaseSimulator):
             Only used if `criticalTemperature`, `criticalPressure`, and `acentricFactor` are not provided.
         random_seed : int | None
             Random seed for reproducibility (default is None).
-        cutoff : float
+        cutoff_radius : float
             Interaction potential cut-off radius used to estimate the minimum unit cell (default is 6.0).
         criticalTemperature : float, optional
             Critical temperature of the adsorbate in Kelvin.
@@ -105,7 +105,7 @@ class GCMC(BaseSimulator):
             debug=debug,
             fugacity_coeff=fugacity_coeff,
             random_seed=random_seed,
-            cutoff=cutoff,
+            cutoff_radius=cutoff_radius,
         )
 
         self.logger = GCMCLogger(simulation=self, output_file=self.out_file)
