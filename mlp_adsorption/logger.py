@@ -113,7 +113,7 @@ Atomic positions:
         adsorbate_header = f"""
 ===========================================================================
 Adsorbate: {self.sim.adsorbate.get_chemical_formula()}
-Adsorbate: {self.sim.n_ads} atoms, {self.sim.adsorbate_mass} kg
+Adsorbate: {self.sim.n_adsorbate_atoms} atoms, {self.sim.adsorbate_mass} kg
 Adsorbate energy: {self.sim.adsorbate_energy} eV
 
 Atomic positions:

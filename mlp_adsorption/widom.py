@@ -84,7 +84,8 @@ class Widom(BaseSimulator):
 
         self.minimum_configuration: ase.Atoms = self.framework.copy()
         self.minimum_energy: float = 0
-
+        self.base_iteration = 0
+        self.N_ads = 0
         self.int_energy_list = np.zeros(1, dtype=float)
 
         self.boltz_fac = np.exp(-self.beta * self.int_energy_list)
@@ -131,6 +132,29 @@ class Widom(BaseSimulator):
             - (units.kB * self.T)
         ) / (units.kJ / units.mol)
 
+    def restart(self) -> None:
+        """
+        Restart the simulation from the last state.
+
+        This method loads the last saved state from the trajectory file and restores the simulation to that state.
+        It also loads the uptake, total energy, and total adsorbates lists from the saved files if they exist.
+        """
+
+        print("Restarting simulation...")
+        total_ads_restart = [], [], []
+
+        if os.path.exists(os.path.join(self.out_folder, f"int_energy_{self.P:.5f}.npy")):
+            total_ads_restart = np.load(
+                os.path.join(self.out_folder, f"int_energy_{self.P:.5f}.npy")
+            )
+        self.int_energy_list = total_ads_restart
+
+        # Set the base iteration to the length of the uptake list
+        self.base_iteration = len(self.int_energy_list)
+
+        self.logger.print_restart_info()
+
+
     def try_insertion(self) -> tuple[float, ase.Atoms]:
         """
         Try to insert a new adsorbate molecule into the framework.
@@ -148,8 +172,8 @@ class Widom(BaseSimulator):
         atoms_trial.calc = self.model
 
         pos = atoms_trial.get_positions()
-        pos[-self.n_ads :] = random_insertion_cell(
-            original_positions=pos[-self.n_ads :],
+        pos[-self.n_adsorbate_atoms :] = random_insertion_cell(
+            original_positions=pos[-self.n_adsorbate_atoms :],
             lattice_vectors=atoms_trial.get_cell(),
             rnd_generator=self.rnd_generator,
         )
@@ -160,7 +184,7 @@ class Widom(BaseSimulator):
         overlaped = check_overlap(
             atoms=atoms_trial,
             group1_indices=np.arange(self.n_atoms_framework),
-            group2_indices=np.arange(self.n_atoms_framework, self.n_atoms_framework + self.n_ads),
+            group2_indices=np.arange(self.n_atoms_framework, self.n_atoms_framework + self.n_adsorbate_atoms),
             vdw_radii=self.vdw,
         )
 
@@ -181,7 +205,9 @@ Iteration  |  dE (eV)  |  dE (kJ/mol)  | kH [mol kg-1 Pa-1]  |  dH (kJ/mol) | Ti
 ---------------------------------------------------------------------------------------"""
         print(header, file=self.out_file, flush=True)
 
-        for i in tqdm(range(1, N + 1), disable=(self.out_file is None), desc="Widom Step"):
+        for iteration in tqdm(range(1, N + 1), disable=(self.out_file is None), desc="Widom Step"):
+
+            actual_iteration = iteration + self.base_iteration
 
             step_time_start = datetime.datetime.now()
 
@@ -219,7 +245,7 @@ Iteration  |  dE (eV)  |  dE (kJ/mol)  | kH [mol kg-1 Pa-1]  |  dH (kJ/mol) | Ti
 
             self.logger.print_iteration_info(
                 [
-                    i,
+                    actual_iteration,
                     deltaE,
                     deltaE / (units.kJ / units.mol),
                     self.kH,
@@ -227,3 +253,10 @@ Iteration  |  dE (eV)  |  dE (kJ/mol)  | kH [mol kg-1 Pa-1]  |  dH (kJ/mol) | Ti
                     (datetime.datetime.now() - step_time_start).total_seconds(),
                 ],
             )
+
+            if actual_iteration % self.save_every == 0:
+
+                np.save(
+                    os.path.join(self.out_folder, f"int_energy_{self.P:.5f}.npy"),
+                    np.array(self.int_energy_list),
+                )

@@ -313,8 +313,8 @@ class GCMC(BaseSimulator):
 
         pos = atoms_trial.get_positions()
 
-        pos[-self.n_ads :] = random_insertion_cell(
-            original_positions=pos[-self.n_ads :],
+        pos[-self.n_adsorbate_atoms :] = random_insertion_cell(
+            original_positions=pos[-self.n_adsorbate_atoms :],
             lattice_vectors=atoms_trial.get_cell(),
             rnd_generator=self.rnd_generator,
         )
@@ -325,7 +325,7 @@ class GCMC(BaseSimulator):
         overlaped = check_overlap(
             atoms=atoms_trial,
             group1_indices=np.arange(self.n_atoms_framework),
-            group2_indices=np.arange(self.n_atoms_framework, self.n_atoms_framework + self.n_ads),
+            group2_indices=np.arange(self.n_atoms_framework, self.n_atoms_framework + self.n_adsorbate_atoms),
             vdw_radii=self.vdw,
         )
 
@@ -367,8 +367,8 @@ class GCMC(BaseSimulator):
         atoms_trial.calc = self.model  # type: ignore
 
         # Get the indices of the adsorbate atoms to be deleted
-        i_start = self.n_atoms_framework + self.n_ads * i_ads
-        i_end = self.n_atoms_framework + self.n_ads * (i_ads + 1)
+        i_start = self.n_atoms_framework + self.n_adsorbate_atoms * i_ads
+        i_end = self.n_atoms_framework + self.n_adsorbate_atoms * (i_ads + 1)
 
         # Delete the adsorbate atoms from the trial structure
         del atoms_trial[i_start:i_end]
@@ -399,8 +399,8 @@ class GCMC(BaseSimulator):
 
         pos = atoms_trial.get_positions()  # type: ignore
 
-        i_start = self.n_atoms_framework + self.n_ads * i_ads
-        i_end = self.n_atoms_framework + self.n_ads * (i_ads + 1)
+        i_start = self.n_atoms_framework + self.n_adsorbate_atoms * i_ads
+        i_end = self.n_atoms_framework + self.n_adsorbate_atoms * (i_ads + 1)
 
         pos[i_start:i_end] = random_translation(
             original_positions=pos[i_start:i_end],
@@ -441,8 +441,8 @@ class GCMC(BaseSimulator):
         atoms_trial.calc = self.model  # type: ignore
 
         pos = atoms_trial.get_positions()  # type: ignore
-        i_start = self.n_atoms_framework + self.n_ads * i_ads
-        i_end = self.n_atoms_framework + self.n_ads * (i_ads + 1)
+        i_start = self.n_atoms_framework + self.n_adsorbate_atoms * i_ads
+        i_end = self.n_atoms_framework + self.n_adsorbate_atoms * (i_ads + 1)
 
         pos[i_start:i_end] = random_rotation(pos[i_start:i_end], rnd_generator=self.rnd_generator)
         atoms_trial.set_positions(pos)  # type: ignore

@@ -188,7 +188,7 @@ class BaseSimulator:
         self.adsorbate.set_cell(self.framework.get_cell())
 
         self.adsorbate_energy = self.adsorbate.get_potential_energy()
-        self.n_ads = len(self.adsorbate)
+        self.n_adsorbate_atoms = len(self.adsorbate)
         self.adsorbate_mass = np.sum(self.adsorbate.get_masses()) / units.kg
 
     def set_state(self, state: ase.Atoms) -> None:

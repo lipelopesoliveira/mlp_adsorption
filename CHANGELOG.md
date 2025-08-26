@@ -29,6 +29,7 @@
   - `BaseLogger`: A base class for logging simulation information, including restart and iteration details.
   - `GCMCLogger`: A logger specifically for GCMC simulations, extending `BaseLogger` with additional functionality.
   - `WidomLogger`: A logger specifically for Widom simulations, extending `BaseLogger` with additional functionality.
+- Now the `Widom` has a `restart` method to allow restarting a Widom simulation from a saved state. Since Widom does not insert adsorbates on the structure, it simply reads the existing list of insertion energies and use it to update the simulation statistics.
 
 ### Fixed 🐛
 
