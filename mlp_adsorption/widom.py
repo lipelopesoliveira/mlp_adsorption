@@ -154,7 +154,6 @@ class Widom(BaseSimulator):
 
         self.logger.print_restart_info()
 
-
     def try_insertion(self) -> tuple[float, ase.Atoms]:
         """
         Try to insert a new adsorbate molecule into the framework.
@@ -184,7 +183,9 @@ class Widom(BaseSimulator):
         overlaped = check_overlap(
             atoms=atoms_trial,
             group1_indices=np.arange(self.n_atoms_framework),
-            group2_indices=np.arange(self.n_atoms_framework, self.n_atoms_framework + self.n_adsorbate_atoms),
+            group2_indices=np.arange(
+                self.n_atoms_framework, self.n_atoms_framework + self.n_adsorbate_atoms
+            ),
             vdw_radii=self.vdw,
         )
 

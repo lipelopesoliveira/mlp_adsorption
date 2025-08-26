@@ -324,8 +324,8 @@ class GCMC(BaseSimulator):
 
         overlaped = check_overlap(
             atoms=atoms_trial,
-            group1_indices=np.arange(self.n_atoms_framework),
-            group2_indices=np.arange(self.n_atoms_framework, self.n_atoms_framework + self.n_adsorbate_atoms),
+            group1_indices=np.arange(len(self.current_system)),
+            group2_indices=np.arange(len(self.current_system), len(atoms_trial)),
             vdw_radii=self.vdw,
         )
 
