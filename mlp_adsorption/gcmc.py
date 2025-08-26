@@ -3,20 +3,19 @@ import itertools
 import os
 import platform
 import sys
-from typing import TextIO, Union
+from typing import Union
 
 import ase
 import numpy as np
 from ase import units
-from ase.build import make_supercell
 from ase.calculators import calculator
 from ase.io import Trajectory, read
-from ase.optimize import LBFGS
+
 from tqdm import tqdm
 
 from mlp_adsorption import VERSION
 from mlp_adsorption.ase_utils import (
-    crystalOptmization,
+    crystalOptimization,
     nPT_Berendsen,
     nPT_NoseHoover,
     nVT_Berendsen,
@@ -28,15 +27,12 @@ from mlp_adsorption.operations import (
     random_rotation,
     random_translation,
 )
-from mlp_adsorption.utilities import (
-    calculate_unit_cells,
-    enthalpy_of_adsorption,
-    get_density,
-    get_perpendicular_lengths,
-)
+from mlp_adsorption.utilities import enthalpy_of_adsorption
+
+from mlp_adsorption.base_simulator import BaseSimulator
 
 
-class GCMC:
+class GCMC(BaseSimulator):
     def __init__(
         self,
         model: calculator.Calculator,
@@ -52,7 +48,10 @@ class GCMC:
         debug: bool = False,
         fugacity_coeff: float = 1.0,
         random_seed: Union[int, None] = None,
-        **kwargs,
+        cutoff: float = 6.0,
+        criticalTemperature: Union[float, None] = None,
+        criticalPressure: Union[float, None] = None,
+        acentricFactor: Union[float, None] = None,
     ):
         """
         Base class for Grand Canonical Monte Carlo (GCMC) simulations using ASE.
@@ -94,55 +93,39 @@ class GCMC:
             Only used if `criticalTemperature`, `criticalPressure`, and `acentricFactor` are not provided.
         random_seed : int | None
             Random seed for reproducibility (default is None).
-
-        **kwargs : dict, optional
-            Additional keyword arguments for the Peng-Robinson EOS parameters:
-            - criticalTemperature: float, critical temperature in Kelvin
-            - criticalPressure: float, critical pressure in Pascal
-            - acentricFactor: float, acentric factor of the adsorbate
-            - cutoff: float, interaction potential cut-off radius
+        cutoff : float
+            Interaction potential cut-off radius used to estimate the minimum unit cell (default is 6.0).
+        criticalTemperature : float, optional
+            Critical temperature of the adsorbate in Kelvin.
+        criticalPressure : float, optional
+            Critical pressure of the adsorbate in Pascal.
+        acentricFactor : float, optional
+            Acentric factor of the adsorbate.
         """
+
+        super().__init__(
+            model=model,
+            framework_atoms=framework_atoms,
+            adsorbate_atoms=adsorbate_atoms,
+            temperature=temperature,
+            pressure=pressure,
+            device=device,
+            vdw_radii=vdw_radii,
+            vdw_factor=vdw_factor,
+            save_frequency=save_frequency,
+            output_to_file=output_to_file,
+            debug=debug,
+            fugacity_coeff=fugacity_coeff,
+            random_seed=random_seed,
+            cutoff=cutoff,
+        )
 
         self.start_time = datetime.datetime.now()
 
-        self.rnd_generator = np.random.default_rng(random_seed)
-        self.cutoff: float = kwargs.get("cutoff", 1.0)  # Default cutoff radius in Angstroms
-
-        self.out_folder = f"results_{temperature:.2f}_{pressure:.2f}"
-        os.makedirs(self.out_folder, exist_ok=True)
-        os.makedirs(os.path.join(self.out_folder, "Movies"), exist_ok=True)
-
-        if output_to_file:
-            self.out_file: Union[TextIO, None] = open(
-                os.path.join(self.out_folder, "GCMC_Output.out"), "a"
-            )
-        else:
-            self.out_file = None
-
-        self.model = model
-
-        self.trajectory = Trajectory(
-            os.path.join(self.out_folder, "GCMC_Trajectory.traj"),
-            "a",
-        )
-
-        # Framework setup
-        self.set_framework(framework_atoms)
-
-        # Get the framework density in g/cm^3
-        self.framework_density: float = get_density(self.framework)
-
-        # Adsorbate setup
-        self.set_adsorbate(adsorbate_atoms)
-
-        # Simulation parameters
-        self.T: float = temperature
-        self.P: float = pressure
-
         # Parameters for calculateing the Peng-Robinson equation of state
-        self.criticalTemperature: float | None = kwargs.get("criticalTemperature", None)  # K
-        self.criticalPressure: float | None = kwargs.get("criticalPressure", None)  # Pa
-        self.acentricFactor: float | None = kwargs.get("acentricFactor", None)  # dimensionless
+        self.criticalTemperature = criticalTemperature
+        self.criticalPressure = criticalPressure
+        self.acentricFactor = acentricFactor
 
         # Check if any critical parameters are not None
         if all([self.criticalTemperature, self.criticalPressure, self.acentricFactor]):
@@ -154,46 +137,10 @@ class GCMC:
                 acentricFactor=self.acentricFactor,  # type: ignore
                 molarMass=self.adsorbate_mass,
             )
-            fugacity_coeff = self.eos.get_fugacity_coefficient()
+            self.fugacity_coeff = self.eos.get_fugacity_coefficient()
 
-        self.fugacity_coeff: float = fugacity_coeff
-
-        self.fugacity = (
-            self.P * self.fugacity_coeff * units.J
-        )  # Convert fugacity from Pa (J/m^3) to eV / m^3
-
-        self.model = model
-        self.device = device
-        self.beta: float = 1 / (units.kB * temperature)  # Boltzmann weight, 1 / [eV/K * K]
-
-        self.save_every = save_frequency
-        self.debug = debug
-
-        atm2pa = 101325
-        mol2cm3 = units.kB / units.J * units.mol * 273.15 / atm2pa
-
-        self.conv_factors = {
-            "mol/kg": (1 / units.mol) / self.framework_mass,
-            "mg/g": (self.adsorbate_mass * 1e3) / self.framework_mass,
-            "cm^3 STP/gr": mol2cm3 / units.mol / self.framework_mass * 1e3,
-            "cm^3 STP/cm^3": 1e6 * mol2cm3 / units.mol / (self.framework.get_volume() * (1e-8**3)),
-        }
-
-        self.vdw: np.ndarray = vdw_radii * vdw_factor  # Adjust van der Waals radii to avoid overlap
-
-        # Replace any NaN value by 1.5 on self.vdw to avoid potential problems
-        self.vdw[np.isnan(self.vdw)] = 1.5
-
-        # Get the ideal supercell. This will be updated by the set_framework method
-        self.ideal_supercell = [1, 1, 1]
-
-        # Define the current state of the system that will be updated during the simulation
-        self.current_system: ase.Atoms = self.framework.copy()
-        self.current_system.calc = self.model
-        self.current_total_energy: float = self.current_system.get_potential_energy()
+        # Parameters for storing the main results during the simulation
         self.N_ads: int = 0
-
-        # Store the main results during the simulation
         self.uptake_list: list[int] = []
         self.total_energy_list: list[float] = []
         self.total_ads_list: list[float] = []
@@ -202,63 +149,6 @@ class GCMC:
 
         # Base iteration for restarting the simulation. This is for tracking the iteration count only
         self.base_iteration: int = 0
-
-    def set_framework(self, framework_atoms: ase.Atoms) -> None:
-        """
-        Set the framework structure for the simulation.
-
-        Parameters
-        ----------
-        framework_atoms : ase.Atoms
-            The new framework structure as an ASE Atoms object.
-        """
-        self.framework = framework_atoms
-
-        ideal_supercell = calculate_unit_cells(self.framework.get_cell(), cutoff=self.cutoff)
-
-        if ideal_supercell != [1, 1, 1]:
-            print(f"Making supercell: {ideal_supercell}")
-            self.framework = make_supercell(self.framework, np.eye(3) * ideal_supercell)
-
-        self.cell = np.array(self.framework.get_cell())
-        self.perpendicular_cell = get_perpendicular_lengths(self.framework.get_cell()) * np.eye(3)
-
-        self.framework.calc = self.model
-        self.framework_energy = self.framework.get_potential_energy()
-        self.n_atoms_framework = len(self.framework)
-
-        self.V = np.linalg.det(self.cell) / units.m**3
-        self.framework_mass = np.sum(self.framework.get_masses()) / units.kg
-
-    def set_adsorbate(self, adsorbate_atoms: ase.Atoms) -> None:
-        """
-        Set the adsorbate structure for the simulation.
-
-        Parameters
-        ----------
-        adsorbate_atoms : ase.Atoms
-            The new adsorbate structure as an ASE Atoms object.
-        """
-        self.adsorbate = adsorbate_atoms
-        self.adsorbate.calc = self.model
-        self.adsorbate.set_cell(self.framework.get_cell())
-
-        self.adsorbate_energy = self.adsorbate.get_potential_energy()
-        self.n_ads = len(self.adsorbate)
-        self.adsorbate_mass = np.sum(self.adsorbate.get_masses()) / units.kg
-
-    def set_state(self, state: ase.Atoms) -> None:
-        """
-        Set the current state of the simulation.
-
-        Parameters
-        ----------
-        state : ase.Atoms
-            The current state of the simulation as an ASE Atoms object.
-        """
-        self.current_system = state.copy()
-        self.current_system.calc = self.model
-        self.current_total_energy = self.current_system.get_potential_energy()
 
     def restart(self) -> None:
         """
@@ -300,9 +190,8 @@ class GCMC:
         self.total_energy_list = total_energy_restart
         self.total_ads_list = total_ads_restart
 
-        self.base_iteration = len(
-            self.uptake_list
-        )  # Set the base iteration to the length of the uptake list
+        # Set the base iteration to the length of the uptake list
+        self.base_iteration = len(self.uptake_list)
 
         self.load_state(os.path.join(self.out_folder, "GCMC_Trajectory.traj"))
 
@@ -340,11 +229,11 @@ class GCMC:
             """
 ===========================================================================
 
-Restart file requested.
+Restarting GCMC simulation from previous configuration...
 
 Loaded state with {} total atoms.
 
-Curent total energy: {:.3f} eV
+Current total energy: {:.3f} eV
 Current number of adsorbates: {}
 Current average binding energy: {:.3f} kJ/mol
 
@@ -561,209 +450,12 @@ Accepted: {rnd_number < acc}
             flush=True,
         )
 
-    def optimize_framework(
-        self,
-        max_steps: int = 1000,
-        opt_cell: bool = True,
-        fix_symmetry: bool = True,
-        hydrostatic_strain: bool = True,
-        symm_tol: float = 1e-3,
-        max_force: float = 0.05,
-    ) -> None:
-        """
-        Optimize the framework structure using the provided calculator.
-
-        Parameters
-        ----------
-        max_steps : int, optional
-            Maximum number of optimization steps (default is 1000).
-        tol : float, optional
-            Tolerance for convergence (default is 1e-5).
-
-        Returns
-        -------
-        ase.Atoms
-            The optimized framework structure.
-        """
-
-        print(
-            """
-=======================================================================================================
-Start optimizing framework structure...
-=======================================================================================================
-              """,
-            file=self.out_file,
-            flush=True,
-        )
-
-        resultsDict, optFramework = crystalOptmization(
-            atoms_in=self.framework,
-            calculator=self.model,
-            optimizer=LBFGS,  # type: ignore
-            fmax=max_force,
-            opt_cell=opt_cell,
-            fix_symmetry=fix_symmetry,
-            hydrostatic_strain=hydrostatic_strain,
-            constant_volume=False,
-            scalar_pressure=0,
-            max_steps=max_steps,
-            trajectory=self.trajectory,  # type: ignore
-            verbose=True,
-            symm_tol=symm_tol,
-            out_file=self.out_file,  # type: ignore
-        )
-
-        # Remove any constraints from the optimized framework
-        optFramework.set_constraint(None)
-
-        self.set_framework(optFramework.copy())
-
-    def optimize_adsorbate(self, max_steps: int = 1000, max_force: float = 0.05) -> None:
-        """
-        Optimize the adsorbate structure using the provided calculator.
-
-        Parameters
-        ----------
-        max_steps : int, optional
-            Maximum number of optimization steps (default is 1000).
-        symm_tol : float, optional
-            Tolerance for symmetry (default is 1e-3).
-        max_force : float, optional
-            Maximum force tolerance for convergence (default is 0.05 eV/Å).
-
-        Returns
-        -------
-        ase.Atoms
-            The optimized adsorbate structure.
-        """
-
-        print(
-            """
-=======================================================================================================
-Start optimizing adsorbate structure...
-=======================================================================================================
-              """,
-            file=self.out_file,
-            flush=True,
-        )
-
-        resultsDict, optAdsorbate = crystalOptmization(
-            atoms_in=self.adsorbate,
-            calculator=self.model,
-            optimizer=LBFGS,  # type: ignore
-            fmax=max_force,
-            opt_cell=False,
-            fix_symmetry=False,
-            hydrostatic_strain=True,
-            constant_volume=True,
-            scalar_pressure=self.P,
-            max_steps=max_steps,
-            trajectory="Adsorbate_Optimization.traj",
-            verbose=True,
-            symm_tol=1e3,
-            out_file=self.out_file,  # type: ignore
-        )
-
-        self.adsorbate = optAdsorbate.copy()
-        self.adsorbate.set_constraint(None)
-        self.adsorbate.set_cell(self.framework.get_cell())
-        self.adsorbate.calc = self.model
-        self.adsorbate_energy = self.adsorbate.get_potential_energy()
-
-    def npt(self, nsteps, time_step: float = 0.5, mode: str = "iso_shape"):
-        """
-        Run a NPT simulation using the Berendsen thermostat and barostat.
-
-        Parameters
-        ----------
-        nsteps : int
-            Number of steps to run the NPT simulation.
-        time_step : float, optional
-            Time step for the NPT simulation (default is 0.5 fs).
-        mode : str, optional
-            The mode of the NPT simulation (default is "iso_shape").
-            Can be one of "iso_shape", "aniso_shape", or "aniso_flex".
-        """
-
-        allowed_modes = ["iso_shape", "aniso_shape", "aniso_flex"]
-        assert mode in allowed_modes, f"Mode must be one of {allowed_modes}."
-
-        if mode == "iso_shape" or mode == "aniso_shape":
-
-            new_state = nPT_Berendsen(
-                atoms=self.current_system,
-                model=self.model,
-                temperature=self.T,
-                pressure=self.P * 1e-5,
-                compressibility=1e-4,
-                time_step=time_step,
-                num_md_steps=nsteps,
-                isotropic=True if mode == "iso_shape" else False,
-                out_folder=self.out_folder,
-                out_file=self.out_file,  # type: ignore
-                trajectory=self.trajectory,
-                output_interval=self.save_every,
-                movie_interval=self.save_every,
-            )
-        else:
-
-            new_state = nPT_NoseHoover(
-                atoms=self.current_system,
-                model=self.model,
-                temperature=self.T,
-                pressure=self.P * 1e-5,
-                time_step=time_step,
-                num_md_steps=nsteps,
-                ttime=25.0,
-                ptime=75.0,
-                B_guess=30,
-                out_folder=self.out_folder,
-                out_file=self.out_file,  # type: ignore
-                trajectory=self.trajectory,
-                output_interval=self.save_every,
-                movie_interval=self.save_every,
-            )
-
-        self.set_state(new_state)
-
-        self.set_framework(new_state[: self.n_atoms_framework].copy())  # type: ignore
-
-    def nvt(self, nsteps, time_step: float = 0.5):
-        """
-        Run a NVT simulation using the Berendsen thermostat.
-
-        Parameters
-        ----------
-        nsteps : int
-            Number of steps to run the NVT simulation.
-        time_step : float, optional
-            Time step for the NVT simulation (default is 0.5 fs).
-        """
-
-        new_state = nVT_Berendsen(
-            atoms=self.current_system,
-            model=self.model,
-            temperature=self.T,
-            time_step=time_step,
-            num_md_steps=nsteps,
-            out_folder=self.out_folder,
-            out_file=self.out_file,  # type: ignore
-            trajectory=self.trajectory,
-            output_interval=self.save_every,
-            movie_interval=self.save_every,
-        )
-
-        self.set_state(new_state)
-
     def _insertion_acceptance(self, deltaE) -> bool:
         """
         Calculate the acceptance probability for insertion of an adsorbate molecule as
 
         # Pacc (N -> N + 1) = min(1, β * V * f * exp(-β ΔE) / (N + 1))
         """
-
-        # if deltaE / (units.kJ / units.mol) < 100:
-        #    return True  # Always accept if the energy change is too high
 
         exp_value = np.exp(-self.beta * deltaE)
 
@@ -791,9 +483,6 @@ Start optimizing adsorbate structure...
 
         Pdel (N -> N - 1 ) = min(1, N / (β * V * f) * exp(-β ΔE) )
         """
-
-        # if deltaE / (units.kJ / units.mol) > 100:
-        #    return True  # Always accept if the energy change is too high
 
         exp_value = np.exp(-self.beta * deltaE)
 
@@ -1028,10 +717,12 @@ Start optimizing adsorbate structure...
 
             switch = np.random.rand()
 
+            # Insertion
             if switch < 0.25:
                 accepted = self.try_insertion()
                 self.mov_dict["insertion"].append(1 if accepted else 0)
 
+            # Deletion
             elif switch < 0.5:
                 accepted = self.try_deletion()
                 self.mov_dict["deletion"].append(1 if accepted else 0)

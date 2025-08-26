@@ -24,6 +24,7 @@
 - Add a `mlp_adsorption.utilities.make_cubic` function that can create a cubic (or close to) supercell from a given structure.
 - Now all movements are based on a `numpy.random.Generator` to ensure reproducibility. A `random_seed` can be provided to the `GCMC` and `Widom` classes for this purpose.
 - New module for checking the overlap between atoms (`mlp_adsorption.operations.check_overlap`)
+- A new `BaseSimulator` method created to abstract the system state management and general simulation logic.
 
 ### Fixed 🐛
 

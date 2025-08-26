@@ -19,7 +19,7 @@ from ase.optimize.optimize import Optimizer
 from ase.spacegroup.symmetrize import check_symmetry
 
 
-def crystalOptmization(
+def crystalOptimization(
     atoms_in: Atoms,
     calculator: Calculator,
     optimizer: Optimizer,

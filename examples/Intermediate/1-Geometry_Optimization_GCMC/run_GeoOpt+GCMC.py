@@ -11,7 +11,7 @@ from ase.io import read
 from ase.optimize import LBFGS
 from mace.calculators import mace_mp
 
-from mlp_adsorption.ase_utils import crystalOptmization
+from mlp_adsorption.ase_utils import crystalOptimization
 from mlp_adsorption.gcmc import GCMC
 
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -37,7 +37,7 @@ model = mace_mp(
 # Load the framework structure
 framework: ase.Atoms = read(FrameworkPath)  # type: ignore
 
-resultsDict, frameworkOpt = crystalOptmization(
+resultsDict, frameworkOpt = crystalOptimization(
     atoms_in=framework,
     calculator=model,
     optimizer=LBFGS,  # type: ignore
@@ -59,7 +59,7 @@ frameworkOpt.set_constraint(None)
 # Load the adsorbate structure
 adsorbate: ase.Atoms = read(AdsorbatePath)  # type: ignore
 
-resultsDict, adsorbateOpt = crystalOptmization(
+resultsDict, adsorbateOpt = crystalOptimization(
     atoms_in=adsorbate,
     calculator=model,
     optimizer=LBFGS,  # type: ignore
