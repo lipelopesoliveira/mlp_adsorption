@@ -105,9 +105,9 @@ gcmc = GCMC(
     acentricFactor=0.22394,
 )
 
-
-gcmc.print_introduction()
+gcmc.logger.print_header()
 
 gcmc.run(MCSteps)
 
-gcmc.print_finish()
+gcmc.logger.print_summary()
+

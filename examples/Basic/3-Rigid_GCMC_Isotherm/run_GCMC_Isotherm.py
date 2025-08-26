@@ -72,7 +72,7 @@ for i, pressure in enumerate(pressure_list):
         acentricFactor=0.22394,
     )
 
-    gcmc.print_introduction()
+    gcmc.logger.print_header()
 
     if pressure > pressure_list[0]:
         print("Loading previous state for continuation...")
@@ -80,4 +80,4 @@ for i, pressure in enumerate(pressure_list):
         gcmc.load_state(os.path.join(output_dir, "GCMC_Trajectory.traj"))
 
     gcmc.run(MCSteps)
-    gcmc.print_finish()
+    gcmc.logger.print_summary()

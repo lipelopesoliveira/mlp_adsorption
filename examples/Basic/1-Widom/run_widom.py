@@ -52,7 +52,7 @@ widom = Widom(
     output_to_file=True,
 )
 
-widom.print_header()
+widom.logger.print_header()
 
 widom.run(NSteps)
-widom.print_footer()
+widom.logger.print_summary()

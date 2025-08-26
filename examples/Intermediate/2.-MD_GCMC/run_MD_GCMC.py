@@ -63,11 +63,11 @@ gcmc = GCMC(
 )
 
 
-gcmc.print_introduction()
+gcmc.logger.print_header()
 
 for j in range(5):
     gcmc.run(MCSteps)
     gcmc.npt(nsteps=MDSteps, time_step=0.5, mode="aniso_flex")
 
 gcmc.run(MCSteps)
-gcmc.print_finish()
+gcmc.logger.print_summary()
