@@ -389,6 +389,12 @@ class WidomLogger(BaseLogger):
     def print_run_header(self):
         """Prints the header for the main Widom loop."""
         header = """
+===========================================================================
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Starting Widom simulation
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 Iteration  |  dE (eV)  |  dE (kJ/mol)  | kH [mol kg-1 Pa-1]  |  dH (kJ/mol) | Time (s)
 ---------------------------------------------------------------------------------------"""
         self._print(header)
@@ -398,7 +404,7 @@ Iteration  |  dE (eV)  |  dE (kJ/mol)  | kH [mol kg-1 Pa-1]  |  dH (kJ/mol) | Ti
         line_str = "{:^10} | {:^9.6f} | {:>13.2f} | {:>19.3e} | {:12.2f} | {:8.2f}"
         self._print(line_str.format(*iteration_data))
 
-    def print_footer(self):
+    def print_summary(self):
         """
         Print the footer for the simulation output.
         This method is called at the end of the simulation to display the final results and elapsed time.
@@ -409,7 +415,7 @@ Iteration  |  dE (eV)  |  dE (kJ/mol)  | kH [mol kg-1 Pa-1]  |  dH (kJ/mol) | Ti
 ===========================================================================
 
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-Finishing simulation
+Finishing Widom simulation
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
     Average properties of the system:
