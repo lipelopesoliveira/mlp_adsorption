@@ -91,16 +91,17 @@ class Widom(BaseSimulator):
 
         # kH = β <exp(-β ΔE)> [mol kg-1 Pa-1]
         self.kH = (
-                self.beta
-                * self.boltz_fac.mean()
-                * (units.J / units.mol)
-                / (self.framework_density * 1e3)
-            )
+            self.beta
+            * self.boltz_fac.mean()
+            * (units.J / units.mol)
+            / (self.framework_density * 1e3)
+        )
 
         # Qst = - < ΔE * exp(-β ΔE) > / <exp(-β ΔE)>  + kB.T # [kJ/mol]
-        self.Qst = (self.int_energy_list * self.boltz_fac).mean() / self.boltz_fac.mean() - (
-                units.kB * self.T
-            ) / (units.kJ / units.mol)
+        self.Qst = (
+            (self.int_energy_list * self.boltz_fac).mean() / self.boltz_fac.mean()
+            - (units.kB * self.T)
+        ) / (units.kJ / units.mol)
 
     def update_statistics(self, deltaE) -> None:
         """
@@ -118,16 +119,17 @@ class Widom(BaseSimulator):
 
         # kH = β <exp(-β ΔE)> [mol kg-1 Pa-1]
         self.kH = (
-                self.beta
-                * self.boltz_fac.mean()
-                * (units.J / units.mol)
-                / (self.framework_density * 1e3)
-            )
+            self.beta
+            * self.boltz_fac.mean()
+            * (units.J / units.mol)
+            / (self.framework_density * 1e3)
+        )
 
-            # Qst = - < ΔE * exp(-β ΔE) > / <exp(-β ΔE)>  + kB.T # [kJ/mol]
+        # Qst = - < ΔE * exp(-β ΔE) > / <exp(-β ΔE)>  + kB.T # [kJ/mol]
         self.Qst = (
-            (self.int_energy_list * self.boltz_fac).mean() / self.boltz_fac.mean() - (units.kB * self.T)
-            ) / (units.kJ / units.mol)
+            (self.int_energy_list * self.boltz_fac).mean() / self.boltz_fac.mean()
+            - (units.kB * self.T)
+        ) / (units.kJ / units.mol)
 
     def try_insertion(self) -> tuple[float, ase.Atoms]:
         """
@@ -200,7 +202,9 @@ Iteration  |  dE (eV)  |  dE (kJ/mol)  | kH [mol kg-1 Pa-1]  |  dH (kJ/mol) | Ti
             if deltaE < self.minimum_energy:
                 self.minimum_configuration = atoms_trial.copy()
                 self.minimum_energy = deltaE
-                tmp_name = "minimum_configuration_{:.2f}.cif".format(deltaE / (units.kJ / units.mol))
+                tmp_name = "minimum_configuration_{:.2f}.cif".format(
+                    deltaE / (units.kJ / units.mol)
+                )
 
                 write(
                     os.path.join(os.path.join(self.out_folder, "Movies", tmp_name)),
