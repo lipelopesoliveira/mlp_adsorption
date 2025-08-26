@@ -14,12 +14,7 @@ from ase.io import Trajectory, read
 from tqdm import tqdm
 
 from mlp_adsorption import VERSION
-from mlp_adsorption.ase_utils import (
-    crystalOptimization,
-    nPT_Berendsen,
-    nPT_NoseHoover,
-    nVT_Berendsen,
-)
+
 from mlp_adsorption.eos import PengRobinsonEOS
 from mlp_adsorption.operations import (
     check_overlap,
@@ -27,9 +22,10 @@ from mlp_adsorption.operations import (
     random_rotation,
     random_translation,
 )
-from mlp_adsorption.utilities import enthalpy_of_adsorption
 
 from mlp_adsorption.base_simulator import BaseSimulator
+
+from mlp_adsorption.logger import GCMCLogger
 
 
 class GCMC(BaseSimulator):
@@ -120,6 +116,11 @@ class GCMC(BaseSimulator):
             cutoff=cutoff,
         )
 
+        self.logger = GCMCLogger(
+            simulation=self,
+            output_file=self.out_file
+            )
+
         self.start_time = datetime.datetime.now()
 
         # Parameters for calculateing the Peng-Robinson equation of state
@@ -193,6 +194,8 @@ class GCMC(BaseSimulator):
         # Set the base iteration to the length of the uptake list
         self.base_iteration = len(self.uptake_list)
 
+        self.logger.print_restart_info()
+
         self.load_state(os.path.join(self.out_folder, "GCMC_Trajectory.traj"))
 
     def load_state(self, state_file: str) -> None:
@@ -225,230 +228,11 @@ class GCMC(BaseSimulator):
             else 0
         )
 
-        print(
-            """
-===========================================================================
-
-Restarting GCMC simulation from previous configuration...
-
-Loaded state with {} total atoms.
-
-Current total energy: {:.3f} eV
-Current number of adsorbates: {}
-Current average binding energy: {:.3f} kJ/mol
-
-Current steps are: {}
-
-===========================================================================
-""".format(
-                len(state),
-                self.current_total_energy,
-                self.N_ads,
-                average_binding_energy,
-                self.base_iteration,
-            ),
-            file=self.out_file,
-            flush=True,
+        self.logger.print_load_state_info(
+            n_atoms=len(state),
+            average_ads_energy=average_binding_energy
         )
 
-    def print_introduction(self):
-        """
-        Print the header for the simulation output.
-        This method is called at the beginning of the simulation to display the initial parameters.
-        """
-
-        header = f"""
-===========================================================================
-                      Grand Canonical Monte Carlo Simulation
-                            powered by Python + ase
-                        Author: Felipe Lopes de Oliveira
-===========================================================================
-
-Code version: {VERSION}
-Simulation started at {self.start_time.strftime('%Y-%m-%d %H:%M:%S')}
-Hostname: {platform.node()}
-OS type: {platform.system()}
-OS release: {platform.release()}
-OS version: {platform.version()}
-
-Python version: {sys.version.split()[0]}
-Numpy version: {np.__version__}
-ASE version: {ase.__version__}
-
-Current directory: {os.getcwd()}
-
-Model: {self.model.name}
-Running on device: {self.device}
-
-===========================================================================
-
-Constants used:
-Boltzmann constant:     {units.kB} eV/K
-Beta (1/kT):            {self.beta:.3f} eV^-1
-Fugacity coefficient:   {self.fugacity_coeff:.9f} (dimensionless)
-
-===========================================================================
-
-Simulation Parameters:
-Temperature: {self.T} K
-Pressure: {self.P / 1e5:.5f} bar
-Fugacity: {self.fugacity / units.J:.3f} Pa
-Fugacity: {self.fugacity:.5e} eV/m^3
-(1/kB.T) * V * f = {self.V * self.beta * self.fugacity} [-]
-
-===========================================================================
-
-System Information:
-Framework: {self.framework.get_chemical_formula()}
-Framework: {self.n_atoms_framework} atoms,
-Framework mass: {np.sum(self.framework.get_masses())} g/mol, {self.framework_mass} kg
-Framework energy: {self.framework_energy} eV
-Framework volume: {self.V} m^3
-Framework density: {self.framework_density * 1e3} kg/m^3, {self.framework_density} g/cm^3
-Framework cell:
-    {self.cell[0, 0]:12.7f} {self.cell[0, 1]:12.7f} {self.cell[0, 2]:12.7f}
-    {self.cell[1, 0]:12.7f} {self.cell[1, 1]:12.7f} {self.cell[1, 2]:12.7f}
-    {self.cell[2, 0]:12.7f} {self.cell[2, 1]:12.7f} {self.cell[2, 2]:12.7f}
-
-Perpendicular cell:
-    {self.perpendicular_cell[0, 0]:12.7f} {self.perpendicular_cell[0, 1]:12.7f} {self.perpendicular_cell[0, 2]:12.7f}
-    {self.perpendicular_cell[1, 0]:12.7f} {self.perpendicular_cell[1, 1]:12.7f} {self.perpendicular_cell[1, 2]:12.7f}
-    {self.perpendicular_cell[2, 0]:12.7f} {self.perpendicular_cell[2, 1]:12.7f} {self.perpendicular_cell[2, 2]:12.7f}
-
-Ideal supercell size is {self.ideal_supercell} (x, y, z).
-
-Atomic positions:
-"""
-        for atom in self.framework:
-            header += "  {:2} {:12.7f} {:12.7f} {:12.7f}\n".format(atom.symbol, *atom.position)  # type: ignore
-        header += f"""
-===========================================================================
-Adsorbate: {self.adsorbate.get_chemical_formula()}
-Adsorbate: {self.n_ads} atoms, {self.adsorbate_mass} kg
-Adsorbate energy: {self.adsorbate_energy} eV
-
-Atomic positions:
-"""
-        for atom in self.adsorbate:
-            header += "  {:2} {:12.7f} {:12.7f} {:12.7f}\n".format(atom.symbol, *atom.position)  # type: ignore
-
-        header += """
-===========================================================================
-Shortest distances:
-"""
-        atomic_numbers = set(
-            list(self.framework.get_atomic_numbers()) + list(self.adsorbate.get_atomic_numbers())
-        )
-
-        for i, j in list(itertools.combinations(atomic_numbers, 2)):
-            header += f"  {ase.Atom(i).symbol:2} - {ase.Atom(j).symbol:2}: {self.vdw[i] + self.vdw[j]:.3f} Å\n"
-
-        header += f"""
-===========================================================================
-Conversion factors:
-    Conversion factor molecules/unit cell -> mol/kg:         {self.conv_factors['mol/kg']:.9f}
-    Conversion factor molecules/unit cell -> mg/g:           {self.conv_factors['mg/g']:.9f}
-    Conversion factor molecules/unit cell -> cm^3 STP/gr:    {self.conv_factors['cm^3 STP/gr']:.9f}
-    Conversion factor molecules/unit cell -> cm^3 STP/cm^3:  {self.conv_factors['cm^3 STP/cm^3']:.9f}
-    Conversion factor molecules/unit cell -> %wt:            {self.conv_factors['mg/g'] * 1e-3:.9f}
-
-Partial pressure:
-           {self.P:>15.5f} Pascal
-           {self.P / 1e5:>15.5f} bar
-           {self.P / 101325:>15.5f} atm
-           {self.P / (101325 * 760):>15.5f} Torr
-===========================================================================
-"""
-        print(header, file=self.out_file, flush=True)
-
-    def print_finish(self):
-        """
-        Print the footer for the simulation output.
-        This method is called at the end of the simulation to display the final results.
-        """
-
-        avg_uptake = np.average(self.uptake_list) if self.uptake_list else 0
-        std_uptake = np.std(self.uptake_list) if self.uptake_list else 0
-
-        Qst = enthalpy_of_adsorption(
-            energy=np.array(self.total_ads_list) / units.kB,  # Convert to K
-            number_of_molecules=self.uptake_list,
-            temperature=self.T,
-        )
-
-        print(
-            """
-===========================================================================
-
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-Finishing simulation
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-    Average properties of the system:
-    ------------------------------------------------------------------------------
-    Average loading absolute [molecules/unit cell]       {:12.5f} +/- {:12.5f} [-]
-    Average loading absolute [mol/kg framework]          {:12.5f} +/- {:12.5f} [-]
-    Average loading absolute [mg/g framework]            {:12.5f} +/- {:12.5f} [-]
-    Average loading absolute [cm^3 (STP)/gr framework]   {:12.5f} +/- {:12.5f} [-]
-    Average loading absolute [cm^3 (STP)/cm^3 framework] {:12.5f} +/- {:12.5f} [-]
-    Average loading absolute [%wt framework]             {:12.5f} +/- {:12.5f} [-]
-
-
-    Enthalpy of adsorption: [kJ/mol]                     {:12.5f} +/- {:12.5f} [-]
-
-===========================================================================
-Simulation finished suscessfully!
-===========================================================================
-
-Simulation finished at {}
-Simulation duration: {}
-
-===========================================================================
-
-""".format(
-                avg_uptake,
-                std_uptake,
-                avg_uptake * self.conv_factors["mol/kg"],
-                std_uptake * self.conv_factors["mol/kg"],
-                avg_uptake * self.conv_factors["mg/g"],
-                std_uptake * self.conv_factors["mg/g"],
-                avg_uptake * self.conv_factors["cm^3 STP/gr"],
-                std_uptake * self.conv_factors["cm^3 STP/gr"],
-                avg_uptake * self.conv_factors["cm^3 STP/cm^3"],
-                std_uptake * self.conv_factors["cm^3 STP/cm^3"],
-                avg_uptake * self.conv_factors["mg/g"] * 1e-3,
-                std_uptake * self.conv_factors["mg/g"] * 1e-3,
-                Qst,
-                0.0,
-                datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                datetime.datetime.now() - self.start_time,
-            ),
-            file=self.out_file,
-            flush=True,
-        )
-
-    def debug_movement(self, movement, deltaE, prefactor, acc, rnd_number) -> None:
-        """
-        Print debug information about the current state of the simulation.
-        This method is called to provide detailed information about the current state of the system.
-        """
-        print(
-            f"""
-=======================================================================================================
-Movement type: {movement}
-Current number of adsorbates: {self.N_ads}
-Interaction energy: {deltaE} eV, {(deltaE / (units.kJ / units.mol))} kJ/mol
-Exponential factor:     {-self.beta * deltaE:.3E}
-Exponential:            {np.exp(-self.beta * deltaE):.3E}
-Prefactor:              {prefactor:.3E}
-Acceptance probability: {acc:.3f}
-Random number:          {rnd_number:.3f}
-Accepted: {rnd_number < acc}
-=======================================================================================================
-""",
-            file=self.out_file,
-            flush=True,
-        )
 
     def _insertion_acceptance(self, deltaE) -> bool:
         """
@@ -466,7 +250,7 @@ Accepted: {rnd_number < acc}
         rnd_number = np.random.rand()
 
         if self.debug:
-            self.debug_movement(
+            self.logger.print_debug_movement(
                 movement="Insertion",
                 deltaE=deltaE,
                 prefactor=pre_factor,
@@ -493,7 +277,7 @@ Accepted: {rnd_number < acc}
         rnd_number = np.random.rand()
 
         if self.debug:
-            self.debug_movement(
+            self.logger.print_debug_movement(
                 movement="Deletion",
                 deltaE=deltaE,
                 prefactor=pre_factor,
@@ -504,7 +288,7 @@ Accepted: {rnd_number < acc}
         # Apply Metropolis acceptance/rejection rule
         return rnd_number < acc
 
-    def _move_acceptance(self, deltaE) -> bool:
+    def _move_acceptance(self, deltaE, movement_name='Movement') -> bool:
         """
         Calculate the acceptance probability for translation or rotation of an adsorbate molecule as
 
@@ -517,8 +301,8 @@ Accepted: {rnd_number < acc}
         rnd_number = np.random.rand()
 
         if self.debug:
-            self.debug_movement(
-                movement="Movement", deltaE=deltaE, prefactor=1, acc=acc, rnd_number=rnd_number
+            self.logger.print_debug_movement(
+                movement=movement_name, deltaE=deltaE, prefactor=1, acc=acc, rnd_number=rnd_number
             )
 
         # Apply Metropolis acceptance/rejection rule
@@ -654,7 +438,7 @@ Accepted: {rnd_number < acc}
         e_trial = atoms_trial.get_potential_energy()  # type: ignore
 
         deltaE = e_trial - self.current_total_energy
-        if self._move_acceptance(deltaE=deltaE):
+        if self._move_acceptance(deltaE=deltaE, movement_name='Translation'):
             self.current_system = atoms_trial.copy()
             self.current_total_energy = e_trial
             return True
@@ -692,7 +476,7 @@ Accepted: {rnd_number < acc}
 
         deltaE = e_trial - self.current_total_energy
 
-        if self._move_acceptance(deltaE=deltaE):
+        if self._move_acceptance(deltaE=deltaE, movement_name='Rotation'):
             self.current_system = atoms_trial.copy()
             self.current_total_energy = e_trial
             return True
@@ -702,12 +486,7 @@ Accepted: {rnd_number < acc}
     def run(self, N) -> None:
         """Run the Grand Canonical Monte Carlo simulation for N iterations."""
 
-        header = """
- Iteration |  Number of  |  Uptake  |    Tot En.   |Av. Ads. En.|  Pacc  |  Pdel  |  Ptra  |  Prot  |  Time
-      -    |  Molecules  | [mmol/g] |     [eV]     |  [kJ/mol]  |    %   |    %   |   %    |   %    |   [s]
----------- | ----------- | -------- | ------------ | ---------- | ------ | ------ | ------ | ------ | ------
-"""
-        print(header, file=self.out_file, flush=True)
+        self.logger.print_run_header()
 
         for iteration in tqdm(range(1, N + 1), disable=(self.out_file is None), desc="GCMC Step"):
 
@@ -753,39 +532,10 @@ Accepted: {rnd_number < acc}
 
             average_ads_energy = average_ads_energy / self.N_ads if self.N_ads > 0 else 0
 
-            line_str = "{:^11}|{:^13}|{:>9.2f} |{:>13.4f} |{:>11.4f} |{:7.2f} |{:7.2f} |{:7.2f} |{:7.2f} |{:9.2f}"
-
-            print(
-                line_str.format(
-                    actual_iteration,
-                    self.N_ads,
-                    self.N_ads * self.conv_factors["mol/kg"],
-                    self.current_total_energy,
-                    average_ads_energy,
-                    (
-                        np.average(self.mov_dict["insertion"]) * 100
-                        if len(self.mov_dict["insertion"]) > 0
-                        else 0
-                    ),
-                    (
-                        np.average(self.mov_dict["deletion"]) * 100
-                        if len(self.mov_dict["deletion"]) > 0
-                        else 0
-                    ),
-                    (
-                        np.average(self.mov_dict["translation"]) * 100
-                        if len(self.mov_dict["translation"]) > 0
-                        else 0
-                    ),
-                    (
-                        np.average(self.mov_dict["rotation"]) * 100
-                        if len(self.mov_dict["rotation"]) > 0
-                        else 0
-                    ),
-                    (datetime.datetime.now() - step_time_start).total_seconds(),
-                ),
-                file=self.out_file,
-                flush=True,
+            self.logger.print_step_info(
+                step=actual_iteration,
+                average_ads_energy=average_ads_energy,
+                step_time=(datetime.datetime.now() - step_time_start).total_seconds()
             )
 
             if actual_iteration % self.save_every == 0:

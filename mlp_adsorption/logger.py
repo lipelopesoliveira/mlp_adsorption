@@ -218,6 +218,41 @@ class GCMCLogger(BaseLogger):
         self.sim = simulation
         self.out_file = output_file
 
+    def print_step_info(self, step, average_ads_energy, step_time):
+
+        line_str = "{:^11}|{:^13}|{:>9.2f} |{:>13.4f} |{:>11.4f} |{:7.2f} |{:7.2f} |{:7.2f} |{:7.2f} |{:9.2f}"
+
+        self._print(line_str.format(
+            step,
+            self.sim.N_ads,
+            self.sim.N_ads * self.sim.conv_factors["mol/kg"],
+            self.sim.current_total_energy,
+            average_ads_energy,
+            (
+                np.average(self.sim.mov_dict["insertion"]) * 100
+                if len(self.sim.mov_dict["insertion"]) > 0
+                else 0
+            ),
+            (
+                np.average(self.sim.mov_dict["deletion"]) * 100
+                if len(self.sim.mov_dict["deletion"]) > 0
+                else 0
+            ),
+            (
+                np.average(self.sim.mov_dict["translation"]) * 100
+                if len(self.sim.mov_dict["translation"]) > 0
+                else 0
+            ),
+            (
+                np.average(self.sim.mov_dict["rotation"]) * 100
+                if len(self.sim.mov_dict["rotation"]) > 0
+                else 0
+            ),
+            step_time
+        )
+        )
+
+
     def print_optimization_start(self, target: str):
         """Prints a header for framework or adsorbate optimization."""
         self._print(
@@ -228,15 +263,41 @@ Start optimizing {target} structure...
 """
         )
 
+    def print_load_state_info(self, n_atoms, average_ads_energy):
+        """Prints information about the loading state."""
+        self._print(
+            f"""
+===========================================================================
+
+Restarting GCMC simulation from previous configuration...
+
+Loaded state with {n_atoms} total atoms.
+
+Current total energy: {self.sim.current_total_energy:.3f} eV
+Current number of adsorbates: {self.sim.N_ads}
+Current average binding energy: {average_ads_energy:.3f} kJ/mol
+
+Current steps are: {self.sim.base_iteration}
+
+===========================================================================
+"""
+        )
+
     def print_run_header(self):
         """Prints the header for the main GCMC loop."""
         header = """
- Iteration |  Number of  |   Uptake   |   Tot En.    |Av. Ads. En.|  Pacc  |  Pdel  |  Ptra  |  Prot  |   Time
-     -     |  Molecules  | [mmol/g] |    [eV]      |  [kJ/mol]  |    %   |    %   |   %    |   %    |   [s]
+===========================================================================
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Starting GCMC simulation
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+ Iteration |  Number of  |  Uptake  |    Tot En.   |Av. Ads. En.|  Pacc  |  Pdel  |  Ptra  |  Prot  |  Time
+      -    |  Molecules  | [mmol/g] |     [eV]     |  [kJ/mol]  |    %   |    %   |   %    |   %    |   [s]
 ---------- | ----------- | -------- | ------------ | ---------- | ------ | ------ | ------ | ------ | ------"""
         self._print(header)
 
-    def print_iteration_log(self, iteration_data: dict):
+    def print_iteration_info(self, iteration_data: dict):
         """Prints a single log line for a GCMC iteration."""
         line_str = "{:^11}|{:^13}|{:>9.2f} |{:>13.4f} |{:>11.4f} |{:7.2f} |{:7.2f} |{:7.2f} |{:7.2f} |{:9.2f}"
         self._print(line_str.format(*iteration_data.values()))
@@ -273,8 +334,9 @@ Accepted: {rnd_number < acc}
         self._print(
             f"""
 ===========================================================================
+
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-Finishing simulation
+Finishing GCMC simulation
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
     Average properties of the system:
@@ -290,7 +352,7 @@ Finishing simulation
     Enthalpy of adsorption: [kJ/mol]                     {Qst:12.5f} +/- {0.0:12.5f} [-]
 
 ===========================================================================
-Simulation finished successfully!
+GCMC simulation finished successfully!
 ===========================================================================
 
 Simulation finished at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
@@ -331,7 +393,7 @@ Iteration  |  dE (eV)  |  dE (kJ/mol)  | kH [mol kg-1 Pa-1]  |  dH (kJ/mol) | Ti
 ---------------------------------------------------------------------------------------"""
         self._print(header)
 
-    def print_iteration_log(self, iteration_data: list):
+    def print_iteration_info(self, iteration_data: list):
         """Prints a single log line for a Widom iteration."""
         line_str = "{:^10} | {:^9.6f} | {:>13.2f} | {:>19.3e} | {:12.2f} | {:8.2f}"
         self._print(line_str.format(*iteration_data))
