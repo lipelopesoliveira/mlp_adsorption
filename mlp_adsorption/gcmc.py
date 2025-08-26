@@ -1,8 +1,5 @@
 import datetime
-import itertools
 import os
-import platform
-import sys
 from typing import Union
 
 import ase
@@ -12,7 +9,6 @@ from ase.calculators import calculator
 from ase.io import Trajectory, read
 from tqdm import tqdm
 
-from mlp_adsorption import VERSION
 from mlp_adsorption.base_simulator import BaseSimulator
 from mlp_adsorption.eos import PengRobinsonEOS
 from mlp_adsorption.logger import GCMCLogger
