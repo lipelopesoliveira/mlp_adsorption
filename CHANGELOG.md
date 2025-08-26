@@ -25,6 +25,10 @@
 - Now all movements are based on a `numpy.random.Generator` to ensure reproducibility. A `random_seed` can be provided to the `GCMC` and `Widom` classes for this purpose.
 - New module for checking the overlap between atoms (`mlp_adsorption.operations.check_overlap`)
 - A new `BaseSimulator` method created to abstract the system state management and general simulation logic.
+- Now all the output of the simulations are managed by a `mlp_adsorption.logger` instance. It introduces:
+  - `BaseLogger`: A base class for logging simulation information, including restart and iteration details.
+  - `GCMCLogger`: A logger specifically for GCMC simulations, extending `BaseLogger` with additional functionality.
+  - `WidomLogger`: A logger specifically for Widom simulations, extending `BaseLogger` with additional functionality.
 
 ### Fixed 🐛
 
