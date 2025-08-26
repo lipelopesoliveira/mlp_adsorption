@@ -141,13 +141,10 @@ class Widom(BaseSimulator):
         """
 
         print("Restarting simulation...")
-        total_ads_restart = [], [], []
 
-        if os.path.exists(os.path.join(self.out_folder, f"int_energy_{self.P:.5f}.npy")):
-            total_ads_restart = np.load(
-                os.path.join(self.out_folder, f"int_energy_{self.P:.5f}.npy")
-            )
-        self.int_energy_list = total_ads_restart
+        self.int_energy_list = np.load(
+            os.path.join(self.out_folder, f"int_energy_{self.P:.5f}.npy")
+        )
 
         # Set the base iteration to the length of the uptake list
         self.base_iteration = len(self.int_energy_list)
