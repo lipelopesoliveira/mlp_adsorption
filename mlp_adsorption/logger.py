@@ -3,7 +3,7 @@ import itertools
 import os
 import platform
 import sys
-from typing import TextIO, Optional
+from typing import Optional, TextIO
 
 import ase
 import numpy as np
@@ -222,36 +222,36 @@ class GCMCLogger(BaseLogger):
 
         line_str = "{:^11}|{:^13}|{:>9.2f} |{:>13.4f} |{:>11.4f} |{:7.2f} |{:7.2f} |{:7.2f} |{:7.2f} |{:9.2f}"
 
-        self._print(line_str.format(
-            step,
-            self.sim.N_ads,
-            self.sim.N_ads * self.sim.conv_factors["mol/kg"],
-            self.sim.current_total_energy,
-            average_ads_energy,
-            (
-                np.average(self.sim.mov_dict["insertion"]) * 100
-                if len(self.sim.mov_dict["insertion"]) > 0
-                else 0
-            ),
-            (
-                np.average(self.sim.mov_dict["deletion"]) * 100
-                if len(self.sim.mov_dict["deletion"]) > 0
-                else 0
-            ),
-            (
-                np.average(self.sim.mov_dict["translation"]) * 100
-                if len(self.sim.mov_dict["translation"]) > 0
-                else 0
-            ),
-            (
-                np.average(self.sim.mov_dict["rotation"]) * 100
-                if len(self.sim.mov_dict["rotation"]) > 0
-                else 0
-            ),
-            step_time
+        self._print(
+            line_str.format(
+                step,
+                self.sim.N_ads,
+                self.sim.N_ads * self.sim.conv_factors["mol/kg"],
+                self.sim.current_total_energy,
+                average_ads_energy,
+                (
+                    np.average(self.sim.mov_dict["insertion"]) * 100
+                    if len(self.sim.mov_dict["insertion"]) > 0
+                    else 0
+                ),
+                (
+                    np.average(self.sim.mov_dict["deletion"]) * 100
+                    if len(self.sim.mov_dict["deletion"]) > 0
+                    else 0
+                ),
+                (
+                    np.average(self.sim.mov_dict["translation"]) * 100
+                    if len(self.sim.mov_dict["translation"]) > 0
+                    else 0
+                ),
+                (
+                    np.average(self.sim.mov_dict["rotation"]) * 100
+                    if len(self.sim.mov_dict["rotation"]) > 0
+                    else 0
+                ),
+                step_time,
+            )
         )
-        )
-
 
     def print_optimization_start(self, target: str):
         """Prints a header for framework or adsorbate optimization."""

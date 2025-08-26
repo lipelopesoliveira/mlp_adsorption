@@ -10,22 +10,18 @@ import numpy as np
 from ase import units
 from ase.calculators import calculator
 from ase.io import Trajectory, read
-
 from tqdm import tqdm
 
 from mlp_adsorption import VERSION
-
+from mlp_adsorption.base_simulator import BaseSimulator
 from mlp_adsorption.eos import PengRobinsonEOS
+from mlp_adsorption.logger import GCMCLogger
 from mlp_adsorption.operations import (
     check_overlap,
     random_insertion_cell,
     random_rotation,
     random_translation,
 )
-
-from mlp_adsorption.base_simulator import BaseSimulator
-
-from mlp_adsorption.logger import GCMCLogger
 
 
 class GCMC(BaseSimulator):
@@ -116,10 +112,7 @@ class GCMC(BaseSimulator):
             cutoff=cutoff,
         )
 
-        self.logger = GCMCLogger(
-            simulation=self,
-            output_file=self.out_file
-            )
+        self.logger = GCMCLogger(simulation=self, output_file=self.out_file)
 
         self.start_time = datetime.datetime.now()
 
@@ -229,10 +222,8 @@ class GCMC(BaseSimulator):
         )
 
         self.logger.print_load_state_info(
-            n_atoms=len(state),
-            average_ads_energy=average_binding_energy
+            n_atoms=len(state), average_ads_energy=average_binding_energy
         )
-
 
     def _insertion_acceptance(self, deltaE) -> bool:
         """
@@ -288,7 +279,7 @@ class GCMC(BaseSimulator):
         # Apply Metropolis acceptance/rejection rule
         return rnd_number < acc
 
-    def _move_acceptance(self, deltaE, movement_name='Movement') -> bool:
+    def _move_acceptance(self, deltaE, movement_name="Movement") -> bool:
         """
         Calculate the acceptance probability for translation or rotation of an adsorbate molecule as
 
@@ -438,7 +429,7 @@ class GCMC(BaseSimulator):
         e_trial = atoms_trial.get_potential_energy()  # type: ignore
 
         deltaE = e_trial - self.current_total_energy
-        if self._move_acceptance(deltaE=deltaE, movement_name='Translation'):
+        if self._move_acceptance(deltaE=deltaE, movement_name="Translation"):
             self.current_system = atoms_trial.copy()
             self.current_total_energy = e_trial
             return True
@@ -476,7 +467,7 @@ class GCMC(BaseSimulator):
 
         deltaE = e_trial - self.current_total_energy
 
-        if self._move_acceptance(deltaE=deltaE, movement_name='Rotation'):
+        if self._move_acceptance(deltaE=deltaE, movement_name="Rotation"):
             self.current_system = atoms_trial.copy()
             self.current_total_energy = e_trial
             return True
@@ -535,7 +526,7 @@ class GCMC(BaseSimulator):
             self.logger.print_step_info(
                 step=actual_iteration,
                 average_ads_energy=average_ads_energy,
-                step_time=(datetime.datetime.now() - step_time_start).total_seconds()
+                step_time=(datetime.datetime.now() - step_time_start).total_seconds(),
             )
 
             if actual_iteration % self.save_every == 0:

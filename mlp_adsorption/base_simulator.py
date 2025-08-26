@@ -7,17 +7,15 @@ from ase import units
 from ase.build import make_supercell
 from ase.calculators import calculator
 from ase.io import Trajectory
-
 from ase.optimize import LBFGS
+
+from mlp_adsorption import VERSION
 from mlp_adsorption.ase_utils import (
     crystalOptimization,
     nPT_Berendsen,
     nPT_NoseHoover,
     nVT_Berendsen,
 )
-
-from mlp_adsorption import VERSION
-
 from mlp_adsorption.utilities import (
     calculate_unit_cells,
     get_density,
@@ -30,22 +28,23 @@ class BaseSimulator:
     This class handles all base parameters for the simulations.
     Separates the basic logic used in the simulations from the specific implementation details.
     """
+
     def __init__(
-            self,
-            model: calculator.Calculator,
-            framework_atoms: ase.Atoms,
-            adsorbate_atoms: ase.Atoms,
-            temperature: float,
-            pressure: float,
-            device: str,
-            vdw_radii: np.ndarray,
-            vdw_factor: float = 0.6,
-            save_frequency: int = 100,
-            output_to_file: bool = True,
-            debug: bool = False,
-            fugacity_coeff: float = 1.0,
-            random_seed: Union[int, None] = None,
-            cutoff: float = 6.0,
+        self,
+        model: calculator.Calculator,
+        framework_atoms: ase.Atoms,
+        adsorbate_atoms: ase.Atoms,
+        temperature: float,
+        pressure: float,
+        device: str,
+        vdw_radii: np.ndarray,
+        vdw_factor: float = 0.6,
+        save_frequency: int = 100,
+        output_to_file: bool = True,
+        debug: bool = False,
+        fugacity_coeff: float = 1.0,
+        random_seed: Union[int, None] = None,
+        cutoff: float = 6.0,
     ):
         """
         model : ase.calculators.Calculator
@@ -80,12 +79,12 @@ class BaseSimulator:
         cutoff : float
             Interaction potential cut-off radius used to estimate the minimum unit cell (default is 6.0).
         """
-        
+
         self.rnd_generator = np.random.default_rng(random_seed)
         self.cutoff = cutoff
 
         # -- General definitions for output --
-        
+
         self.out_folder = f"results_{temperature:.2f}_{pressure:.2f}"
         os.makedirs(self.out_folder, exist_ok=True)
         os.makedirs(os.path.join(self.out_folder, "Movies"), exist_ok=True)
@@ -145,7 +144,6 @@ class BaseSimulator:
 
         # Replace any NaN value by 1.5 on self.vdw to avoid potential problems
         self.vdw[np.isnan(self.vdw)] = 1.5
-
 
     def set_framework(self, framework_atoms: ase.Atoms) -> None:
         """
@@ -263,7 +261,6 @@ Start optimizing framework structure...
         optFramework.set_constraint(None)
 
         self.set_framework(optFramework.copy())
-
 
     def optimize_adsorbate(self, max_steps: int = 1000, max_force: float = 0.05) -> None:
         """
