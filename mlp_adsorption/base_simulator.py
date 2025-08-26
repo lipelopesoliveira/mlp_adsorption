@@ -9,7 +9,6 @@ from ase.calculators import calculator
 from ase.io import Trajectory
 from ase.optimize import LBFGS
 
-from mlp_adsorption import VERSION
 from mlp_adsorption.ase_utils import (
     crystalOptimization,
     nPT_Berendsen,
