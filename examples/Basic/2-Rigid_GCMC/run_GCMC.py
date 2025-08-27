@@ -60,7 +60,7 @@ gcmc = GCMC(
     criticalTemperature=304.1282,
     criticalPressure=7377300.0,
     acentricFactor=0.22394,
-    random_seed=42
+    random_seed=42,
 )
 
 
