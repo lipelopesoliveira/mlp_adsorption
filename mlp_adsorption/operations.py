@@ -139,25 +139,16 @@ def random_mol_insertion(
 
     tmp_molecule = molecule.copy()
 
-    tmp_molecule.set_positions(
-        random_rotation(
-            molecule.get_positions(),
-            rnd_generator
-            )
-        )
+    tmp_molecule.set_positions(random_rotation(molecule.get_positions(), rnd_generator))
 
     tmp_molecule.set_positions(
-        random_position_cell(
-            tmp_molecule.get_positions(),
-            framework.cell.array,
-            rnd_generator
-            )
-        )
+        random_position_cell(tmp_molecule.get_positions(), framework.cell.array, rnd_generator)
+    )
 
     new_framework = framework.copy()
     new_framework += tmp_molecule
     new_framework.wrap()
-    
+
     return new_framework
 
 

@@ -224,7 +224,7 @@ class GCMC(BaseSimulator):
     def _insertion_acceptance(self, deltaE) -> bool:
         """
         Calculate the acceptance probability for insertion of an adsorbate molecule as
-        
+
         Pacc (N -> N + 1) = min(1, β * V * f * exp(-β ΔE) / (N + 1))
         """
 
