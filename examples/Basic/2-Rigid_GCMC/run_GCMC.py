@@ -26,7 +26,7 @@ model = mace_mp(
     dispersion=True,
     damping="zero",  # choices: ["zero", "bj", "zerom", "bjm"]
     dispersion_xc="pbe",
-    default_dtype="float32",
+    default_dtype="float64",
     device=device,
 )
 
@@ -60,6 +60,7 @@ gcmc = GCMC(
     criticalTemperature=304.1282,
     criticalPressure=7377300.0,
     acentricFactor=0.22394,
+    random_seed=42
 )
 
 
