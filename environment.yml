@@ -16,5 +16,6 @@ dependencies:
   - simplejson
   - pip:
     - pymser
+    - cuequivariance-torch
     - mace-torch
     - torch-dftd
