@@ -14,7 +14,7 @@ from mlp_adsorption.eos import PengRobinsonEOS
 from mlp_adsorption.logger import GCMCLogger
 from mlp_adsorption.operations import (
     check_overlap,
-    random_insertion_cell,
+    random_mol_insertion,
     random_rotation,
     random_translation,
 )
@@ -224,8 +224,8 @@ class GCMC(BaseSimulator):
     def _insertion_acceptance(self, deltaE) -> bool:
         """
         Calculate the acceptance probability for insertion of an adsorbate molecule as
-
-        # Pacc (N -> N + 1) = min(1, β * V * f * exp(-β ΔE) / (N + 1))
+        
+        Pacc (N -> N + 1) = min(1, β * V * f * exp(-β ΔE) / (N + 1))
         """
 
         exp_value = np.exp(-self.beta * deltaE)
@@ -234,7 +234,7 @@ class GCMC(BaseSimulator):
 
         acc = min(1, pre_factor * exp_value)
 
-        rnd_number = np.random.rand()
+        rnd_number = self.rnd_generator.random()
 
         if self.debug:
             self.logger.print_debug_movement(
@@ -261,7 +261,7 @@ class GCMC(BaseSimulator):
 
         acc = min(1, pre_factor * exp_value)
 
-        rnd_number = np.random.rand()
+        rnd_number = self.rnd_generator.random()
 
         if self.debug:
             self.logger.print_debug_movement(
@@ -285,7 +285,7 @@ class GCMC(BaseSimulator):
         exp_value = np.exp(-self.beta * deltaE)
         acc = min(1, exp_value)
 
-        rnd_number = np.random.rand()
+        rnd_number = self.rnd_generator.random()
 
         if self.debug:
             self.logger.print_debug_movement(
@@ -308,19 +308,7 @@ class GCMC(BaseSimulator):
             True if the insertion was accepted, False otherwise.
         """
 
-        atoms_trial = self.current_system.copy() + self.adsorbate.copy()  # type: ignore
-        atoms_trial.calc = self.model
-
-        pos = atoms_trial.get_positions()
-
-        pos[-self.n_adsorbate_atoms :] = random_insertion_cell(
-            original_positions=pos[-self.n_adsorbate_atoms :],
-            lattice_vectors=atoms_trial.get_cell(),
-            rnd_generator=self.rnd_generator,
-        )
-
-        atoms_trial.set_positions(pos)
-        atoms_trial.wrap()
+        atoms_trial = random_mol_insertion(self.current_system, self.adsorbate, self.rnd_generator)
 
         overlaped = check_overlap(
             atoms=atoms_trial,
@@ -362,13 +350,15 @@ class GCMC(BaseSimulator):
             return False
 
         # Randomly select an adsorbate molecule to delete
-        i_ads = np.random.randint(self.N_ads)
-        atoms_trial = self.current_system.copy()
-        atoms_trial.calc = self.model  # type: ignore
+        i_ads = self.rnd_generator.integers(low=0, high=self.N_ads, size=1)[0]
 
         # Get the indices of the adsorbate atoms to be deleted
         i_start = self.n_atoms_framework + self.n_adsorbate_atoms * i_ads
         i_end = self.n_atoms_framework + self.n_adsorbate_atoms * (i_ads + 1)
+
+        # Create a trial system for the deletion
+        atoms_trial = self.current_system.copy()
+        atoms_trial.calc = self.model  # type: ignore
 
         # Delete the adsorbate atoms from the trial structure
         del atoms_trial[i_start:i_end]
@@ -393,9 +383,8 @@ class GCMC(BaseSimulator):
         if self.N_ads == 0:
             return False
 
-        i_ads = np.random.randint(self.N_ads)
+        i_ads = self.rnd_generator.integers(low=0, high=self.N_ads, size=1)[0]
         atoms_trial = self.current_system.copy()
-        atoms_trial.calc = self.model  # type: ignore
 
         pos = atoms_trial.get_positions()  # type: ignore
 
@@ -422,6 +411,7 @@ class GCMC(BaseSimulator):
         if overlaped:
             return False
 
+        atoms_trial.calc = self.model  # type: ignore
         e_trial = atoms_trial.get_potential_energy()  # type: ignore
 
         deltaE = e_trial - self.current_total_energy
@@ -436,9 +426,8 @@ class GCMC(BaseSimulator):
         if self.N_ads == 0:
             return False
 
-        i_ads = np.random.randint(self.N_ads)
+        i_ads = self.rnd_generator.integers(low=0, high=self.N_ads, size=1)[0]
         atoms_trial = self.current_system.copy()
-        atoms_trial.calc = self.model  # type: ignore
 
         pos = atoms_trial.get_positions()  # type: ignore
         i_start = self.n_atoms_framework + self.n_adsorbate_atoms * i_ads
@@ -459,6 +448,7 @@ class GCMC(BaseSimulator):
         if overlaped:
             return False
 
+        atoms_trial.calc = self.model  # type: ignore
         e_trial = atoms_trial.get_potential_energy()  # type: ignore
 
         deltaE = e_trial - self.current_total_energy
@@ -481,10 +471,10 @@ class GCMC(BaseSimulator):
 
             step_time_start = datetime.datetime.now()
 
-            switch = np.random.rand()
+            switch = self.rnd_generator.random()
 
             # Insertion
-            if switch < 0.25:
+            if switch < 0.25 or self.N_ads == 0:
                 accepted = self.try_insertion()
                 self.mov_dict["insertion"].append(1 if accepted else 0)
 
