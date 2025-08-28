@@ -7,7 +7,8 @@ def random_rotation(
     original_position: np.ndarray, rnd_generator: np.random.Generator
 ) -> np.ndarray:
     """
-    Generates a random rotation of the original position vector using a provided generator.
+    Generates a random rotation of the original position vector around its geometrical center
+    using a provided generator.
 
     Parameters
     ----------
@@ -31,7 +32,7 @@ def random_rotation(
     centered_points = np.array(original_position) - center
 
     # 3. Generate a uniform random rotation in 3D space.
-    #    Pass the provided generator to the 'rng' parameter.
+    #    Pass the provided generator to the 'random_state' parameter.
     random_rot = Rotation.random(rng=rnd_generator)
 
     # 4. Apply the random rotation to the centered points.
@@ -47,8 +48,8 @@ def random_translation(
     original_positions: np.ndarray, max_translation: float, rnd_generator: np.random.Generator
 ) -> np.ndarray:
     """
-    Generates a random translation vector for the original positions on the interval [-max_translation/2, max_translation/2]
-    using a provided generator.
+    Generates a random translation vector for the original positions on the interval
+    [-max_translation/2, max_translation/2] using a provided generator.
 
     Parameters
     ----------
@@ -116,9 +117,9 @@ def random_position_cell(
     return original_position + translation_vector
 
 
-def random_insertion_cell(
-    original_positions: np.ndarray, lattice_vectors: np.ndarray, rnd_generator: np.random.Generator
-) -> np.ndarray:
+def random_mol_insertion(
+    framework: ase.Atoms, molecule: ase.Atoms, rnd_generator: np.random.Generator
+) -> ase.Atoms:
     """
     Generates a random position within the unit cell defined by the lattice vectors.
 
@@ -133,13 +134,22 @@ def random_insertion_cell(
 
     Returns:
     ----------
-        np.ndarray: A 3D random position inside the unit cell.
+        np.ndarray: A 3D random position inside the unit cell
     """
 
-    new_position = random_rotation(original_positions, rnd_generator)
-    new_position = random_position_cell(new_position, lattice_vectors, rnd_generator)
+    tmp_molecule = molecule.copy()
 
-    return new_position
+    tmp_molecule.set_positions(random_rotation(molecule.get_positions(), rnd_generator))
+
+    tmp_molecule.set_positions(
+        random_position_cell(tmp_molecule.get_positions(), framework.cell.array, rnd_generator)
+    )
+
+    new_framework = framework.copy()
+    new_framework += tmp_molecule
+    new_framework.wrap()
+
+    return new_framework
 
 
 def check_overlap(

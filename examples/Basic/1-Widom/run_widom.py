@@ -50,6 +50,7 @@ widom = Widom(
     vdw_radii=vdw_radii,
     debug=False,
     output_to_file=True,
+    random_seed=42,
 )
 
 widom.logger.print_header()

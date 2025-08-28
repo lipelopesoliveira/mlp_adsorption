@@ -11,7 +11,7 @@ from tqdm import tqdm
 
 from mlp_adsorption.base_simulator import BaseSimulator
 from mlp_adsorption.logger import WidomLogger
-from mlp_adsorption.operations import check_overlap, random_insertion_cell
+from mlp_adsorption.operations import check_overlap, random_mol_insertion
 
 
 class Widom(BaseSimulator):
@@ -164,18 +164,7 @@ class Widom(BaseSimulator):
             True if the insertion was accepted, False otherwise.
         """
 
-        atoms_trial = self.framework.copy() + self.adsorbate.copy()
-        atoms_trial.calc = self.model
-
-        pos = atoms_trial.get_positions()
-        pos[-self.n_adsorbate_atoms :] = random_insertion_cell(
-            original_positions=pos[-self.n_adsorbate_atoms :],
-            lattice_vectors=atoms_trial.get_cell(),
-            rnd_generator=self.rnd_generator,
-        )
-
-        atoms_trial.set_positions(pos)
-        atoms_trial.wrap()
+        atoms_trial = random_mol_insertion(self.framework, self.adsorbate, self.rnd_generator)
 
         overlaped = check_overlap(
             atoms=atoms_trial,
