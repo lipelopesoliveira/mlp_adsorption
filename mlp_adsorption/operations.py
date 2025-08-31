@@ -70,7 +70,7 @@ def random_translation(
     """
     # 1. Generate random translation vectors on the interval [-0.5, 0.5].
     translation_vectors = rnd_generator.uniform(
-        -max_translation / 2, max_translation / 2, size=original_positions.shape
+        -max_translation / 2, max_translation / 2, size=(1, 3)
     )
 
     # 2. Apply the translation to the original positions.
