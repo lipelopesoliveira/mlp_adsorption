@@ -63,6 +63,7 @@ Numpy version: {np.__version__}
 ASE version: {ase.__version__}
 
 Current directory: {os.getcwd()}
+Random Seed: {self.sim.random_seed}
 
 Model: {self.sim.model.name}
 Running on device: {self.sim.device}

@@ -79,6 +79,7 @@ class BaseSimulator:
             Interaction potential cut-off radius used to estimate the minimum unit cell (default is 6.0).
         """
 
+        self.random_seed = random_seed
         self.rnd_generator = np.random.default_rng(random_seed)
         self.cutoff = cutoff_radius
 
