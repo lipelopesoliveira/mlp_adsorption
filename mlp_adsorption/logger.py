@@ -11,7 +11,6 @@ import pymser
 from ase import units
 
 from mlp_adsorption import VERSION
-from mlp_adsorption.utilities import enthalpy_of_adsorption
 
 
 class BaseLogger:
