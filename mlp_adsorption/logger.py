@@ -8,6 +8,7 @@ from typing import Optional, TextIO
 import ase
 import numpy as np
 from ase import units
+import pymser
 
 from mlp_adsorption import VERSION
 from mlp_adsorption.utilities import enthalpy_of_adsorption
@@ -219,7 +220,21 @@ class GCMCLogger(BaseLogger):
         self.sim = simulation
         self.out_file = output_file
 
-    def print_step_info(self, step, average_ads_energy, step_time):
+    def print_run_header(self) -> None:
+        """Prints the header for the main GCMC loop."""
+        header = """
+===========================================================================
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Starting GCMC simulation
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+ Iteration |  Number of  |  Uptake  |    Tot En.   |Av. Ads. En.|  Pacc  |  Pdel  |  Ptra  |  Prot  |  Time
+      -    |  Molecules  | [mmol/g] |     [eV]     |  [kJ/mol]  |    %   |    %   |   %    |   %    |   [s]
+---------- | ----------- | -------- | ------------ | ---------- | ------ | ------ | ------ | ------ | ------"""
+        self._print(header)
+
+    def print_step_info(self, step, average_ads_energy, step_time) -> None:
 
         line_str = "{:^11}|{:^13}|{:>9.2f} |{:>13.4f} |{:>11.4f} |{:7.2f} |{:7.2f} |{:7.2f} |{:7.2f} |{:9.2f}"
 
@@ -254,7 +269,7 @@ class GCMCLogger(BaseLogger):
             )
         )
 
-    def print_optimization_start(self, target: str):
+    def print_optimization_start(self, target: str) -> None:
         """Prints a header for framework or adsorbate optimization."""
         self._print(
             f"""
@@ -284,26 +299,12 @@ Current steps are: {self.sim.base_iteration}
 """
         )
 
-    def print_run_header(self):
-        """Prints the header for the main GCMC loop."""
-        header = """
-===========================================================================
-
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-Starting GCMC simulation
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
- Iteration |  Number of  |  Uptake  |    Tot En.   |Av. Ads. En.|  Pacc  |  Pdel  |  Ptra  |  Prot  |  Time
-      -    |  Molecules  | [mmol/g] |     [eV]     |  [kJ/mol]  |    %   |    %   |   %    |   %    |   [s]
----------- | ----------- | -------- | ------------ | ---------- | ------ | ------ | ------ | ------ | ------"""
-        self._print(header)
-
-    def print_iteration_info(self, iteration_data: dict):
+    def print_iteration_info(self, iteration_data: dict) -> None:
         """Prints a single log line for a GCMC iteration."""
         line_str = "{:^11}|{:^13}|{:>9.2f} |{:>13.4f} |{:>11.4f} |{:7.2f} |{:7.2f} |{:7.2f} |{:7.2f} |{:9.2f}"
         self._print(line_str.format(*iteration_data.values()))
 
-    def print_debug_movement(self, movement, deltaE, prefactor, acc, rnd_number):
+    def print_debug_movement(self, movement, deltaE, prefactor, acc, rnd_number) -> None:
         """Prints detailed debug information for a single MC move."""
         self._print(
             f"""
@@ -321,15 +322,28 @@ Accepted: {rnd_number < acc}
 """
         )
 
-    def print_summary(self):
+    def print_summary(self) -> None:
         """Prints the final summary of the simulation results."""
-        avg_uptake = np.average(self.sim.uptake_list) if self.sim.uptake_list else 0
-        std_uptake = np.std(self.sim.uptake_list) if self.sim.uptake_list else 0
 
-        Qst = enthalpy_of_adsorption(
+        eq_results = pymser.equilibrate(
+            self.sim.uptake_list,
+            LLM=True,
+            batch_size=int(len(self.sim.uptake_list) / 50),
+            ADF_test=False,
+            uncertainty='uSD',
+            print_results=False
+            )
+        
+        avg_uptake = eq_results['average']
+        std_uptake = eq_results['uncertainty']
+
+        enthalpy, enthalpy_sd = pymser.calc_equilibrated_enthalpy(
             energy=np.array(self.sim.total_ads_list) / units.kB,  # Convert to K
             number_of_molecules=self.sim.uptake_list,
             temperature=self.sim.T,
+            eq_index=eq_results['t0'],
+            uncertainty='SD',
+            ac_time=int(eq_results['ac_time'])
         )
 
         self._print(
@@ -340,6 +354,16 @@ Accepted: {rnd_number < acc}
 Finishing GCMC simulation
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+    pyMSER Equilibration Results:
+    ------------------------------------------------------------------------------
+    Start of equilibrated data:          {eq_results['t0']} of {len(self.sim.uptake_list)}
+    Total equilibrated steps:            {len(self.sim.uptake_list) - eq_results['t0']}  ({(len(self.sim.uptake_list) - eq_results['t0']) / len(self.sim.uptake_list) * 100:.2f}%)
+    Equilibrated:                        {eq_results['t0'] < 0.75 * len(self.sim.uptake_list)}
+    Average over equilibrated data:      {eq_results['average']:.4f} ± {eq_results['uncertainty']:.4f} molecules/unit cell
+    Number of uncorrelated samples:      {eq_results['uncorr_samples']:.1f}
+    Autocorrelation time:                {eq_results['ac_time']:.1f}
+    ------------------------------------------------------------------------------
+    
     Average properties of the system:
     ------------------------------------------------------------------------------
     Average loading absolute [molecules/unit cell]       {avg_uptake:12.5f} +/- {std_uptake:12.5f} [-]
@@ -350,7 +374,7 @@ Finishing GCMC simulation
     Average loading absolute [%wt framework]             {avg_uptake * self.sim.conv_factors["mg/g"] * 1e-3:12.5f} +/- {std_uptake * self.sim.conv_factors["mg/g"] * 1e-3:12.5f} [-]
 
 
-    Enthalpy of adsorption: [kJ/mol]                     {Qst:12.5f} +/- {0.0:12.5f} [-]
+    Enthalpy of adsorption: [kJ/mol]                     {enthalpy:12.5f} +/- {enthalpy_sd:12.5f} [kJ/mol]
 
 ===========================================================================
 GCMC simulation finished successfully!
