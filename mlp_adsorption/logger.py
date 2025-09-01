@@ -7,8 +7,8 @@ from typing import Optional, TextIO
 
 import ase
 import numpy as np
-from ase import units
 import pymser
+from ase import units
 
 from mlp_adsorption import VERSION
 from mlp_adsorption.utilities import enthalpy_of_adsorption
@@ -330,20 +330,20 @@ Accepted: {rnd_number < acc}
             LLM=True,
             batch_size=int(len(self.sim.uptake_list) / 50),
             ADF_test=False,
-            uncertainty='uSD',
-            print_results=False
-            )
-        
-        avg_uptake = eq_results['average']
-        std_uptake = eq_results['uncertainty']
+            uncertainty="uSD",
+            print_results=False,
+        )
+
+        avg_uptake = eq_results["average"]
+        std_uptake = eq_results["uncertainty"]
 
         enthalpy, enthalpy_sd = pymser.calc_equilibrated_enthalpy(
             energy=np.array(self.sim.total_ads_list) / units.kB,  # Convert to K
             number_of_molecules=self.sim.uptake_list,
             temperature=self.sim.T,
-            eq_index=eq_results['t0'],
-            uncertainty='SD',
-            ac_time=int(eq_results['ac_time'])
+            eq_index=eq_results["t0"],
+            uncertainty="SD",
+            ac_time=int(eq_results["ac_time"]),
         )
 
         self._print(
