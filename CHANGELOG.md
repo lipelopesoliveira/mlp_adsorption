@@ -35,6 +35,7 @@
 ### Fixed 🐛
 
 - Fix the framework density calculation on `GCMC` and `Widom` class.
+- Fix an error on the check if the optimization converged.
 
 ### Enhanced ✨
 
