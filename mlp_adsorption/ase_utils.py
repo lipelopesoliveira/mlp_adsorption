@@ -193,9 +193,7 @@ def crystalOptimization(
         flush=True,
     )
 
-    print(
-        f"Optimization {'' if converged else 'did not '}converged.", file=out_file, flush=True
-    )
+    print(f"Optimization {'' if converged else 'did not '}converged.", file=out_file, flush=True)
 
     resultsDict = {
         "status": "Finished",
