@@ -1,5 +1,8 @@
 import os
 
+import sys
+sys.path.append("../../../")  # for local testing
+
 # Hide UserWarning and RuntimeWarning messages
 import warnings
 
