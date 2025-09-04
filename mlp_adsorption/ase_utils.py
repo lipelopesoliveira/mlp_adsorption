@@ -19,7 +19,7 @@ from ase.optimize.optimize import Optimizer
 from ase.spacegroup.symmetrize import check_symmetry
 
 
-def crystalOptmization(
+def crystalOptimization(
     atoms_in: Atoms,
     calculator: Calculator,
     optimizer: Optimizer,
@@ -180,7 +180,7 @@ def crystalOptmization(
         flush=True,
     )
 
-    opt.run(fmax=fmax, steps=max_steps)
+    converged = opt.run(fmax=fmax, steps=max_steps)
 
     if trajectory:
         traj.close()
@@ -193,13 +193,11 @@ def crystalOptmization(
         flush=True,
     )
 
-    print(
-        f"Optimization {'' if opt.converged() else 'did not '}converged.", file=out_file, flush=True
-    )
+    print(f"Optimization {'' if converged else 'did not '}converged.", file=out_file, flush=True)
 
     resultsDict = {
         "status": "Finished",
-        "optConverged": "Yes" if opt.converged() else "No",
+        "optConverged": "Yes" if converged else "No",
         "warningList": [],
         "executionTime": {
             "unit": "s",

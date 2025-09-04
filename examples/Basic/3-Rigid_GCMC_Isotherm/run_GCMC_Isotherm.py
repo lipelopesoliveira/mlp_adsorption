@@ -63,14 +63,18 @@ for i, pressure in enumerate(pressure_list):
         adsorbate_atoms=adsorbate,
         temperature=Temperature,
         pressure=pressure,
-        fugacity_coeff=1,
         device=device,
         vdw_radii=vdw_radii,
         debug=False,
         output_to_file=True,
+        criticalTemperature=304.1282,
+        criticalPressure=7377300.0,
+        acentricFactor=0.22394,
+        cutoff_radius=6.0,
+        automatic_supercell=True,
     )
 
-    gcmc.print_introduction()
+    gcmc.logger.print_header()
 
     if pressure > pressure_list[0]:
         print("Loading previous state for continuation...")
@@ -78,4 +82,4 @@ for i, pressure in enumerate(pressure_list):
         gcmc.load_state(os.path.join(output_dir, "GCMC_Trajectory.traj"))
 
     gcmc.run(MCSteps)
-    gcmc.print_finish()
+    gcmc.logger.print_summary()

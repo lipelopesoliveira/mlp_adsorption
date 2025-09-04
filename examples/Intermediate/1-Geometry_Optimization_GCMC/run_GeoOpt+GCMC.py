@@ -11,7 +11,7 @@ from ase.io import read
 from ase.optimize import LBFGS
 from mace.calculators import mace_mp
 
-from mlp_adsorption.ase_utils import crystalOptmization
+from mlp_adsorption.ase_utils import crystalOptimization
 from mlp_adsorption.gcmc import GCMC
 
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -37,7 +37,7 @@ model = mace_mp(
 # Load the framework structure
 framework: ase.Atoms = read(FrameworkPath)  # type: ignore
 
-resultsDict, frameworkOpt = crystalOptmization(
+resultsDict, frameworkOpt = crystalOptimization(
     atoms_in=framework,
     calculator=model,
     optimizer=LBFGS,  # type: ignore
@@ -59,7 +59,7 @@ frameworkOpt.set_constraint(None)
 # Load the adsorbate structure
 adsorbate: ase.Atoms = read(AdsorbatePath)  # type: ignore
 
-resultsDict, adsorbateOpt = crystalOptmization(
+resultsDict, adsorbateOpt = crystalOptimization(
     atoms_in=adsorbate,
     calculator=model,
     optimizer=LBFGS,  # type: ignore
@@ -94,18 +94,21 @@ gcmc = GCMC(
     adsorbate_atoms=adsorbateOpt,
     temperature=Temperature,
     pressure=pressure,
-    fugacity_coeff=1,
     device=device,
     vdw_radii=vdw_radii,
     vdw_factor=0.6,
     save_frequency=1,
     debug=True,
     output_to_file=True,
+    criticalTemperature=304.1282,
+    criticalPressure=7377300.0,
+    acentricFactor=0.22394,
+    cutoff_radius=6.0,
+    automatic_supercell=True,
 )
 
-
-gcmc.print_introduction()
+gcmc.logger.print_header()
 
 gcmc.run(MCSteps)
 
-gcmc.print_finish()
+gcmc.logger.print_summary()

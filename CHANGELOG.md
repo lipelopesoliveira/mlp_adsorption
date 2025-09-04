@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v[X.Y.Z] - YYYY-MM-DD (Unreleased)
 
 ### New Features 🎉
 
@@ -12,7 +12,44 @@
 
 ### Removed 🗑️
 
-## v[0.3.2] - 2025-08-05
+## v[0.4.0] - 2025-09-04
+
+### New Features 🎉
+
+- Added the Peng-Robinson equation of state (EOS) to the `mlp_adsorption.eos` module.
+  - This allows for the calculation of fugacity coefficients and bulk phase density using the Peng-Robinson EOS.
+- Add functions to calculate perpendicular lengths and unit cell repetitions in `utilities`.
+- Add a new parameter `cutoff` on the `mlp.gcmc` class for controlling the supercell check based on a cutoff radius for the potential.
+- Add the `get_density` function to the `mlp_adsorption.utilities` module.
+- Add a `mlp_adsorption.utilities.make_cubic` function that can create a cubic (or close to) supercell from a given structure.
+- Now all movements are based on a `numpy.random.Generator` to ensure reproducibility. A `random_seed` can be provided to the `GCMC` and `Widom` classes for this purpose.
+- New module for checking the overlap between atoms (`mlp_adsorption.operations.check_overlap`)
+- A new `BaseSimulator` method created to abstract the system state management and general simulation logic.
+- Now all the output of the simulations are managed by a `mlp_adsorption.logger` instance. It introduces:
+  - `BaseLogger`: A base class for logging simulation information, including restart and iteration details.
+  - `GCMCLogger`: A logger specifically for GCMC simulations, extending `BaseLogger` with additional functionality.
+  - `WidomLogger`: A logger specifically for Widom simulations, extending `BaseLogger` with additional functionality.
+- Now the `Widom` has a `restart` method to allow restarting a Widom simulation from a saved state. Since Widom does not insert adsorbates on the structure, it simply reads the existing list of insertion energies and use it to update the simulation statistics.
+- Now the code uses [pyMSER](https://github.com/IBM/pymser) to evaluate the equilibration of the simulation and calculate the average uptake and enthalpy of adsorption.
+
+### Fixed 🐛
+
+- Fix the framework density calculation on `GCMC` and `Widom` class.
+- Fix an error on the check if the optimization converged.
+
+### Enhanced ✨
+
+- Move the random operations (insertion, rotation, translation) to a separate `mlp_adsorption.operations.py` module for better organization and reusability.
+
+### Documentation 📖
+
+- Add the critical parameters to the examples.
+
+### Removed 🗑️
+
+- Old `mlp_adsorption.operations.vdw_overlap` and `mlp_adsorption.operations.vdw_overlap2` functions.
+
+## v[0.3.2] - 2025-08-17
 
 ### New Features 🎉
 
@@ -44,6 +81,8 @@
     - Flexible GCMC: Molecular Dynamics + GCMC
   
 ### Documentation 📖
+
+- New examples are documented in the README file, providing clear instructions on how to run GCMC simulations and Widom insertion tests.
 
 ### Removed 🗑️
 

@@ -50,9 +50,12 @@ widom = Widom(
     vdw_radii=vdw_radii,
     debug=False,
     output_to_file=True,
+    random_seed=42,
+    cutoff_radius=6.0,
+    automatic_supercell=True,
 )
 
-widom.print_header()
+widom.logger.print_header()
 
 widom.run(NSteps)
-widom.print_footer()
+widom.logger.print_summary()

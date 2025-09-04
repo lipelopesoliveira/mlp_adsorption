@@ -1,6 +1,8 @@
-# MLP Adsorption
+# <span style="font-size:larger;">MLP Adsorption</span>
 
-This repository contains the MLP Adsorption package, which provides tools for molecular simulations and adsorption studies using machine learning potentials.
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+
+MLP Adsorption is a general purpose adsorption simulation toolbox built around the Atomic Simulation Environment (ASE), which provides tools for molecular simulations and adsorption studies using machine learning potentials, classical force fields, and other advanced techniques.
 
 ## Requirements
 
@@ -23,6 +25,10 @@ conda env create --file environment.yml
 ## Installation
 
 You can install the MLP Adsorption package using pip:
+
+> **Warning**
+>
+> The code is not yet published on PyPI, so you need to install it directly from the GitHub repository.
 
 ```Shell
 pip install git+https://github.com/lipelopesoliveira/mlp_adsorption.git
@@ -96,21 +102,26 @@ gcmc = GCMC(
     adsorbate_atoms=adsorbate,
     temperature=Temperature,
     pressure=pressure,
-    fugacity_coeff=1,
     device=device,
     vdw_radii=vdw_radii,
     vdw_factor=0.6,
     save_frequency=1,
     debug=True,
     output_to_file=True,
+    criticalTemperature=304.1282,
+    criticalPressure=7377300.0,
+    acentricFactor=0.22394,
+    random_seed=42,
+    cutoff_radius=6.0,
+    automatic_supercell=True,
 )
 
 
-gcmc.print_introduction()
+gcmc.logger.print_header()
 
 gcmc.run(MCSteps)
 
-gcmc.print_finish()
+gcmc.logger.print_summary()
 
 ```
 
