@@ -103,7 +103,7 @@ Perpendicular cell:
     {self.sim.perpendicular_cell[1, 0]:12.7f} {self.sim.perpendicular_cell[1, 1]:12.7f} {self.sim.perpendicular_cell[1, 2]:12.7f}
     {self.sim.perpendicular_cell[2, 0]:12.7f} {self.sim.perpendicular_cell[2, 1]:12.7f} {self.sim.perpendicular_cell[2, 2]:12.7f}
 
-"""     
+"""
         if self.sim.get_ideal_supercell() != [1, 1, 1]:
             header += f"""
 WARNING: Ideal supercell size is {self.sim.get_ideal_supercell()} (x, y, z).
@@ -135,7 +135,6 @@ Shortest distances:
 
         for i, j in list(itertools.combinations(atomic_numbers, 2)):
             header += f"  {ase.Atom(i).symbol:2} - {ase.Atom(j).symbol:2}: {self.sim.vdw[i] + self.sim.vdw[j]:.3f} Å\n"
-            
 
         header += f"""
 ===========================================================================
