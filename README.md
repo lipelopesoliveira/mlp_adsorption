@@ -26,6 +26,10 @@ conda env create --file environment.yml
 
 You can install the MLP Adsorption package using pip:
 
+> **Warning**
+>
+> The code is not yet published on PyPI, so you need to install it directly from the GitHub repository.
+
 ```Shell
 pip install git+https://github.com/lipelopesoliveira/mlp_adsorption.git
 ```
@@ -98,21 +102,24 @@ gcmc = GCMC(
     adsorbate_atoms=adsorbate,
     temperature=Temperature,
     pressure=pressure,
-    fugacity_coeff=1,
     device=device,
     vdw_radii=vdw_radii,
     vdw_factor=0.6,
     save_frequency=1,
     debug=True,
     output_to_file=True,
+    criticalTemperature=304.1282,
+    criticalPressure=7377300.0,
+    acentricFactor=0.22394,
+    random_seed=42,
 )
 
 
-gcmc.print_introduction()
+gcmc.logger.print_header()
 
 gcmc.run(MCSteps)
 
-gcmc.print_finish()
+gcmc.logger.print_summary()
 
 ```
 
