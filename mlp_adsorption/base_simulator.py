@@ -159,7 +159,7 @@ class BaseSimulator:
             A list of three integers representing the number of unit cells in each dimension.
         """
         return calculate_unit_cells(self.framework.get_cell(), cutoff=self.cutoff)
-    
+
     def get_framework_mass(self) -> float:
         """
         Calculate the mass of the framework in kg.
