@@ -184,7 +184,7 @@ class BaseSimulator:
         self.n_atoms_framework = len(self.framework)
 
         self.V = np.linalg.det(self.cell) / units.m**3
-        self.framework_mass = np.sum(self.framework.get_masses()) / units.kg
+        self.framework_mass = float(np.sum(self.framework.get_masses()) / units.kg)
 
         # Get the framework density in g/cm^3
         self.framework_density = get_density(self.framework)
