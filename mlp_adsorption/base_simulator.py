@@ -44,6 +44,7 @@ class BaseSimulator:
         fugacity_coeff: float = 1.0,
         random_seed: Union[int, None] = None,
         cutoff_radius: float = 6.0,
+        automatic_supercell: bool = True,
     ):
         """
         model : ase.calculators.Calculator
@@ -77,11 +78,14 @@ class BaseSimulator:
             Random seed for reproducibility (default is None).
         cutoff_radius : float
             Interaction potential cut-off radius used to estimate the minimum unit cell (default is 6.0).
+        automatic_supercell : bool
+            If True, automatically creates a supercell based on the cutoff radius (default is True).
         """
 
         self.random_seed = random_seed
         self.rnd_generator = np.random.default_rng(random_seed)
         self.cutoff = cutoff_radius
+        self.automatic_supercell = automatic_supercell
 
         # -- General definitions for output --
 
@@ -145,6 +149,17 @@ class BaseSimulator:
         # Replace any NaN value by 1.5 on self.vdw to avoid potential problems
         self.vdw[np.isnan(self.vdw)] = 1.5
 
+    def get_ideal_supercell(self) -> list[int]:
+        """
+        Get the ideal supercell dimensions based on the cutoff radius.
+
+        Returns
+        -------
+        list[int]
+            A list of three integers representing the number of unit cells in each dimension.
+        """
+        return calculate_unit_cells(self.framework.get_cell(), cutoff=self.cutoff)
+
     def set_framework(self, framework_atoms: ase.Atoms) -> None:
         """
         Set the framework structure for the simulation.
@@ -156,11 +171,10 @@ class BaseSimulator:
         """
         self.framework = framework_atoms
 
-        ideal_supercell = calculate_unit_cells(self.framework.get_cell(), cutoff=self.cutoff)
+        self.ideal_supercell = self.get_ideal_supercell()
 
-        if ideal_supercell != [1, 1, 1]:
-            print(f"Making supercell: {ideal_supercell}")
-            self.framework = make_supercell(self.framework, np.eye(3) * ideal_supercell)
+        if self.ideal_supercell != [1, 1, 1] and self.automatic_supercell:
+            self.framework = make_supercell(self.framework, np.eye(3) * self.ideal_supercell)
 
         self.cell = np.array(self.framework.get_cell())
         self.perpendicular_cell = get_perpendicular_lengths(self.framework.get_cell()) * np.eye(3)

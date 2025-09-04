@@ -37,6 +37,7 @@ class GCMC(BaseSimulator):
         fugacity_coeff: float = 1.0,
         random_seed: Union[int, None] = None,
         cutoff_radius: float = 6.0,
+        automatic_supercell: bool = True,
         criticalTemperature: Union[float, None] = None,
         criticalPressure: Union[float, None] = None,
         acentricFactor: Union[float, None] = None,
@@ -83,6 +84,8 @@ class GCMC(BaseSimulator):
             Random seed for reproducibility (default is None).
         cutoff_radius : float
             Interaction potential cut-off radius used to estimate the minimum unit cell (default is 6.0).
+        automatic_supercell : bool
+            If True, automatically creates a supercell based on the cutoff radius (default is True).
         criticalTemperature : float, optional
             Critical temperature of the adsorbate in Kelvin.
         criticalPressure : float, optional
@@ -106,6 +109,7 @@ class GCMC(BaseSimulator):
             fugacity_coeff=fugacity_coeff,
             random_seed=random_seed,
             cutoff_radius=cutoff_radius,
+            automatic_supercell=automatic_supercell,
         )
 
         self.logger = GCMCLogger(simulation=self, output_file=self.out_file)

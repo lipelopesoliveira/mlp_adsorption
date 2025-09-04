@@ -112,6 +112,8 @@ gcmc = GCMC(
     criticalPressure=7377300.0,
     acentricFactor=0.22394,
     random_seed=42,
+    cutoff_radius=6.0,
+    automatic_supercell=True,
 )
 
 

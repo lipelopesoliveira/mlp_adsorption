@@ -103,15 +103,21 @@ Perpendicular cell:
     {self.sim.perpendicular_cell[1, 0]:12.7f} {self.sim.perpendicular_cell[1, 1]:12.7f} {self.sim.perpendicular_cell[1, 2]:12.7f}
     {self.sim.perpendicular_cell[2, 0]:12.7f} {self.sim.perpendicular_cell[2, 1]:12.7f} {self.sim.perpendicular_cell[2, 2]:12.7f}
 
-Ideal supercell size is {self.sim.ideal_supercell} (x, y, z).
+"""     
+        if self.sim.get_ideal_supercell() != [1, 1, 1]:
+            header += f"""
+WARNING: Ideal supercell size is {self.sim.get_ideal_supercell()} (x, y, z).
+Consider using automatic_supercell=True to create a supercell that
+fits the cutoff radius of {self.sim.cutoff} Å or manually create a supercell.
 
-Atomic positions:
 """
-        self._print(header)
-        for atom in self.sim.framework:
-            self._print("  {:2} {:12.7f} {:12.7f} {:12.7f}".format(atom.symbol, *atom.position))
 
-        adsorbate_header = f"""
+        header += "Atomic positions:\n"
+
+        for atom in self.sim.framework:
+            header += "  {:2} {:12.7f} {:12.7f} {:12.7f}\n".format(atom.symbol, *atom.position)
+
+        header += f"""
 ===========================================================================
 Adsorbate: {self.sim.adsorbate.get_chemical_formula()}
 Adsorbate: {self.sim.n_adsorbate_atoms} atoms, {self.sim.adsorbate_mass} kg
@@ -119,21 +125,19 @@ Adsorbate energy: {self.sim.adsorbate_energy} eV
 
 Atomic positions:
 """
-        self._print(adsorbate_header)
         for atom in self.sim.adsorbate:
-            self._print("  {:2} {:12.7f} {:12.7f} {:12.7f}".format(atom.symbol, *atom.position))
+            header += "  {:2} {:12.7f} {:12.7f} {:12.7f}\n".format(atom.symbol, *atom.position)
 
-        distances_header = """
+        header += """
 ===========================================================================
 Shortest distances:
 """
-        self._print(distances_header)
-        for i, j in list(itertools.combinations(atomic_numbers, 2)):
-            self._print(
-                f"  {ase.Atom(i).symbol:2} - {ase.Atom(j).symbol:2}: {self.sim.vdw[i] + self.sim.vdw[j]:.3f} Å"
-            )
 
-        footer = f"""
+        for i, j in list(itertools.combinations(atomic_numbers, 2)):
+            header += f"  {ase.Atom(i).symbol:2} - {ase.Atom(j).symbol:2}: {self.sim.vdw[i] + self.sim.vdw[j]:.3f} Å\n"
+            
+
+        header += f"""
 ===========================================================================
 Conversion factors:
     Conversion factor molecules/unit cell -> mol/kg:         {self.sim.conv_factors['mol/kg']:.9f}
@@ -149,7 +153,7 @@ Partial pressure:
         {self.sim.P / (101325 * 760):>15.5f} Torr
 ===========================================================================
 """
-        self._print(footer)
+        self._print(header)
 
     def print_restart_info(self) -> None:
         """Prints information when a simulation is restarted."""

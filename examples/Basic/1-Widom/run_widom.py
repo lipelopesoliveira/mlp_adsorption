@@ -51,6 +51,8 @@ widom = Widom(
     debug=False,
     output_to_file=True,
     random_seed=42,
+    cutoff_radius=6.0,
+    automatic_supercell=True,
 )
 
 widom.logger.print_header()

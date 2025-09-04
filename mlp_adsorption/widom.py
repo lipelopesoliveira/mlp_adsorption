@@ -29,6 +29,7 @@ class Widom(BaseSimulator):
         debug: bool = False,
         random_seed: Union[int, None] = None,
         cutoff_radius: float = 6.0,
+        automatic_supercell: bool = True,
     ) -> None:
         """
         Base class for Widom insertion method using ASE.
@@ -59,6 +60,8 @@ class Widom(BaseSimulator):
             Random seed for reproducibility (default is None).
         cutoff_radius : float
             Interaction potential cut-off radius used to estimate the minimum unit cell (default is 6.0).
+        automatic_supercell : bool
+            Whether to automatically create a supercell based on the cutoff radius (default is True).
         """
 
         super().__init__(
@@ -76,6 +79,7 @@ class Widom(BaseSimulator):
             fugacity_coeff=0.0,
             random_seed=random_seed,
             cutoff_radius=cutoff_radius,
+            automatic_supercell=automatic_supercell,
         )
 
         self.logger = WidomLogger(simulation=self, output_file=self.out_file)

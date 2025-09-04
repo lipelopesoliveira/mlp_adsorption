@@ -60,6 +60,8 @@ gcmc = GCMC(
     criticalTemperature=304.1282,
     criticalPressure=7377300.0,
     acentricFactor=0.22394,
+    cutoff_radius=6.0,
+    automatic_supercell=True,
 )
 
 
