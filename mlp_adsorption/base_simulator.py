@@ -135,9 +135,9 @@ class BaseSimulator:
         mol2cm3 = units.kB / units.J * units.mol * 273.15 / atm2pa
 
         self.conv_factors = {
-            "mol/kg": (1 / units.mol) / self.framework_mass,
-            "mg/g": (self.adsorbate_mass * 1e3) / self.framework_mass,
-            "cm^3 STP/gr": mol2cm3 / units.mol / self.framework_mass * 1e3,
+            "mol/kg": (1 / units.mol) / self.get_framework_mass(),
+            "mg/g": (self.adsorbate_mass * 1e3) / self.get_framework_mass(),
+            "cm^3 STP/gr": mol2cm3 / units.mol / self.get_framework_mass() * 1e3,
             "cm^3 STP/cm^3": 1e6 * mol2cm3 / units.mol / (self.framework.get_volume() * (1e-8**3)),
         }
 
@@ -159,6 +159,17 @@ class BaseSimulator:
             A list of three integers representing the number of unit cells in each dimension.
         """
         return calculate_unit_cells(self.framework.get_cell(), cutoff=self.cutoff)
+    
+    def get_framework_mass(self) -> float:
+        """
+        Calculate the mass of the framework in kg.
+
+        Returns
+        -------
+        float
+            The mass of the framework in kg.
+        """
+        return float(np.sum(self.framework.get_masses()) / units.kg)
 
     def set_framework(self, framework_atoms: ase.Atoms) -> None:
         """
@@ -184,7 +195,7 @@ class BaseSimulator:
         self.n_atoms_framework = len(self.framework)
 
         self.V = np.linalg.det(self.cell) / units.m**3
-        self.framework_mass = float(np.sum(self.framework.get_masses()) / units.kg)
+        self.framework_mass = self.get_framework_mass()
 
         # Get the framework density in g/cm^3
         self.framework_density = get_density(self.framework)
