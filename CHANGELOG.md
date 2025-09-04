@@ -12,7 +12,7 @@
 
 ### Removed 🗑️
 
-## v[0.4.0] - Unreleased
+## v[0.4.0] - 2025-09-04
 
 ### New Features 🎉
 
