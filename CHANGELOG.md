@@ -12,6 +12,21 @@
 
 ### Removed 🗑️
 
+## v[0.4.1] - YYYY-MM-DD (Unreleased)
+
+### New Features 🎉
+
+### Fixed 🐛
+
+### Enhanced ✨
+
+- Added a `max_deltaE` parameter to the `BaseSimulator`, `GCMC`, and `Widom` classes to prevent errors from the model during energy calculations. This parameter sets a maximum threshold for energy changes, ensuring numerical stability during simulations. The default value is set to 1.555 eV (150 kJ/mol).
+- Change the `random_seed` parameter to pick a random integer between 1 and 1,000,000 if not provided by the user. This ensures the use of a valid seed for the random number generator, enhancing reproducibility in simulations.
+
+### Documentation 📖
+
+### Removed 🗑️
+
 ## v[0.4.0] - 2025-09-04
 
 ### New Features 🎉

@@ -23,6 +23,7 @@ class Widom(BaseSimulator):
         model: calculator.Calculator,
         vdw_radii: np.ndarray,
         vdw_factor: float = 0.6,
+        max_deltaE: float = 1.555,
         device: str = "cpu",
         save_frequency: int = 100,
         output_to_file: bool = True,
@@ -54,6 +55,9 @@ class Widom(BaseSimulator):
             Van der Waals radii of the atoms in the framework and adsorbate.
         vdw_factor : float, optional
             Factor to scale the Van der Waals radii (default is 0.6).
+        max_deltaE : float, optional
+            Maximum energy difference (in eV) to consider for acceptance criteria.
+            This is used to avoid overflow due to problematic calculations (default is 1.555 eV / 150 kJ/mol).
         device : str, optional
             Device to run the calculations on, either 'cpu' or 'cuda'. Default is 'cpu'.
         random_seed : int | None
@@ -73,6 +77,7 @@ class Widom(BaseSimulator):
             device=device,
             vdw_radii=vdw_radii,
             vdw_factor=vdw_factor,
+            max_deltaE=max_deltaE,
             save_frequency=save_frequency,
             output_to_file=output_to_file,
             debug=debug,
@@ -186,6 +191,9 @@ class Widom(BaseSimulator):
         e_new = atoms_trial.get_potential_energy()
 
         deltaE = e_new - self.framework_energy - self.adsorbate_energy
+
+        if np.abs(deltaE) > np.abs(self.max_deltaE):
+            return 1000.0, atoms_trial  # Return 1000 energy to indicate error
 
         return deltaE, atoms_trial
 
