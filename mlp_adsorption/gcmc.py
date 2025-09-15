@@ -433,7 +433,7 @@ class GCMC(BaseSimulator):
 
         if np.abs(deltaE) > np.abs(self.max_deltaE):
             return False
-        
+
         if self._move_acceptance(deltaE=deltaE, movement_name="Translation"):
             self.current_system = atoms_trial.copy()
             self.current_total_energy = e_trial
