@@ -10,7 +10,7 @@ import numpy as np
 import pymser
 from ase import units
 
-from mlp_adsorption import VERSION
+from flames import VERSION
 
 
 class BaseLogger:
