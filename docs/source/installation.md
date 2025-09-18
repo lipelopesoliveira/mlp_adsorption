@@ -1,23 +1,23 @@
 Installation
 ============
 
-**mlp-adsorption** supports Python >= 3.8.
+**flames** supports Python >= 3.10.
 
 ## Installing with `pip`
 
-**mlp-adsorption** is available [on PyPI](https://pypi.org/project/mlp-adsorption/). Just run
+**flames** is available [on PyPI](https://pypi.org/project/flames/). Just run
 
 ```bash
-pip install mlp-adsorption
+pip install flames
 ```
 
 ## Installing from source
 
-To install **mlp-adsorption** from source, first clone [the repository](https://github.com/lipelopesoliveira/mlp_adsorption):
+To install **flames** from source, first clone [the repository](https://github.com/lipelopesoliveira/flames):
 
 ```bash
-git clone https://github.com/lipelopesoliveira/mlp_adsorption.git
-cd mlp_adsorption
+git clone https://github.com/lipelopesoliveira/flames.git
+cd flames
 ```
 
 Then run

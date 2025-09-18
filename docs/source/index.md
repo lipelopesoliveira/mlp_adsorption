@@ -1,4 +1,4 @@
-# **mlp-adsorption**
+# **flames**
 
 ```{toctree}
 :maxdepth: 2
@@ -15,8 +15,8 @@ overview
 
 CHANGELOG
 CONTRIBUTING
-License <https://raw.githubusercontent.com/allenai/mlp_adsorption/main/LICENSE>
-GitHub Repository <https://github.com/lipelopesoliveira/mlp_adsorption>
+License <https://raw.githubusercontent.com/lipelopesoliveira/flames/main/LICENSE>
+GitHub Repository <https://github.com/lipelopesoliveira/flames>
 ```
 
 ## Indices and tables
