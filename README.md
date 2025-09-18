@@ -1,8 +1,8 @@
-# <span style="font-size:larger;">MLP Adsorption</span>
+# <span style="font-size:larger;">FLAMES - Flexible Lattice Adsorption by Monte Carlo Engine Simulation</span>
 
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-MLP Adsorption is a general purpose adsorption simulation toolbox built around the Atomic Simulation Environment (ASE), which provides tools for molecular simulations and adsorption studies using machine learning potentials, classical force fields, and other advanced techniques.
+The FLAMES is a general purpose adsorption simulation toolbox built around the Atomic Simulation Environment (ASE), which provides tools for molecular simulations and adsorption studies using machine learning potentials, classical force fields, and other advanced techniques.
 
 ## Requirements
 
@@ -28,33 +28,29 @@ You can install the MLP Adsorption package using pip:
 
 > **Warning**
 >
-> The code is not yet published on PyPI, so you need to install it directly from the GitHub repository.
+> The code is not yet published on PyPI, so you need to import it manually from the GitHub repository.
 
-```Shell
-pip install git+https://github.com/lipelopesoliveira/mlp_adsorption.git
-```
-
-Alternatively, you can use MLP Adsorption by manually importing it using the `sys` module, as exemplified below:
+You can use FLAMES by manually importing it using the `sys` module, as exemplified below:
 
 ```python
 # importing module
 import sys
  
 # appending a path
-sys.path.append('{PATH_TOMLP_ADS}/mlp_adsorption')
+sys.path.append('{PATH_TO_FLAMES}/flames')
 
-from mlp_adsorption.gcmc import GCMC
+from flames.gcmc import GCMC
 ```
 
-Just remember to change the `{PATH_TOMLP_ADS}` to the directory where you downloaded the MLP Adsorption package.
+Just remember to change the `{PATH_TO_FLAMES}` to the directory where you downloaded the FLAMES package.
 
 ## Feature Overview
 
-The MLP Adsorption package includes modules for performing Grand Canonical Monte Carlo (GCMC) simulations and Widom insertion tests. It is designed to work with the ASE (Atomic Simulation Environment) framework and supports various machine learning potentials.
+The FLAMES package includes modules for performing Grand Canonical Monte Carlo (GCMC) simulations and Widom insertion tests. It is designed to work with the ASE (Atomic Simulation Environment) framework and supports various machine learning potentials.
 
 ## Usage
 
-To use the MLP Adsorption package, you can import the necessary classes from the `mlp_adsorption` module. For example, to perform GCMC simulations, you can use the `GCMC` class:
+To use the FLAMES package, you can import the necessary classes from the `flames` module. For example, to perform GCMC simulations, you can use the `GCMC` class:
 
 ```python
 import os
@@ -65,7 +61,7 @@ from ase.data import vdw_radii
 from ase.io import read
 from mace.calculators import mace_mp
 
-from mlp_adsorption.gcmc import GCMC
+from flames.gcmc import GCMC
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
