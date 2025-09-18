@@ -219,6 +219,7 @@ class BaseSimulator:
         self.adsorbate = adsorbate_atoms
         self.adsorbate.calc = self.model
         self.adsorbate.set_cell(self.framework.get_cell())
+        self.adsorbate.set_pbc([True, True, True])
 
         self.adsorbate_energy = self.adsorbate.get_potential_energy()
         self.n_adsorbate_atoms = len(self.adsorbate)
