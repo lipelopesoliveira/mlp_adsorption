@@ -11,8 +11,8 @@ from ase.io import read
 from ase.optimize import LBFGS
 from mace.calculators import mace_mp
 
-from mlp_adsorption.ase_utils import crystalOptimization
-from mlp_adsorption.gcmc import GCMC
+from flames.ase_utils import crystalOptimization
+from flames.gcmc import GCMC
 
 warnings.filterwarnings("ignore", category=UserWarning)
 warnings.filterwarnings("ignore", category=RuntimeWarning)

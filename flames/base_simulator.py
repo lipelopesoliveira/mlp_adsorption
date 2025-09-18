@@ -9,13 +9,13 @@ from ase.calculators import calculator
 from ase.io import Trajectory
 from ase.optimize import LBFGS
 
-from mlp_adsorption.ase_utils import (
+from flames.ase_utils import (
     crystalOptimization,
     nPT_Berendsen,
     nPT_NoseHoover,
     nVT_Berendsen,
 )
-from mlp_adsorption.utilities import (
+from flames.utilities import (
     calculate_unit_cells,
     get_density,
     get_perpendicular_lengths,
@@ -38,6 +38,7 @@ class BaseSimulator:
         device: str,
         vdw_radii: np.ndarray,
         vdw_factor: float = 0.6,
+        max_deltaE: float = 1.555,
         save_frequency: int = 100,
         output_to_file: bool = True,
         debug: bool = False,
@@ -65,6 +66,9 @@ class BaseSimulator:
             Should be an array of the same length as the number of atomic numbers in ASE.
         vdw_factor : float, optional
             Factor to scale the Van der Waals radii (default is 0.6).
+         max_deltaE : float, optional
+            Maximum energy difference (in eV) to consider for acceptance criteria.
+            This is used to avoid overflow due to problematic calculations (default is 1.555 eV / 150 kJ/mol).
         save_frequency : int, optional
             Frequency at which to save the simulation state and results (default is 100).
         output_to_file : bool, optional
@@ -82,8 +86,8 @@ class BaseSimulator:
             If True, automatically creates a supercell based on the cutoff radius (default is True).
         """
 
-        self.random_seed = random_seed
-        self.rnd_generator = np.random.default_rng(random_seed)
+        self.random_seed = random_seed if random_seed is not None else np.random.randint(1, 1000000)
+        self.rnd_generator = np.random.default_rng(self.random_seed)
         self.cutoff = cutoff_radius
         self.automatic_supercell = automatic_supercell
 
@@ -149,6 +153,9 @@ class BaseSimulator:
         # Replace any NaN value by 1.5 on self.vdw to avoid potential problems
         self.vdw[np.isnan(self.vdw)] = 1.5
 
+        # Use an max deltaE to avoid errors on the model
+        self.max_deltaE = max_deltaE
+
     def get_ideal_supercell(self) -> list[int]:
         """
         Get the ideal supercell dimensions based on the cutoff radius.
@@ -212,6 +219,7 @@ class BaseSimulator:
         self.adsorbate = adsorbate_atoms
         self.adsorbate.calc = self.model
         self.adsorbate.set_cell(self.framework.get_cell())
+        self.adsorbate.set_pbc([True, True, True])
 
         self.adsorbate_energy = self.adsorbate.get_potential_energy()
         self.n_adsorbate_atoms = len(self.adsorbate)

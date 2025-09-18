@@ -9,10 +9,10 @@ from ase.calculators import calculator
 from ase.io import Trajectory, read
 from tqdm import tqdm
 
-from mlp_adsorption.base_simulator import BaseSimulator
-from mlp_adsorption.eos import PengRobinsonEOS
-from mlp_adsorption.logger import GCMCLogger
-from mlp_adsorption.operations import (
+from flames.base_simulator import BaseSimulator
+from flames.eos import PengRobinsonEOS
+from flames.logger import GCMCLogger
+from flames.operations import (
     check_overlap,
     random_mol_insertion,
     random_rotation,
@@ -31,6 +31,7 @@ class GCMC(BaseSimulator):
         device: str,
         vdw_radii: np.ndarray,
         vdw_factor: float = 0.6,
+        max_deltaE: float = 1.555,
         save_frequency: int = 100,
         output_to_file: bool = True,
         debug: bool = False,
@@ -69,6 +70,9 @@ class GCMC(BaseSimulator):
         vdw_radii : np.ndarray
             Van der Waals radii for the atoms in the framework and adsorbate.
             Should be an array of the same length as the number of atomic numbers in ASE.
+        max_deltaE : float, optional
+            Maximum energy difference (in eV) to consider for acceptance criteria.
+            This is used to avoid overflow due to problematic calculations (default is 1.555 eV / 150 kJ/mol).
         vdw_factor : float, optional
             Factor to scale the Van der Waals radii (default is 0.6).
         save_frequency : int, optional
@@ -103,6 +107,7 @@ class GCMC(BaseSimulator):
             device=device,
             vdw_radii=vdw_radii,
             vdw_factor=vdw_factor,
+            max_deltaE=max_deltaE,
             save_frequency=save_frequency,
             output_to_file=output_to_file,
             debug=debug,
@@ -329,6 +334,9 @@ class GCMC(BaseSimulator):
 
         deltaE = e_new - self.current_total_energy - self.adsorbate_energy
 
+        if np.abs(deltaE) > np.abs(self.max_deltaE):
+            return False
+
         # Apply the acceptance criteria for insertion
         if self._insertion_acceptance(deltaE=deltaE):
             self.current_system = atoms_trial.copy()
@@ -371,6 +379,9 @@ class GCMC(BaseSimulator):
         e_new = atoms_trial.get_potential_energy()  # type: ignore
 
         deltaE = e_new + self.adsorbate_energy - self.current_total_energy
+
+        if np.abs(deltaE) > np.abs(self.max_deltaE):
+            return False
 
         # Apply the acceptance criteria for deletion
         if self._deletion_acceptance(deltaE=deltaE):
@@ -419,6 +430,10 @@ class GCMC(BaseSimulator):
         e_trial = atoms_trial.get_potential_energy()  # type: ignore
 
         deltaE = e_trial - self.current_total_energy
+
+        if np.abs(deltaE) > np.abs(self.max_deltaE):
+            return False
+
         if self._move_acceptance(deltaE=deltaE, movement_name="Translation"):
             self.current_system = atoms_trial.copy()
             self.current_total_energy = e_trial
@@ -456,6 +471,9 @@ class GCMC(BaseSimulator):
         e_trial = atoms_trial.get_potential_energy()  # type: ignore
 
         deltaE = e_trial - self.current_total_energy
+
+        if np.abs(deltaE) > np.abs(self.max_deltaE):
+            return False
 
         if self._move_acceptance(deltaE=deltaE, movement_name="Rotation"):
             self.current_system = atoms_trial.copy()

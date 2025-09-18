@@ -2,7 +2,7 @@
 
 ## Steps
 
-1. Update the version in `mlp_adsorption/version.py`.
+1. Update the version in `flames/version.py`.
 
 3. Run the release script:
 

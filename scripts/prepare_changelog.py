@@ -1,7 +1,7 @@
 from datetime import datetime
 from pathlib import Path
 
-from mlp_adsorption.version import VERSION
+from flames.version import VERSION
 
 
 def main():
@@ -27,7 +27,7 @@ def main():
     lines.insert(insert_index, "\n")
     lines.insert(
         insert_index + 1,
-        f"## [v{VERSION}](https://github.com/lipelopesoliveira/mlp_adsorption/releases/tag/v{VERSION}) - "
+        f"## [v{VERSION}](https://github.com/lipelopesoliveira/flames/releases/tag/v{VERSION}) - "
         f"{datetime.now().strftime('%Y-%m-%d')}\n",
     )
 

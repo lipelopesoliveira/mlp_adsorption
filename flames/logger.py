@@ -10,7 +10,7 @@ import numpy as np
 import pymser
 from ase import units
 
-from mlp_adsorption import VERSION
+from flames import VERSION
 
 
 class BaseLogger:
@@ -46,9 +46,17 @@ class BaseLogger:
 
         header = f"""
 ===========================================================================
-                      MLP Adsorption: Monte Carlo Simulations
-                              powered by Python + ase
-                         Author: Felipe Lopes de Oliveira
+
+             FFFFFFF LL        AAAAA   MM      M  EEEEEEE  SSSSS  
+             F       LL       A     A  M M M M M  E       SS     
+             FFFFF   LL       AAAAAAA  M   M   M  EEEE     SSSSS 
+             F       LL       A     A  M       M  E            SS
+             F       LLLLLLL  A     A  M       M  EEEEEEE  SSSSS
+
+              FLAMES - Flexible Lattice Adsorption by Monte Carlo
+                             Engine Simulation
+                        powered by Python + ASE
+                    Author: Felipe Lopes de Oliveira
 ===========================================================================
 
 Code version: {VERSION}
