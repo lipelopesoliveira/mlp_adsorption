@@ -18,11 +18,11 @@ from datetime import datetime
 
 sys.path.insert(0, os.path.abspath("../../"))
 
-from mlp_adsorption import VERSION, VERSION_SHORT  # noqa: E402
+from flames import VERSION, VERSION_SHORT  # noqa: E402
 
 # -- Project information -----------------------------------------------------
 
-project = "mlp_adsorption"
+project = "FLAMES"
 copyright = f"{datetime.today().year}, Felipe Lopes de Oliveira"
 author = "Felipe Lopes de Oliveira"
 version = VERSION_SHORT

@@ -16,6 +16,8 @@
 
 ### New Features 🎉
 
+- The final name of the package is now `FLAMES - Flexible Lattice Adsorption by Monte Carlo Engine Simulation`. The code repository, documentation site, and examples have been updated to reflect this change.
+
 ### Fixed 🐛
 
 ### Enhanced ✨

@@ -9,10 +9,10 @@ from ase.calculators import calculator
 from ase.io import Trajectory, read
 from tqdm import tqdm
 
-from mlp_adsorption.base_simulator import BaseSimulator
-from mlp_adsorption.eos import PengRobinsonEOS
-from mlp_adsorption.logger import GCMCLogger
-from mlp_adsorption.operations import (
+from flames.base_simulator import BaseSimulator
+from flames.eos import PengRobinsonEOS
+from flames.logger import GCMCLogger
+from flames.operations import (
     check_overlap,
     random_mol_insertion,
     random_rotation,

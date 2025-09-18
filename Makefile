@@ -1,7 +1,7 @@
 .PHONY : docs
 docs :
 	rm -rf docs/build/
-	sphinx-autobuild -b html --watch mlp_adsorption/ docs/source/ docs/build/
+	sphinx-autobuild -b html --watch flames/ docs/source/ docs/build/
 
 .PHONY : run-checks
 run-checks :
@@ -9,7 +9,7 @@ run-checks :
 	black --check .
 	ruff check .
 	mypy .
-	CUDA_VISIBLE_DEVICES='' pytest -v --color=yes --doctest-modules tests/ mlp_adsorption/
+	CUDA_VISIBLE_DEVICES='' pytest -v --color=yes --doctest-modules tests/ flames/
 
 .PHONY : build
 build :

@@ -9,13 +9,13 @@ from ase.calculators import calculator
 from ase.io import Trajectory
 from ase.optimize import LBFGS
 
-from mlp_adsorption.ase_utils import (
+from flames.ase_utils import (
     crystalOptimization,
     nPT_Berendsen,
     nPT_NoseHoover,
     nVT_Berendsen,
 )
-from mlp_adsorption.utilities import (
+from flames.utilities import (
     calculate_unit_cells,
     get_density,
     get_perpendicular_lengths,

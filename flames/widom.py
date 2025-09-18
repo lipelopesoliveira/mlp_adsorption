@@ -9,9 +9,9 @@ from ase.calculators import calculator
 from ase.io import write
 from tqdm import tqdm
 
-from mlp_adsorption.base_simulator import BaseSimulator
-from mlp_adsorption.logger import WidomLogger
-from mlp_adsorption.operations import check_overlap, random_mol_insertion
+from flames.base_simulator import BaseSimulator
+from flames.logger import WidomLogger
+from flames.operations import check_overlap, random_mol_insertion
 
 
 class Widom(BaseSimulator):

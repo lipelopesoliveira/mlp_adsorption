@@ -1,4 +1,4 @@
-name: mlp_ads
+name: flames
 channels:
   - conda-forge
 dependencies:
