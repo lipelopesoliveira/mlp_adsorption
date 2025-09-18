@@ -1,4 +1,6 @@
-# <span style="font-size:larger;">FLAMES - Flexible Lattice Adsorption by Monte Carlo Engine Simulation</span>
+![FLAMES Logo](docs/logo.png)
+
+# FLAMES - Flexible Lattice Adsorption by Monte Carlo Engine Simulation
 
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
