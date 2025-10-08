@@ -1,5 +1,6 @@
-import numpy as np
 import warnings
+
+import numpy as np
 from ase import Atoms, units
 from ase.cell import Cell
 from pymatgen.core import Structure
@@ -193,7 +194,7 @@ def check_weights(move_weights: dict) -> dict:
     # Check if move_weights is a dictionary
     if type(move_weights) is not dict:
         raise TypeError("move_weights must be a dictionary, not " + str(type(move_weights)))
-    
+
     # Check if the keys in move weights are insertion, deletion, translation, rotation
     if not all([i in valid_keys for i in set(move_weights.keys())]):
         raise MoveKeyError(list(move_weights.keys()))
@@ -201,7 +202,9 @@ def check_weights(move_weights: dict) -> dict:
     # Raise a warning if any of the four moves are missing
     for key in valid_keys:
         if key not in move_weights:
-            warnings.warn(f"Warning: move_weights is missing the key '{key}'. Assuming weight 0 for this move.")
+            warnings.warn(
+                f"Warning: move_weights is missing the key '{key}'. Assuming weight 0 for this move."
+            )
             move_weights[key] = 0
 
     # Check if all weights are numbers and non-negative
@@ -214,7 +217,7 @@ def check_weights(move_weights: dict) -> dict:
     # Check if insertion and deletion weights are equal
     if move_weights["insertion"] != move_weights["deletion"]:
         raise InsertionDeletionError(move_weights["insertion"], move_weights["deletion"])
-    
+
     # Normalize weights to sum to 1
     total_weight = sum(move_weights.values())
     move_weights = {k: v / total_weight for k, v in move_weights.items()}

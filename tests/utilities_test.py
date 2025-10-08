@@ -1,11 +1,10 @@
-import pytest
 import warnings
-import sys
 
-sys.path.append('C:\\Users\\flopes\\Documents\\PRs\\mlp_adsorption')
+import pytest
 
+from flames.exceptions import InsertionDeletionError, MoveKeyError
 from flames.utilities import check_weights
-from flames.exceptions import MoveKeyError, InsertionDeletionError 
+
 
 # -----------------------------
 # VALID INPUT TEST
@@ -100,7 +99,8 @@ def test_check_weights_missing_one_key_warns():
 
 def test_check_weights_missing_multiple_keys_warns():
     move_weights = {
-        "insertion": 1, "deletion": 1,
+        "insertion": 1,
+        "deletion": 1,
         # missing: translation, rotation
     }
     with warnings.catch_warnings(record=True) as w:
