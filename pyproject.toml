@@ -43,8 +43,8 @@ Changelog = "https://github.com/lipelopesoliveira/flames/blob/main/CHANGELOG.md"
 dev = [
     "ruff",
     "mypy>=1.0,<2.0",
-    "black>=23.0,<26.0",
-    "isort>=5.12,<5.14",
+    "black>=23.0,<25.0",
+    "isort>=5.12,<6.2",
     "pytest",
     "pytest-sphinx",
     "pytest-cov",
@@ -57,7 +57,7 @@ dev = [
     "myst-parser>=1.0",
     "sphinx-copybutton",
     "sphinx-autobuild",
-    "sphinx-autodoc-typehints==1.23.3",
+    "sphinx-autodoc-typehints==3.0.1",
     "packaging"
 ]
 
