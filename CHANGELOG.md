@@ -12,6 +12,18 @@
 
 ### Removed 🗑️
 
+## v[0.4.2] - 2025-10-10 (Unreleased)
+
+### New Features 🎉
+
+### Fixed 🐛
+
+### Enhanced ✨
+
+### Documentation 📖
+
+### Removed 🗑️
+
 ## v[0.4.1] - 2025-09-19
 
 ### New Features 🎉
