@@ -46,15 +46,14 @@ class BaseLogger:
 
         header = f"""
 ===========================================================================
-
-             FFFFFFF LL        AAAAA   MM      M  EEEEEEE  SSSSS  
-             F       LL       A     A  M M M M M  E       SS     
-             FFFFF   LL       AAAAAAA  M   M   M  EEEE     SSSSS 
-             F       LL       A     A  M       M  E            SS
-             F       LLLLLLL  A     A  M       M  EEEEEEE  SSSSS
-
-              FLAMES - Flexible Lattice Adsorption by Monte Carlo
-                             Engine Simulation
+         _______  __          ___      .___  ___.  _______     _______.
+        |   ____||  |        /   \     |   \/   | |   ____|   /       |
+        |  |__   |  |       /  ^  \    |  \  /  | |  |__     |   (----`
+        |   __|  |  |      /  /_\  \   |  |\/|  | |   __|     \   \    
+        |  |     |  `----./  _____  \  |  |  |  | |  |____.----)   |   
+        |__|     |_______/__/     \__\ |__|  |__| |_______|_______/    
+                                                               
+          Flexible Lattice Adsorption by Monte Carlo Engine Simulation
                         powered by Python + ASE
                     Author: Felipe Lopes de Oliveira
 ===========================================================================
