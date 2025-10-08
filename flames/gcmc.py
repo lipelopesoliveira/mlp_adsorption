@@ -9,6 +9,9 @@ from ase.calculators import calculator
 from ase.io import Trajectory, read
 from tqdm import tqdm
 
+import simplejson as json
+import pymser
+
 from flames.base_simulator import BaseSimulator
 from flames.eos import PengRobinsonEOS
 from flames.logger import GCMCLogger
@@ -149,6 +152,9 @@ class GCMC(BaseSimulator):
         # Base iteration for restarting the simulation. This is for tracking the iteration count only
         self.base_iteration: int = 0
 
+        # Dictionary to store the equilibrated results by pyMSER
+        self.equilibrated_results: dict = {}
+
     def restart(self) -> None:
         """
         Restart the simulation from the last state.
@@ -229,6 +235,89 @@ class GCMC(BaseSimulator):
         self.logger.print_load_state_info(
             n_atoms=len(state), average_ads_energy=average_binding_energy
         )
+
+    def equilibrate(self, LLM: bool = True, batch_size: int = 100, run_ADF: bool = False, uncertainty: str = "uSD") -> None:
+        """
+        Use pyMSER to get the equilibrated statistics of the simulation.
+
+        Parameters
+        ----------
+        LLM : bool
+            If True, use the Leftmost-Local Minima (LLM) method to determine the equilibration time.
+            This is only recommended for high-throughput simulations, and sometimes can underestimate
+            the true equilibration point.
+            Default is True.
+        batch_size : int
+            Batch size to use for speedup the equilibration process. Default is 100.
+        run_ADF : bool
+            If True, run the Augmented Dickey-Fuller (ADF) test to confirm for stationarity.
+            Default is False.
+        uncertainty : str
+            The type of uncertainty to use for the equilibration process. Default is "uSD".
+            Options are:
+            - "uSD": uncorrelated Standard Deviation
+            - "uSE": uncorrelated Standard Error
+            - "SD": Standard Deviation
+            - "SE": Standard Error
+
+        """
+
+        eq_results = pymser.equilibrate(
+            self.uptake_list,
+            LLM=LLM,
+            batch_size=batch_size,
+            ADF_test=run_ADF,
+            uncertainty=uncertainty,
+            print_results=False,
+        )
+
+        enthalpy, enthalpy_sd = pymser.calc_equilibrated_enthalpy(
+            energy=np.array(self.total_ads_list) / units.kB,  # Convert to K
+            number_of_molecules=self.uptake_list,
+            temperature=self.T,
+            eq_index=eq_results["t0"],
+            uncertainty="SD",
+            ac_time=int(eq_results["ac_time"]),
+        )
+
+        eq_results["enthalpy_kJ_per_mol"] = float(enthalpy)
+        eq_results["enthalpy_sd_kJ_per_mol"] = float(enthalpy_sd)
+
+        self.equilibrated_results = eq_results
+    
+    def save_results(self) -> None:
+        """
+        Save a json file with the main results of the simulation.
+        """
+
+        results = {
+            "temperature_K": self.T,
+            "pressure_Pa": self.P,
+            "fugacity_coefficient": self.fugacity_coeff,
+            "fugacity_Pa": self.fugacity_coeff * self.P,
+            't0': self.equilibrated_results.get('t0', None),
+            'average': self.equilibrated_results.get('average', None),
+            'uncertainty': self.equilibrated_results.get('uncertainty', None),
+            'equilibrated': self.equilibrated_results.get('equilibrated', None),
+            'ac_time': self.equilibrated_results.get('ac_time', None),
+            'uncorr_samples': self.equilibrated_results.get('uncorr_samples', None),
+            'enthalpy_kJ_per_mol': self.equilibrated_results.get('enthalpy_kJ_per_mol', None),
+            'enthalpy_sd_kJ_per_mol': self.equilibrated_results.get('enthalpy_sd_kJ_per_mol', None),
+            'uptake_mmol_g': self.equilibrated_results.get('average', 0) * self.conv_factors['mmol/g'],
+            'uptake_sd_mmol_g': self.equilibrated_results.get('uncertainty', 0) * self.conv_factors['mmol/g'],
+            'uptake_mg_g': self.equilibrated_results.get('average', 0) * self.conv_factors['mg/g'],
+            'uptake_sd_mg_g': self.equilibrated_results.get('uncertainty', 0) * self.conv_factors['mg/g'],
+            'uptake_cm3__g': self.equilibrated_results.get('average', 0) * self.conv_factors['cm^3 STP/gr'],
+            'uptake_sd_cm3_g': self.equilibrated_results.get('uncertainty', 0) * self.conv_factors['cm^3 STP/gr'],
+            'uptake_cm3_cm3': self.equilibrated_results.get('average', 0) * self.conv_factors['cm^3 STP/cm^3'],
+            'uptake_sd_cm3_cm3': self.equilibrated_results.get('uncertainty', 0) * self.conv_factors['cm^3 STP/cm^3'],
+            'uptake_percent_wt': self.equilibrated_results.get('average', 0) * self.conv_factors['mg/g'] * 1e-3,
+            'uptake_sd_percent_wt': self.equilibrated_results.get('uncertainty', 0) * self.conv_factors['mg/g'] * 1e-3,
+        }
+
+        with open(os.path.join(self.out_folder, "GCMC_Results.json"), "w") as f:
+            json.dump(results, f, indent=4)
+
 
     def _insertion_acceptance(self, deltaE) -> bool:
         """

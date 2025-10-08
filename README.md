@@ -28,7 +28,7 @@ conda env create --file environment.yml
 
 You can install the MLP Adsorption package using pip:
 
-> **Warning**
+> [!WARNING]
 >
 > The code is not yet published on PyPI, so you need to import it manually from the GitHub repository.
 
