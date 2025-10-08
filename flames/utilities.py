@@ -6,6 +6,8 @@ from pymatgen.transformations.advanced_transformations import (
     CubicSupercellTransformation,
 )
 
+from flames.exceptions import InsertionDeletionError, MoveKeyError
+
 
 def enthalpy_of_adsorption(energy, number_of_molecules, temperature):
     """
@@ -173,3 +175,39 @@ def make_cubic(
     ase_structure = cubic_dict.to_ase_atoms()
 
     return ase_structure
+
+
+def check_weights(move_weights: dict) -> dict:
+    """
+    Check if the move weights are valid and normalize them to sum to 1.
+
+    Parameters:
+    - move_weights (dict): A dictionary containing the move weights for 'insertion', 'deletion', 'translation', and 'rotation'.
+    Returns:
+    - dict: Normalized move weights.
+    """
+
+    # Check if move_weights is a dictionary
+    if type(move_weights) is not dict:
+        raise TypeError("move_weights must be a dictionary, not " + str(type(move_weights)))
+
+    # Check if the keys in move weights are insertion, deletion, translation, rotation
+    if set(move_weights.keys()) != {"insertion", "deletion", "translation", "rotation"}:
+        raise MoveKeyError(list(move_weights.keys()))
+
+    # Check if all weights are numbers and non-negative
+    for k, v in move_weights.items():
+        if type(v) not in [int, float]:
+            raise TypeError(f"move_weights['{k}'] must be a number, not " + str(type(v)))
+        if v < 0:
+            raise ValueError(f"move_weights['{k}'] must be non-negative, not " + str(v))
+
+    # Check if insertion and deletion weights are equal
+    if move_weights["insertion"] != move_weights["deletion"]:
+        raise InsertionDeletionError(move_weights["insertion"], move_weights["deletion"])
+
+    # Normalize weights to sum to 1
+    total_weight = sum(move_weights.values())
+    move_weights = {k: v / total_weight for k, v in move_weights.items()}
+
+    return move_weights

@@ -4,13 +4,12 @@ from typing import Union
 
 import ase
 import numpy as np
+import pymser
+import simplejson as json
 from ase import units
 from ase.calculators import calculator
 from ase.io import Trajectory, read
 from tqdm import tqdm
-
-import simplejson as json
-import pymser
 
 from flames.base_simulator import BaseSimulator
 from flames.eos import PengRobinsonEOS
@@ -21,6 +20,7 @@ from flames.operations import (
     random_rotation,
     random_translation,
 )
+from flames.utilities import check_weights
 
 
 class GCMC(BaseSimulator):
@@ -45,6 +45,12 @@ class GCMC(BaseSimulator):
         criticalTemperature: Union[float, None] = None,
         criticalPressure: Union[float, None] = None,
         acentricFactor: Union[float, None] = None,
+        move_weights: dict = {
+            "insertion": 0.25,
+            "deletion": 0.25,
+            "translation": 0.25,
+            "rotation": 0.25,
+        },
     ):
         """
         Base class for Grand Canonical Monte Carlo (GCMC) simulations using ASE.
@@ -99,6 +105,9 @@ class GCMC(BaseSimulator):
             Critical pressure of the adsorbate in Pascal.
         acentricFactor : float, optional
             Acentric factor of the adsorbate.
+        move_weights : dict, optional
+            A dictionary containing the move weights for 'insertion', 'deletion', 'translation', and 'rotation'.
+            Default is equal weights for all moves.
         """
 
         super().__init__(
@@ -146,6 +155,8 @@ class GCMC(BaseSimulator):
         self.uptake_list: list[int] = []
         self.total_energy_list: list[float] = []
         self.total_ads_list: list[float] = []
+
+        self.move_weights = check_weights(move_weights)
 
         self.mov_dict: dict = {"insertion": [], "deletion": [], "translation": [], "rotation": []}
 
@@ -236,7 +247,13 @@ class GCMC(BaseSimulator):
             n_atoms=len(state), average_ads_energy=average_binding_energy
         )
 
-    def equilibrate(self, LLM: bool = True, batch_size: int = 100, run_ADF: bool = False, uncertainty: str = "uSD") -> None:
+    def equilibrate(
+        self,
+        LLM: bool = True,
+        batch_size: int = 100,
+        run_ADF: bool = False,
+        uncertainty: str = "uSD",
+    ) -> None:
         """
         Use pyMSER to get the equilibrated statistics of the simulation.
 
@@ -284,7 +301,7 @@ class GCMC(BaseSimulator):
         eq_results["enthalpy_sd_kJ_per_mol"] = float(enthalpy_sd)
 
         self.equilibrated_results = eq_results
-    
+
     def save_results(self) -> None:
         """
         Save a json file with the main results of the simulation.
@@ -295,29 +312,39 @@ class GCMC(BaseSimulator):
             "pressure_Pa": self.P,
             "fugacity_coefficient": self.fugacity_coeff,
             "fugacity_Pa": self.fugacity_coeff * self.P,
-            't0': self.equilibrated_results.get('t0', None),
-            'average': self.equilibrated_results.get('average', None),
-            'uncertainty': self.equilibrated_results.get('uncertainty', None),
-            'equilibrated': self.equilibrated_results.get('equilibrated', None),
-            'ac_time': self.equilibrated_results.get('ac_time', None),
-            'uncorr_samples': self.equilibrated_results.get('uncorr_samples', None),
-            'enthalpy_kJ_per_mol': self.equilibrated_results.get('enthalpy_kJ_per_mol', None),
-            'enthalpy_sd_kJ_per_mol': self.equilibrated_results.get('enthalpy_sd_kJ_per_mol', None),
-            'uptake_mmol_g': self.equilibrated_results.get('average', 0) * self.conv_factors['mmol/g'],
-            'uptake_sd_mmol_g': self.equilibrated_results.get('uncertainty', 0) * self.conv_factors['mmol/g'],
-            'uptake_mg_g': self.equilibrated_results.get('average', 0) * self.conv_factors['mg/g'],
-            'uptake_sd_mg_g': self.equilibrated_results.get('uncertainty', 0) * self.conv_factors['mg/g'],
-            'uptake_cm3__g': self.equilibrated_results.get('average', 0) * self.conv_factors['cm^3 STP/gr'],
-            'uptake_sd_cm3_g': self.equilibrated_results.get('uncertainty', 0) * self.conv_factors['cm^3 STP/gr'],
-            'uptake_cm3_cm3': self.equilibrated_results.get('average', 0) * self.conv_factors['cm^3 STP/cm^3'],
-            'uptake_sd_cm3_cm3': self.equilibrated_results.get('uncertainty', 0) * self.conv_factors['cm^3 STP/cm^3'],
-            'uptake_percent_wt': self.equilibrated_results.get('average', 0) * self.conv_factors['mg/g'] * 1e-3,
-            'uptake_sd_percent_wt': self.equilibrated_results.get('uncertainty', 0) * self.conv_factors['mg/g'] * 1e-3,
+            "t0": self.equilibrated_results.get("t0", None),
+            "average": self.equilibrated_results.get("average", None),
+            "uncertainty": self.equilibrated_results.get("uncertainty", None),
+            "equilibrated": self.equilibrated_results.get("equilibrated", None),
+            "ac_time": self.equilibrated_results.get("ac_time", None),
+            "uncorr_samples": self.equilibrated_results.get("uncorr_samples", None),
+            "enthalpy_kJ_per_mol": self.equilibrated_results.get("enthalpy_kJ_per_mol", None),
+            "enthalpy_sd_kJ_per_mol": self.equilibrated_results.get("enthalpy_sd_kJ_per_mol", None),
+            "uptake_mmol_g": self.equilibrated_results.get("average", 0)
+            * self.conv_factors["mmol/g"],
+            "uptake_sd_mmol_g": self.equilibrated_results.get("uncertainty", 0)
+            * self.conv_factors["mmol/g"],
+            "uptake_mg_g": self.equilibrated_results.get("average", 0) * self.conv_factors["mg/g"],
+            "uptake_sd_mg_g": self.equilibrated_results.get("uncertainty", 0)
+            * self.conv_factors["mg/g"],
+            "uptake_cm3__g": self.equilibrated_results.get("average", 0)
+            * self.conv_factors["cm^3 STP/gr"],
+            "uptake_sd_cm3_g": self.equilibrated_results.get("uncertainty", 0)
+            * self.conv_factors["cm^3 STP/gr"],
+            "uptake_cm3_cm3": self.equilibrated_results.get("average", 0)
+            * self.conv_factors["cm^3 STP/cm^3"],
+            "uptake_sd_cm3_cm3": self.equilibrated_results.get("uncertainty", 0)
+            * self.conv_factors["cm^3 STP/cm^3"],
+            "uptake_percent_wt": self.equilibrated_results.get("average", 0)
+            * self.conv_factors["mg/g"]
+            * 1e-3,
+            "uptake_sd_percent_wt": self.equilibrated_results.get("uncertainty", 0)
+            * self.conv_factors["mg/g"]
+            * 1e-3,
         }
 
         with open(os.path.join(self.out_folder, "GCMC_Results.json"), "w") as f:
             json.dump(results, f, indent=4)
-
 
     def _insertion_acceptance(self, deltaE) -> bool:
         """
@@ -582,25 +609,27 @@ class GCMC(BaseSimulator):
 
             step_time_start = datetime.datetime.now()
 
-            switch = self.rnd_generator.random()
+            move = self.rnd_generator.choice(
+                a=list(self.move_weights.keys()), p=list(self.move_weights.values())
+            )
 
             # Insertion
-            if switch < 0.25 or self.N_ads == 0:
+            if move == "insertion" or self.N_ads == 0:
                 accepted = self.try_insertion()
                 self.mov_dict["insertion"].append(1 if accepted else 0)
 
             # Deletion
-            elif switch < 0.5:
+            elif move == "deletion":
                 accepted = self.try_deletion()
                 self.mov_dict["deletion"].append(1 if accepted else 0)
 
             # Translation
-            elif switch < 0.75:
+            elif move == "translation":
                 accepted = self.try_translation()
                 self.mov_dict["translation"].append(1 if accepted else 0)
 
             # Rotation
-            elif switch >= 0.75:
+            elif move == "rotation":
                 accepted = self.try_rotation()
                 self.mov_dict["rotation"].append(1 if accepted else 0)
 
