@@ -1,10 +1,10 @@
 import datetime
 import os
 from typing import Union
-import simplejson as json
 
 import ase
 import numpy as np
+import simplejson as json
 from ase import units
 from ase.calculators import calculator
 from ase.io import write
@@ -181,7 +181,7 @@ class Widom(BaseSimulator):
             "henry_coefficient_std_mol_kg-1_Pa-1": self.kH_std_dv,
             "enthalpy_of_adsorption_kJ_mol-1": self.Qst,
             "enthalpy_of_adsorption_std_kJ_mol-1": self.Qst_std_dv,
-            "total_insertions": len(self.int_energy_list)
+            "total_insertions": len(self.int_energy_list),
         }
 
         with open(os.path.join(self.out_folder, "Widom_Results.json"), "w") as f:
