@@ -19,6 +19,7 @@
 - Added the `GCMC.equilibrate` method to allow users to perform equilibration analysis separately from the main simulation run. This method uses the pyMSER library to analyze the uptake data and determine when the system has reached equilibrium.
 - Added the `GCMC.save_results` method to save the results of the equilibration analysis to a JSON file. This includes key metrics such as average uptake, uncertainty, and enthalpy of adsorption.
 - Allow for custom move weights in the GCMC simulation. Users can now specify different probabilities for insertion, deletion, translation, and rotation moves through the `move_weights` parameter when initializing the `GCMC` class. This provides greater flexibility in tailoring the simulation to specific systems or research needs.
+- Improved the logging of Widom simulation results to include standard deviations for both the Henry coefficient and the enthalpy of adsorption. The standard deviations are calculated using 5-fold cross-validation, providing a more robust measure of uncertainty in the results.
 
 ### Fixed 🐛
 
