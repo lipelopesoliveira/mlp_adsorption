@@ -312,6 +312,7 @@ class GCMC(BaseSimulator):
             "pressure_Pa": self.P,
             "fugacity_coefficient": self.fugacity_coeff,
             "fugacity_Pa": self.fugacity_coeff * self.P,
+            "n_steps": len(self.uptake_list),
             "t0": self.equilibrated_results.get("t0", None),
             "average": self.equilibrated_results.get("average", None),
             "uncertainty": self.equilibrated_results.get("uncertainty", None),
