@@ -1,6 +1,7 @@
 import datetime
 import os
 from typing import Union
+import simplejson as json
 
 import ase
 import numpy as np
@@ -168,6 +169,23 @@ class Widom(BaseSimulator):
             )
             / (units.kJ / units.mol)
         ).std()
+
+    def save_results(self) -> None:
+        """
+        Save a json file with the main results of the simulation.
+        """
+
+        results = {
+            "temperature_K": self.T,
+            "henry_coefficient_mol_kg-1_Pa-1": self.kH,
+            "henry_coefficient_std_mol_kg-1_Pa-1": self.kH_std_dv,
+            "enthalpy_of_adsorption_kJ_mol-1": self.Qst,
+            "enthalpy_of_adsorption_std_kJ_mol-1": self.Qst_std_dv,
+            "total_insertions": len(self.int_energy_list)
+        }
+
+        with open(os.path.join(self.out_folder, "Widom_Results.json"), "w") as f:
+            json.dump(results, f, indent=4)
 
     def restart(self) -> None:
         """
