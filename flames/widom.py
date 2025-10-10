@@ -131,11 +131,11 @@ class Widom(BaseSimulator):
 
         self.int_energy_list = np.append(self.int_energy_list, deltaE)
 
-        cv_int_energy_list = random_n_splits(self.int_energy_list, 5, self.rnd_generator)
+        
 
         self.boltz_fac = np.exp(-self.beta * self.int_energy_list)
 
-        cv_boltz_fac = np.exp(-self.beta * cv_int_energy_list)
+        
 
         # kH = β <exp(-β ΔE)> [mol kg-1 Pa-1]
         self.kH = (
@@ -145,16 +145,6 @@ class Widom(BaseSimulator):
             / (self.framework_density * 1e3)
         )
 
-        # Calculate standard deviation using cross-validation
-        self.kH_std_dv = (
-            (
-                self.beta
-                * cv_boltz_fac.mean(axis=-1)
-                * (units.J / units.mol)
-                / (self.framework_density * 1e3)
-            )
-        ).std()
-
         # Qst = - < ΔE * exp(-β ΔE) > / <exp(-β ΔE)>  + kB.T # [kJ/mol]
         self.Qst = (
             (self.int_energy_list * self.boltz_fac).mean() / self.boltz_fac.mean()
@@ -162,13 +152,28 @@ class Widom(BaseSimulator):
         ) / (units.kJ / units.mol)
 
         # Calculate standard deviation using cross-validation
-        self.Qst_std_dv = (
-            (
-                (cv_int_energy_list * cv_boltz_fac).mean(axis=-1) / cv_boltz_fac.mean(axis=-1)
-                - (units.kB * self.T)
-            )
-            / (units.kJ / units.mol)
-        ).std()
+        if len(self.int_energy_list) > 5:
+            cv_int_energy_list = random_n_splits(self.int_energy_list, 5, self.rnd_generator)
+
+            cv_boltz_fac = np.exp(-self.beta * cv_int_energy_list)
+
+            # Calculate standard deviation using cross-validation
+            self.kH_std_dv = (
+                (
+                    self.beta
+                    * cv_boltz_fac.mean(axis=-1)
+                    * (units.J / units.mol)
+                    / (self.framework_density * 1e3)
+                )
+            ).std()
+
+            self.Qst_std_dv = (
+                (
+                    (cv_int_energy_list * cv_boltz_fac).mean(axis=-1) / cv_boltz_fac.mean(axis=-1)
+                    - (units.kB * self.T)
+                )
+                / (units.kJ / units.mol)
+            ).std()
 
     def save_results(self) -> None:
         """
