@@ -454,8 +454,8 @@ Finishing Widom simulation
 
     Average properties of the system:
     ------------------------------------------------------------------------------
-    Henry coefficient: [mol/kg/Pa]                       {self.sim.kH:12.5e} +/- {0.0:12.5e} [-]
-    Enthalpy of adsorption: [kJ/mol]                     {self.sim.Qst:12.5f} +/- {0.0:12.5f} [-]
+    Henry coefficient: [mol/kg/Pa]      {self.sim.kH:12.5e} +/- {self.sim.kH_std_dv:12.5e} [-]
+    Enthalpy of adsorption: [kJ/mol]    {self.sim.Qst:12.5f} +/- {self.sim.Qst_std_dv:12.5f} [-]
 
 ===========================================================================
 Simulation finished successfully!

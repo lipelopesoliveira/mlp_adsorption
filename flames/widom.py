@@ -12,6 +12,7 @@ from tqdm import tqdm
 from flames.base_simulator import BaseSimulator
 from flames.logger import WidomLogger
 from flames.operations import check_overlap, random_mol_insertion
+from flames.utilities import random_n_splits
 
 
 class Widom(BaseSimulator):
@@ -107,11 +108,15 @@ class Widom(BaseSimulator):
             / (self.framework_density * 1e3)
         )
 
+        self.kH_std_dv = 0.0
+
         # Qst = - < ΔE * exp(-β ΔE) > / <exp(-β ΔE)>  + kB.T # [kJ/mol]
         self.Qst = (
             (self.int_energy_list * self.boltz_fac).mean() / self.boltz_fac.mean()
             - (units.kB * self.T)
         ) / (units.kJ / units.mol)
+
+        self.Qst_std_dv = 0.0
 
     def update_statistics(self, deltaE) -> None:
         """
@@ -125,7 +130,11 @@ class Widom(BaseSimulator):
 
         self.int_energy_list = np.append(self.int_energy_list, deltaE)
 
+        cv_int_energy_list = random_n_splits(self.int_energy_list, 5, self.rnd_generator)
+
         self.boltz_fac = np.exp(-self.beta * self.int_energy_list)
+
+        cv_boltz_fac = np.exp(-self.beta * cv_int_energy_list)
 
         # kH = β <exp(-β ΔE)> [mol kg-1 Pa-1]
         self.kH = (
@@ -135,11 +144,30 @@ class Widom(BaseSimulator):
             / (self.framework_density * 1e3)
         )
 
+        # Calculate standard deviation using cross-validation
+        self.kH_std_dv = (
+            (
+                self.beta
+                * cv_boltz_fac.mean(axis=-1)
+                * (units.J / units.mol)
+                / (self.framework_density * 1e3)
+            )
+        ).std()
+
         # Qst = - < ΔE * exp(-β ΔE) > / <exp(-β ΔE)>  + kB.T # [kJ/mol]
         self.Qst = (
             (self.int_energy_list * self.boltz_fac).mean() / self.boltz_fac.mean()
             - (units.kB * self.T)
         ) / (units.kJ / units.mol)
+
+        # Calculate standard deviation using cross-validation
+        self.Qst_std_dv = (
+            (
+                (cv_int_energy_list * cv_boltz_fac).mean(axis=-1) / cv_boltz_fac.mean(axis=-1)
+                - (units.kB * self.T)
+            )
+            / (units.kJ / units.mol)
+        ).std()
 
     def restart(self) -> None:
         """

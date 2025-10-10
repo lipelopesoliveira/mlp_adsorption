@@ -260,14 +260,11 @@ def random_n_splits(data: np.ndarray, n: int, random_generator=None) -> np.ndarr
     # Shuffle all indices once using the provided random generator
     if random_generator is None:
         random_generator = np.random.default_rng()
-    
+
     shuffled_indices = random_generator.permutation(total_len)
 
     # Partition indices into equal-sized removal sets manually
-    removal_sets = [
-        shuffled_indices[i * remove_size:(i + 1) * remove_size] 
-        for i in range(n)
-    ]
+    removal_sets = [shuffled_indices[i * remove_size : (i + 1) * remove_size] for i in range(n)]
 
     # Create the resulting arrays
     result_arrays = []
