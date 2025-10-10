@@ -223,3 +223,57 @@ def check_weights(move_weights: dict) -> dict:
     move_weights = {k: v / total_weight for k, v in move_weights.items()}
 
     return move_weights
+
+
+def random_n_splits(data: np.ndarray, n: int, random_generator=None) -> np.ndarray:
+    """
+    Generate n arrays where each array has exactly (100/n)% of the data removed randomly.
+    The removed data is unique per array (no overlap between removed subsets).
+
+    Parameters:
+        data (np.ndarray): Input array
+        n (int): Number of arrays to generate
+        random_generator: Optional random generator for reproducibility
+
+    Returns:
+        np.ndarray: List of n arrays with equal-sized unique removals
+    """
+
+    data = np.array(data)
+    total_len = len(data)
+
+    if n <= 0:
+        raise ValueError("n must be a positive integer.")
+
+    if total_len < n:
+        raise ValueError("Input array length must have at least n elements.")
+
+    # Padding if not divisible
+    if total_len % n != 0:
+        padding_size = n - (total_len % n)
+        data = data[:-padding_size]
+        total_len = len(data)
+
+    # Number of elements to remove per array
+    remove_size = total_len // n
+
+    # Shuffle all indices once using the provided random generator
+    if random_generator is None:
+        random_generator = np.random.default_rng()
+    
+    shuffled_indices = random_generator.permutation(total_len)
+
+    # Partition indices into equal-sized removal sets manually
+    removal_sets = [
+        shuffled_indices[i * remove_size:(i + 1) * remove_size] 
+        for i in range(n)
+    ]
+
+    # Create the resulting arrays
+    result_arrays = []
+    for rm_indices in removal_sets:
+        mask = np.ones(total_len, dtype=bool)
+        mask[rm_indices] = False
+        result_arrays.append(data[mask])
+
+    return np.array(result_arrays)
