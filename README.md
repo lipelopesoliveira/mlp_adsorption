@@ -132,7 +132,7 @@ gcmc.save_results()
 
 ## Examples
 
-You can find example scripts in the `examples` directory. These scripts demonstrate how to use the FLAMES package for various tasks, such as running GCMC simulations and performing Widom insertion tests, etc.
+You can find example scripts in the [examples](https://github.com/lipelopesoliveira/mlp_adsorption/tree/main/examples) directory. These scripts demonstrate how to use the FLAMES package for various tasks, such as running GCMC simulations and performing Widom insertion tests, etc.
 
 ### Basic
 
