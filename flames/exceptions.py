@@ -20,7 +20,7 @@ class MoveKeyError(Exception):
         self.message = (
             "Error: move_weights must contain exactly the keys:" + ", ".join(valid_keys) + ".\n"
         )
-        self.message += f" Invalid keys: " + ", ".join(
+        self.message += " Invalid keys: " + ", ".join(
             [move for move in moves if move not in valid_keys]
         )
         super().__init__(self.message)

@@ -4,7 +4,7 @@ from typing import Union
 
 import ase
 import numpy as np
-import simplejson as json
+import json
 from ase import units
 from ase.calculators import calculator
 from ase.io import write
