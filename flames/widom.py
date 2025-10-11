@@ -175,9 +175,14 @@ class Widom(BaseSimulator):
                 / (units.kJ / units.mol)
             ).std()
 
-    def save_results(self) -> None:
+    def save_results(self, file_name: str = "Widom_Results.json") -> None:
         """
         Save a json file with the main results of the simulation.
+
+        Parameters
+        ----------
+        file_name : str, optional
+            Name of the output json file (default is 'Widom_Results.json').
         """
 
         results = {
@@ -189,7 +194,7 @@ class Widom(BaseSimulator):
             "total_insertions": len(self.int_energy_list),
         }
 
-        with open(os.path.join(self.out_folder, "Widom_Results.json"), "w") as f:
+        with open(os.path.join(self.out_folder, file_name), "w") as f:
             json.dump(results, f, indent=4)
 
     def restart(self) -> None:

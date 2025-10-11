@@ -302,7 +302,7 @@ class GCMC(BaseSimulator):
 
         self.equilibrated_results = eq_results
 
-    def save_results(self) -> None:
+    def save_results(self, file_name: str = "GCMC_Results.json") -> None:
         """
         Save a json file with the main results of the simulation.
         """
@@ -344,7 +344,7 @@ class GCMC(BaseSimulator):
             * 1e-3,
         }
 
-        with open(os.path.join(self.out_folder, "GCMC_Results.json"), "w") as f:
+        with open(os.path.join(self.out_folder, file_name), "w") as f:
             json.dump(results, f, indent=4)
 
     def _insertion_acceptance(self, deltaE) -> bool:
