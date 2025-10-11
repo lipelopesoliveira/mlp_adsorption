@@ -142,11 +142,7 @@ class Widom(BaseSimulator):
 
         self.int_energy_list = np.append(self.int_energy_list, deltaE)
 
-        
-
         self.boltz_fac = np.exp(-self.beta * self.int_energy_list)
-
-        
 
         # kH = β <exp(-β ΔE)> [mol kg-1 Pa-1]
         self.kH = (
@@ -259,7 +255,7 @@ class Widom(BaseSimulator):
 
         deltaE = e_new - self.framework_energy - self.adsorbate_energy
 
-        atoms_trial.info['interaction_energy'] = deltaE
+        atoms_trial.info["interaction_energy"] = deltaE
 
         if np.abs(deltaE) > np.abs(self.max_deltaE):
             return 1000.0, atoms_trial  # Return 1000 energy to indicate error
