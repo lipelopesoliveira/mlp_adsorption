@@ -21,12 +21,17 @@
 - Allow for custom move weights in the GCMC simulation. Users can now specify different probabilities for insertion, deletion, translation, and rotation moves through the `move_weights` parameter when initializing the `GCMC` class. This provides greater flexibility in tailoring the simulation to specific systems or research needs.
 - Improved the logging of Widom simulation results to include standard deviations for both the Henry coefficient and the enthalpy of adsorption. The standard deviations are calculated using 5-fold cross-validation, providing a more robust measure of uncertainty in the results.
 - Added the `Widom.save_results` method to include standard deviations for the Henry coefficient and enthalpy of adsorption.
+- Added the `save_rejected` parameter to both the `GCMC` and `Widom` classes. When set to `True`, this parameter enables the saving of rejected moves to a separate trajectory file, allowing users to analyze these configurations post-simulation.
 
 ### Fixed 🐛
 
 ### Enhanced ✨
 
+- Improved the handling of tags in the ASE Atoms objects for both the framework and adsorbate molecules. The framework atoms are now tagged with `0`, and adsorbate atoms are tagged with `1`. This tagging system helps differentiate between framework and adsorbate atoms during simulations and analyses. This is also a necessary step for future implementations of multiple adsorbates.
+
 ### Documentation 📖
+
+- Examples have been updated to save the results of the simulations using the new `save_results` method.
 
 ### Removed 🗑️
 

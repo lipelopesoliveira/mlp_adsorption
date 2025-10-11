@@ -36,6 +36,7 @@ class GCMC(BaseSimulator):
         vdw_factor: float = 0.6,
         max_deltaE: float = 1.555,
         save_frequency: int = 100,
+        save_rejected: bool = False,
         output_to_file: bool = True,
         debug: bool = False,
         fugacity_coeff: float = 1.0,
@@ -86,6 +87,8 @@ class GCMC(BaseSimulator):
             Factor to scale the Van der Waals radii (default is 0.6).
         save_frequency : int, optional
             Frequency at which to save the simulation state and results (default is 100).
+        save_rejected : bool, optional
+            If True, saves the rejected moves in a trajectory file (default is False).
         output_to_file : bool, optional
             If True, writes the output to a file named 'GCMC_Output.out' in the 'results' directory
         debug : bool, optional
@@ -121,6 +124,7 @@ class GCMC(BaseSimulator):
             vdw_factor=vdw_factor,
             max_deltaE=max_deltaE,
             save_frequency=save_frequency,
+            save_rejected=save_rejected,
             output_to_file=output_to_file,
             debug=debug,
             fugacity_coeff=fugacity_coeff,
@@ -452,6 +456,8 @@ class GCMC(BaseSimulator):
         deltaE = e_new - self.current_total_energy - self.adsorbate_energy
 
         if np.abs(deltaE) > np.abs(self.max_deltaE):
+            if self.save_rejected:
+                self.rejected_trajectory.write(atoms_trial)  # type: ignore
             return False
 
         # Apply the acceptance criteria for insertion
@@ -461,6 +467,8 @@ class GCMC(BaseSimulator):
             self.N_ads += 1
             return True
         else:
+            if self.save_rejected:
+                self.rejected_trajectory.write(atoms_trial)  # type: ignore
             return False
 
     def try_deletion(self) -> bool:
@@ -549,6 +557,8 @@ class GCMC(BaseSimulator):
         deltaE = e_trial - self.current_total_energy
 
         if np.abs(deltaE) > np.abs(self.max_deltaE):
+            if self.save_rejected:
+                self.rejected_trajectory.write(atoms_trial)  # type: ignore
             return False
 
         if self._move_acceptance(deltaE=deltaE, movement_name="Translation"):
@@ -556,6 +566,8 @@ class GCMC(BaseSimulator):
             self.current_total_energy = e_trial
             return True
         else:
+            if self.save_rejected:
+                self.rejected_trajectory.write(atoms_trial)  # type: ignore
             return False
 
     def try_rotation(self) -> bool:
@@ -590,6 +602,8 @@ class GCMC(BaseSimulator):
         deltaE = e_trial - self.current_total_energy
 
         if np.abs(deltaE) > np.abs(self.max_deltaE):
+            if self.save_rejected:
+                self.rejected_trajectory.write(atoms_trial)  # type: ignore
             return False
 
         if self._move_acceptance(deltaE=deltaE, movement_name="Rotation"):
@@ -597,6 +611,8 @@ class GCMC(BaseSimulator):
             self.current_total_energy = e_trial
             return True
         else:
+            if self.save_rejected:
+                self.rejected_trajectory.write(atoms_trial)  # type: ignore
             return False
 
     def run(self, N) -> None:
