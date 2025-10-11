@@ -73,3 +73,4 @@ for j in range(5):
 
 gcmc.run(MCSteps)
 gcmc.logger.print_summary()
+gcmc.save_results()
