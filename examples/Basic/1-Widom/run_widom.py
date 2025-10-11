@@ -59,3 +59,4 @@ widom.logger.print_header()
 
 widom.run(NSteps)
 widom.logger.print_summary()
+widom.save_results()

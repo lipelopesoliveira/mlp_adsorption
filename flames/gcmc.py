@@ -1,9 +1,11 @@
 import datetime
+import json
 import os
 from typing import Union
 
 import ase
 import numpy as np
+import pymser
 from ase import units
 from ase.calculators import calculator
 from ase.io import Trajectory, read
@@ -18,6 +20,7 @@ from flames.operations import (
     random_rotation,
     random_translation,
 )
+from flames.utilities import check_weights
 
 
 class GCMC(BaseSimulator):
@@ -33,6 +36,7 @@ class GCMC(BaseSimulator):
         vdw_factor: float = 0.6,
         max_deltaE: float = 1.555,
         save_frequency: int = 100,
+        save_rejected: bool = False,
         output_to_file: bool = True,
         debug: bool = False,
         fugacity_coeff: float = 1.0,
@@ -42,6 +46,12 @@ class GCMC(BaseSimulator):
         criticalTemperature: Union[float, None] = None,
         criticalPressure: Union[float, None] = None,
         acentricFactor: Union[float, None] = None,
+        move_weights: dict = {
+            "insertion": 0.25,
+            "deletion": 0.25,
+            "translation": 0.25,
+            "rotation": 0.25,
+        },
     ):
         """
         Base class for Grand Canonical Monte Carlo (GCMC) simulations using ASE.
@@ -77,6 +87,8 @@ class GCMC(BaseSimulator):
             Factor to scale the Van der Waals radii (default is 0.6).
         save_frequency : int, optional
             Frequency at which to save the simulation state and results (default is 100).
+        save_rejected : bool, optional
+            If True, saves the rejected moves in a trajectory file (default is False).
         output_to_file : bool, optional
             If True, writes the output to a file named 'GCMC_Output.out' in the 'results' directory
         debug : bool, optional
@@ -96,6 +108,9 @@ class GCMC(BaseSimulator):
             Critical pressure of the adsorbate in Pascal.
         acentricFactor : float, optional
             Acentric factor of the adsorbate.
+        move_weights : dict, optional
+            A dictionary containing the move weights for 'insertion', 'deletion', 'translation', and 'rotation'.
+            Default is equal weights for all moves.
         """
 
         super().__init__(
@@ -109,6 +124,7 @@ class GCMC(BaseSimulator):
             vdw_factor=vdw_factor,
             max_deltaE=max_deltaE,
             save_frequency=save_frequency,
+            save_rejected=save_rejected,
             output_to_file=output_to_file,
             debug=debug,
             fugacity_coeff=fugacity_coeff,
@@ -144,10 +160,15 @@ class GCMC(BaseSimulator):
         self.total_energy_list: list[float] = []
         self.total_ads_list: list[float] = []
 
+        self.move_weights = check_weights(move_weights)
+
         self.mov_dict: dict = {"insertion": [], "deletion": [], "translation": [], "rotation": []}
 
         # Base iteration for restarting the simulation. This is for tracking the iteration count only
         self.base_iteration: int = 0
+
+        # Dictionary to store the equilibrated results by pyMSER
+        self.equilibrated_results: dict = {}
 
     def restart(self) -> None:
         """
@@ -229,6 +250,106 @@ class GCMC(BaseSimulator):
         self.logger.print_load_state_info(
             n_atoms=len(state), average_ads_energy=average_binding_energy
         )
+
+    def equilibrate(
+        self,
+        LLM: bool = True,
+        batch_size: int = 100,
+        run_ADF: bool = False,
+        uncertainty: str = "uSD",
+    ) -> None:
+        """
+        Use pyMSER to get the equilibrated statistics of the simulation.
+
+        Parameters
+        ----------
+        LLM : bool
+            If True, use the Leftmost-Local Minima (LLM) method to determine the equilibration time.
+            This is only recommended for high-throughput simulations, and sometimes can underestimate
+            the true equilibration point.
+            Default is True.
+        batch_size : int
+            Batch size to use for speedup the equilibration process. Default is 100.
+        run_ADF : bool
+            If True, run the Augmented Dickey-Fuller (ADF) test to confirm for stationarity.
+            Default is False.
+        uncertainty : str
+            The type of uncertainty to use for the equilibration process. Default is "uSD".
+            Options are:
+            - "uSD": uncorrelated Standard Deviation
+            - "uSE": uncorrelated Standard Error
+            - "SD": Standard Deviation
+            - "SE": Standard Error
+
+        """
+
+        eq_results = pymser.equilibrate(
+            self.uptake_list,
+            LLM=LLM,
+            batch_size=batch_size,
+            ADF_test=run_ADF,
+            uncertainty=uncertainty,
+            print_results=False,
+        )
+
+        enthalpy, enthalpy_sd = pymser.calc_equilibrated_enthalpy(
+            energy=np.array(self.total_ads_list) / units.kB,  # Convert to K
+            number_of_molecules=self.uptake_list,
+            temperature=self.T,
+            eq_index=eq_results["t0"],
+            uncertainty="SD",
+            ac_time=int(eq_results["ac_time"]),
+        )
+
+        eq_results["enthalpy_kJ_per_mol"] = float(enthalpy)
+        eq_results["enthalpy_sd_kJ_per_mol"] = float(enthalpy_sd)
+
+        self.equilibrated_results = eq_results
+
+    def save_results(self, file_name: str = "GCMC_Results.json") -> None:
+        """
+        Save a json file with the main results of the simulation.
+        """
+
+        results = {
+            "temperature_K": self.T,
+            "pressure_Pa": self.P,
+            "fugacity_coefficient": self.fugacity_coeff,
+            "fugacity_Pa": self.fugacity_coeff * self.P,
+            "n_steps": len(self.uptake_list),
+            "t0": self.equilibrated_results.get("t0", None),
+            "average": self.equilibrated_results.get("average", None),
+            "uncertainty": self.equilibrated_results.get("uncertainty", None),
+            "equilibrated": self.equilibrated_results.get("equilibrated", None),
+            "ac_time": self.equilibrated_results.get("ac_time", None),
+            "uncorr_samples": self.equilibrated_results.get("uncorr_samples", None),
+            "enthalpy_kJ_per_mol": self.equilibrated_results.get("enthalpy_kJ_per_mol", None),
+            "enthalpy_sd_kJ_per_mol": self.equilibrated_results.get("enthalpy_sd_kJ_per_mol", None),
+            "uptake_mmol_g": self.equilibrated_results.get("average", 0)
+            * self.conv_factors["mmol/g"],
+            "uptake_sd_mmol_g": self.equilibrated_results.get("uncertainty", 0)
+            * self.conv_factors["mmol/g"],
+            "uptake_mg_g": self.equilibrated_results.get("average", 0) * self.conv_factors["mg/g"],
+            "uptake_sd_mg_g": self.equilibrated_results.get("uncertainty", 0)
+            * self.conv_factors["mg/g"],
+            "uptake_cm3__g": self.equilibrated_results.get("average", 0)
+            * self.conv_factors["cm^3 STP/gr"],
+            "uptake_sd_cm3_g": self.equilibrated_results.get("uncertainty", 0)
+            * self.conv_factors["cm^3 STP/gr"],
+            "uptake_cm3_cm3": self.equilibrated_results.get("average", 0)
+            * self.conv_factors["cm^3 STP/cm^3"],
+            "uptake_sd_cm3_cm3": self.equilibrated_results.get("uncertainty", 0)
+            * self.conv_factors["cm^3 STP/cm^3"],
+            "uptake_percent_wt": self.equilibrated_results.get("average", 0)
+            * self.conv_factors["mg/g"]
+            * 1e-3,
+            "uptake_sd_percent_wt": self.equilibrated_results.get("uncertainty", 0)
+            * self.conv_factors["mg/g"]
+            * 1e-3,
+        }
+
+        with open(os.path.join(self.out_folder, file_name), "w") as f:
+            json.dump(results, f, indent=4)
 
     def _insertion_acceptance(self, deltaE) -> bool:
         """
@@ -335,6 +456,8 @@ class GCMC(BaseSimulator):
         deltaE = e_new - self.current_total_energy - self.adsorbate_energy
 
         if np.abs(deltaE) > np.abs(self.max_deltaE):
+            if self.save_rejected:
+                self.rejected_trajectory.write(atoms_trial)  # type: ignore
             return False
 
         # Apply the acceptance criteria for insertion
@@ -344,6 +467,8 @@ class GCMC(BaseSimulator):
             self.N_ads += 1
             return True
         else:
+            if self.save_rejected:
+                self.rejected_trajectory.write(atoms_trial)  # type: ignore
             return False
 
     def try_deletion(self) -> bool:
@@ -432,6 +557,8 @@ class GCMC(BaseSimulator):
         deltaE = e_trial - self.current_total_energy
 
         if np.abs(deltaE) > np.abs(self.max_deltaE):
+            if self.save_rejected:
+                self.rejected_trajectory.write(atoms_trial)  # type: ignore
             return False
 
         if self._move_acceptance(deltaE=deltaE, movement_name="Translation"):
@@ -439,6 +566,8 @@ class GCMC(BaseSimulator):
             self.current_total_energy = e_trial
             return True
         else:
+            if self.save_rejected:
+                self.rejected_trajectory.write(atoms_trial)  # type: ignore
             return False
 
     def try_rotation(self) -> bool:
@@ -473,6 +602,8 @@ class GCMC(BaseSimulator):
         deltaE = e_trial - self.current_total_energy
 
         if np.abs(deltaE) > np.abs(self.max_deltaE):
+            if self.save_rejected:
+                self.rejected_trajectory.write(atoms_trial)  # type: ignore
             return False
 
         if self._move_acceptance(deltaE=deltaE, movement_name="Rotation"):
@@ -480,6 +611,8 @@ class GCMC(BaseSimulator):
             self.current_total_energy = e_trial
             return True
         else:
+            if self.save_rejected:
+                self.rejected_trajectory.write(atoms_trial)  # type: ignore
             return False
 
     def run(self, N) -> None:
@@ -493,25 +626,27 @@ class GCMC(BaseSimulator):
 
             step_time_start = datetime.datetime.now()
 
-            switch = self.rnd_generator.random()
+            move = self.rnd_generator.choice(
+                a=list(self.move_weights.keys()), p=list(self.move_weights.values())
+            )
 
             # Insertion
-            if switch < 0.25 or self.N_ads == 0:
+            if move == "insertion" or self.N_ads == 0:
                 accepted = self.try_insertion()
                 self.mov_dict["insertion"].append(1 if accepted else 0)
 
             # Deletion
-            elif switch < 0.5:
+            elif move == "deletion":
                 accepted = self.try_deletion()
                 self.mov_dict["deletion"].append(1 if accepted else 0)
 
             # Translation
-            elif switch < 0.75:
+            elif move == "translation":
                 accepted = self.try_translation()
                 self.mov_dict["translation"].append(1 if accepted else 0)
 
             # Rotation
-            elif switch >= 0.75:
+            elif move == "rotation":
                 accepted = self.try_rotation()
                 self.mov_dict["rotation"].append(1 if accepted else 0)
 

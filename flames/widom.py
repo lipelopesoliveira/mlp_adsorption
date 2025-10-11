@@ -1,4 +1,5 @@
 import datetime
+import json
 import os
 from typing import Union
 
@@ -12,6 +13,7 @@ from tqdm import tqdm
 from flames.base_simulator import BaseSimulator
 from flames.logger import WidomLogger
 from flames.operations import check_overlap, random_mol_insertion
+from flames.utilities import random_n_splits
 
 
 class Widom(BaseSimulator):
@@ -26,6 +28,7 @@ class Widom(BaseSimulator):
         max_deltaE: float = 1.555,
         device: str = "cpu",
         save_frequency: int = 100,
+        save_rejected: bool = False,
         output_to_file: bool = True,
         debug: bool = False,
         random_seed: Union[int, None] = None,
@@ -60,6 +63,15 @@ class Widom(BaseSimulator):
             This is used to avoid overflow due to problematic calculations (default is 1.555 eV / 150 kJ/mol).
         device : str, optional
             Device to run the calculations on, either 'cpu' or 'cuda'. Default is 'cpu'.
+        save_frequency : int, optional
+            Frequency at which to save the simulation state and results (default is 100).
+        save_rejected : bool, optional
+            If True, saves the rejected moves in a trajectory file (default is False).
+        output_to_file : bool, optional
+            If True, writes the output to a file named 'Widom_Output.out' in the 'results' directory
+            (default is True).
+        debug : bool, optional
+            If True, enables debug mode with more verbose output (default is False).
         random_seed : int | None
             Random seed for reproducibility (default is None).
         cutoff_radius : float
@@ -79,6 +91,7 @@ class Widom(BaseSimulator):
             vdw_factor=vdw_factor,
             max_deltaE=max_deltaE,
             save_frequency=save_frequency,
+            save_rejected=save_rejected,
             output_to_file=output_to_file,
             debug=debug,
             fugacity_coeff=0.0,
@@ -107,11 +120,15 @@ class Widom(BaseSimulator):
             / (self.framework_density * 1e3)
         )
 
+        self.kH_std_dv = 0.0
+
         # Qst = - < ΔE * exp(-β ΔE) > / <exp(-β ΔE)>  + kB.T # [kJ/mol]
         self.Qst = (
             (self.int_energy_list * self.boltz_fac).mean() / self.boltz_fac.mean()
             - (units.kB * self.T)
         ) / (units.kJ / units.mol)
+
+        self.Qst_std_dv = 0.0
 
     def update_statistics(self, deltaE) -> None:
         """
@@ -140,6 +157,52 @@ class Widom(BaseSimulator):
             (self.int_energy_list * self.boltz_fac).mean() / self.boltz_fac.mean()
             - (units.kB * self.T)
         ) / (units.kJ / units.mol)
+
+        # Calculate standard deviation using cross-validation
+        if len(self.int_energy_list) > 5:
+            cv_int_energy_list = random_n_splits(self.int_energy_list, 5, self.rnd_generator)
+
+            cv_boltz_fac = np.exp(-self.beta * cv_int_energy_list)
+
+            # Calculate standard deviation using cross-validation
+            self.kH_std_dv = (
+                (
+                    self.beta
+                    * cv_boltz_fac.mean(axis=-1)
+                    * (units.J / units.mol)
+                    / (self.framework_density * 1e3)
+                )
+            ).std()
+
+            self.Qst_std_dv = (
+                (
+                    (cv_int_energy_list * cv_boltz_fac).mean(axis=-1) / cv_boltz_fac.mean(axis=-1)
+                    - (units.kB * self.T)
+                )
+                / (units.kJ / units.mol)
+            ).std()
+
+    def save_results(self, file_name: str = "Widom_Results.json") -> None:
+        """
+        Save a json file with the main results of the simulation.
+
+        Parameters
+        ----------
+        file_name : str, optional
+            Name of the output json file (default is 'Widom_Results.json').
+        """
+
+        results = {
+            "temperature_K": self.T,
+            "henry_coefficient_mol_kg-1_Pa-1": self.kH,
+            "henry_coefficient_std_mol_kg-1_Pa-1": self.kH_std_dv,
+            "enthalpy_of_adsorption_kJ_mol-1": self.Qst,
+            "enthalpy_of_adsorption_std_kJ_mol-1": self.Qst_std_dv,
+            "total_insertions": len(self.int_energy_list),
+        }
+
+        with open(os.path.join(self.out_folder, file_name), "w") as f:
+            json.dump(results, f, indent=4)
 
     def restart(self) -> None:
         """
@@ -185,12 +248,14 @@ class Widom(BaseSimulator):
         )
 
         if overlaped:
-            return 1000.0, atoms_trial  # Return 1000 energy to indicate overlap
+            return False, atoms_trial  # Return 1000 energy to indicate overlap
 
         atoms_trial.calc = self.model
         e_new = atoms_trial.get_potential_energy()
 
         deltaE = e_new - self.framework_energy - self.adsorbate_energy
+
+        atoms_trial.info["interaction_energy"] = deltaE
 
         if np.abs(deltaE) > np.abs(self.max_deltaE):
             return 1000.0, atoms_trial  # Return 1000 energy to indicate error
@@ -221,8 +286,13 @@ Iteration  |  dE (eV)  |  dE (kJ/mol)  | kH [mol kg-1 Pa-1]  |  dH (kJ/mol) | Ti
             while not accepted:
                 insert_iter += 1
                 deltaE, atoms_trial = self.try_insertion()
+                if deltaE is False:
+                    continue
                 if deltaE < units.kB * self.T or insert_iter > 1000:
                     accepted = True
+                else:
+                    if self.save_rejected:
+                        self.rejected_trajectory.write(atoms_trial)  # type: ignore
 
             if deltaE < self.minimum_energy:
                 self.minimum_configuration = atoms_trial.copy()
