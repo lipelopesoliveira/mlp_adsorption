@@ -1,10 +1,10 @@
 import datetime
+import json
 import os
 from typing import Union
 
 import ase
 import numpy as np
-import json
 from ase import units
 from ase.calculators import calculator
 from ase.io import write
