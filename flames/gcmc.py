@@ -326,9 +326,9 @@ class GCMC(BaseSimulator):
             "enthalpy_kJ_per_mol": self.equilibrated_results.get("enthalpy_kJ_per_mol", None),
             "enthalpy_sd_kJ_per_mol": self.equilibrated_results.get("enthalpy_sd_kJ_per_mol", None),
             "uptake_mmol_g": self.equilibrated_results.get("average", 0)
-            * self.conv_factors["mmol/g"],
+            * self.conv_factors["mol/kg"],
             "uptake_sd_mmol_g": self.equilibrated_results.get("uncertainty", 0)
-            * self.conv_factors["mmol/g"],
+            * self.conv_factors["mol/kg"],
             "uptake_mg_g": self.equilibrated_results.get("average", 0) * self.conv_factors["mg/g"],
             "uptake_sd_mg_g": self.equilibrated_results.get("uncertainty", 0)
             * self.conv_factors["mg/g"],
