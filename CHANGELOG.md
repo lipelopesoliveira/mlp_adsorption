@@ -31,6 +31,7 @@
 ### Enhanced ✨
 
 - Improved the handling of tags in the ASE Atoms objects for both the framework and adsorbate molecules. The framework atoms are now tagged with `0`, and adsorbate atoms are tagged with `1`. This tagging system helps differentiate between framework and adsorbate atoms during simulations and analyses. This is also a necessary step for future implementations of multiple adsorbates.
+- Now the rotation movements are restricted to an arc of -15 to +15 degrees around an random axis instead of a full random rotation. This change aims to improve the acceptance rate of rotation moves in the GCMC simulation by making smaller, more controlled adjustments to the adsorbate positions. This angle can be adjusted by the user through the `max_rotation_angle` parameter when initializing the `GCMC` class.
 
 ### Documentation 📖
 

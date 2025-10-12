@@ -18,6 +18,7 @@ from flames.operations import (
     check_overlap,
     random_mol_insertion,
     random_rotation,
+    random_rotation_limited,
     random_translation,
 )
 from flames.utilities import check_weights
@@ -34,6 +35,8 @@ class GCMC(BaseSimulator):
         device: str,
         vdw_radii: np.ndarray,
         vdw_factor: float = 0.6,
+        max_translation: float = 1.0,
+        max_rotation: float = np.radians(15),
         max_deltaE: float = 1.555,
         save_frequency: int = 100,
         save_rejected: bool = False,
@@ -85,6 +88,10 @@ class GCMC(BaseSimulator):
             This is used to avoid overflow due to problematic calculations (default is 1.555 eV / 150 kJ/mol).
         vdw_factor : float, optional
             Factor to scale the Van der Waals radii (default is 0.6).
+        max_translation : float, optional
+            Maximum translation distance (default is 1.0).
+        max_rotation : float, optional
+            Maximum rotation angle (in radians) (default is 15 degrees).
         save_frequency : int, optional
             Frequency at which to save the simulation state and results (default is 100).
         save_rejected : bool, optional
@@ -162,6 +169,9 @@ class GCMC(BaseSimulator):
 
         self.move_weights = check_weights(move_weights)
 
+        self.max_translation = max_translation
+        self.max_rotation = max_rotation
+
         self.mov_dict: dict = {"insertion": [], "deletion": [], "translation": [], "rotation": []}
 
         # Base iteration for restarting the simulation. This is for tracking the iteration count only
@@ -215,7 +225,7 @@ class GCMC(BaseSimulator):
 
         self.logger.print_restart_info()
 
-        self.load_state(os.path.join(self.out_folder, 'Movies', "Trajectory.traj"))
+        self.load_state(os.path.join(self.out_folder, "Movies", "Trajectory.traj"))
 
     def load_state(self, state_file: str) -> None:
         """
@@ -301,24 +311,26 @@ class GCMC(BaseSimulator):
             ac_time=int(eq_results["ac_time"]),
         )
 
-        eq_results['average'] = float(eq_results['average'])
-        eq_results['uncertainty'] = float(eq_results['uncertainty'])
-        eq_results['ac_time'] = int(eq_results['ac_time'])
-        eq_results['uncorr_samples'] = int(eq_results['uncorr_samples'])
+        eq_results["average"] = float(eq_results["average"])
+        eq_results["uncertainty"] = float(eq_results["uncertainty"])
+        eq_results["ac_time"] = int(eq_results["ac_time"])
+        eq_results["uncorr_samples"] = int(eq_results["uncorr_samples"])
 
-        eq_results["equilibrated"] = eq_results['t0'] < 0.75 * len(self.uptake_list)
+        eq_results["equilibrated"] = eq_results["t0"] < 0.75 * len(self.uptake_list)
 
         eq_results["enthalpy_kJ_per_mol"] = float(enthalpy)
         eq_results["enthalpy_sd_kJ_per_mol"] = float(enthalpy_sd)
 
         self.equilibrated_results = eq_results
 
-    def save_results(self,
-                     file_name: str = "GCMC_Results.json",
-                     LLM: bool = True,
-                     batch_size: Union[int, bool] = False,
-                     run_ADF: bool = False,
-                     uncertainty: str = "uSD",) -> None:
+    def save_results(
+        self,
+        file_name: str = "GCMC_Results.json",
+        LLM: bool = True,
+        batch_size: Union[int, bool] = False,
+        run_ADF: bool = False,
+        uncertainty: str = "uSD",
+    ) -> None:
         """
         Save a json file with the main results of the simulation.
 
@@ -332,7 +344,7 @@ class GCMC(BaseSimulator):
             the true equilibration point.
             Default is True.
         batch_size : int
-            Batch size to use for speedup the equilibration process. 
+            Batch size to use for speedup the equilibration process.
             Default is False, which means 2% of the total number of steps.
         run_ADF : bool
             If True, run the Augmented Dickey-Fuller (ADF) test to confirm for stationarity.
@@ -573,7 +585,7 @@ class GCMC(BaseSimulator):
 
         pos[i_start:i_end] = random_translation(
             original_positions=pos[i_start:i_end],
-            max_translation=1.0,
+            max_translation=self.max_translation,
             rnd_generator=self.rnd_generator,
         )
 
@@ -621,7 +633,9 @@ class GCMC(BaseSimulator):
         i_start = self.n_atoms_framework + self.n_adsorbate_atoms * i_ads
         i_end = self.n_atoms_framework + self.n_adsorbate_atoms * (i_ads + 1)
 
-        pos[i_start:i_end] = random_rotation(pos[i_start:i_end], rnd_generator=self.rnd_generator)
+        pos[i_start:i_end] = random_rotation_limited(
+            pos[i_start:i_end], rnd_generator=self.rnd_generator, theta_max=self.max_rotation
+        )
         atoms_trial.set_positions(pos)  # type: ignore
 
         overlaped = check_overlap(

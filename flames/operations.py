@@ -43,14 +43,13 @@ def random_rotation(
 
     return rotated_points
 
+
 def random_rotation_limited(
-    original_position: np.ndarray,
-    rnd_generator: np.random.Generator,
-    theta_max: float
+    original_position: np.ndarray, rnd_generator: np.random.Generator, theta_max: float
 ) -> np.ndarray:
     """
     Generates a random rotation of the molecule around a random axis,
-    with rotation angle limited by theta_max (in radians).
+    with rotation angle limited between -theta_max and theta_max (in radians).
 
     Parameters
     ----------
@@ -86,6 +85,7 @@ def random_rotation_limited(
     rotated_points = rot.apply(centered_points) + center
 
     return rotated_points
+
 
 def random_translation(
     original_positions: np.ndarray, max_translation: float, rnd_generator: np.random.Generator
