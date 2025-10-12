@@ -25,6 +25,9 @@
 
 ### Fixed 🐛
 
+- The %wt conversion factor was incorrectly calculated using a factor of 1e-3 instead of 1e-1. This has been corrected in the `GCMC` class and related calculations to ensure accurate representation of adsorption data in weight percent.
+- The restart method in the `GCMC` class was not properly resetting the simulation state. This has been fixed to ensure that all relevant attributes are correctly reinitialized when restarting a simulation.
+
 ### Enhanced ✨
 
 - Improved the handling of tags in the ASE Atoms objects for both the framework and adsorbate molecules. The framework atoms are now tagged with `0`, and adsorbate atoms are tagged with `1`. This tagging system helps differentiate between framework and adsorbate atoms during simulations and analyses. This is also a necessary step for future implementations of multiple adsorbates.

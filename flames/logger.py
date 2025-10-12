@@ -150,13 +150,13 @@ Conversion factors:
     Conversion factor molecules/unit cell -> mg/g:           {self.sim.conv_factors['mg/g']:.9f}
     Conversion factor molecules/unit cell -> cm^3 STP/gr:    {self.sim.conv_factors['cm^3 STP/gr']:.9f}
     Conversion factor molecules/unit cell -> cm^3 STP/cm^3:  {self.sim.conv_factors['cm^3 STP/cm^3']:.9f}
-    Conversion factor molecules/unit cell -> %wt:            {self.sim.conv_factors['mg/g'] * 1e-3:.9f}
+    Conversion factor molecules/unit cell -> %wt:            {self.sim.conv_factors['mg/g'] * 1e-1:.9f}
 
 Partial pressure:
-        {self.sim.P:>15.5f} Pascal
-        {self.sim.P / 1e5:>15.5f} bar
-        {self.sim.P / 101325:>15.5f} atm
-        {self.sim.P / (101325 * 760):>15.5f} Torr
+        {self.sim.P:>25.15f} Pascal
+        {self.sim.P / 1e5:>25.15f} bar
+        {self.sim.P / 101325:>25.15f} atm
+        {self.sim.P / (101325 * 760):>25.15f} Torr
 ===========================================================================
 """
         self._print(header)
@@ -380,7 +380,7 @@ Finishing GCMC simulation
     Average loading absolute [mg/g framework]            {avg_uptake * self.sim.conv_factors["mg/g"]:12.5f} +/- {std_uptake * self.sim.conv_factors["mg/g"]:12.5f} [-]
     Average loading absolute [cm^3 (STP)/gr framework]   {avg_uptake * self.sim.conv_factors["cm^3 STP/gr"]:12.5f} +/- {std_uptake * self.sim.conv_factors["cm^3 STP/gr"]:12.5f} [-]
     Average loading absolute [cm^3 (STP)/cm^3 framework] {avg_uptake * self.sim.conv_factors["cm^3 STP/cm^3"]:12.5f} +/- {std_uptake * self.sim.conv_factors["cm^3 STP/cm^3"]:12.5f} [-]
-    Average loading absolute [%wt framework]             {avg_uptake * self.sim.conv_factors["mg/g"] * 1e-3:12.5f} +/- {std_uptake * self.sim.conv_factors["mg/g"] * 1e-3:12.5f} [-]
+    Average loading absolute [%wt framework]             {avg_uptake * self.sim.conv_factors["mg/g"] * 1e-1:12.5f} +/- {std_uptake * self.sim.conv_factors["mg/g"] * 1e-1:12.5f} [-]
 
 
     Enthalpy of adsorption: [kJ/mol]                     {enthalpy:12.5f} +/- {enthalpy_sd:12.5f} [kJ/mol]

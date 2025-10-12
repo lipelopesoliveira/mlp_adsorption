@@ -215,7 +215,7 @@ class GCMC(BaseSimulator):
 
         self.logger.print_restart_info()
 
-        self.load_state(os.path.join(self.out_folder, "GCMC_Trajectory.traj"))
+        self.load_state(os.path.join(self.out_folder, 'Movies', "Trajectory.traj"))
 
     def load_state(self, state_file: str) -> None:
         """
@@ -254,7 +254,7 @@ class GCMC(BaseSimulator):
     def equilibrate(
         self,
         LLM: bool = True,
-        batch_size: int = 100,
+        batch_size: Union[int, bool] = False,
         run_ADF: bool = False,
         uncertainty: str = "uSD",
     ) -> None:
@@ -286,7 +286,7 @@ class GCMC(BaseSimulator):
         eq_results = pymser.equilibrate(
             self.uptake_list,
             LLM=LLM,
-            batch_size=batch_size,
+            batch_size=int(len(self.uptake_list) / 50) if batch_size is False else batch_size,
             ADF_test=run_ADF,
             uncertainty=uncertainty,
             print_results=False,
@@ -301,15 +301,53 @@ class GCMC(BaseSimulator):
             ac_time=int(eq_results["ac_time"]),
         )
 
+        eq_results['average'] = float(eq_results['average'])
+        eq_results['uncertainty'] = float(eq_results['uncertainty'])
+        eq_results['ac_time'] = int(eq_results['ac_time'])
+        eq_results['uncorr_samples'] = int(eq_results['uncorr_samples'])
+
+        eq_results["equilibrated"] = eq_results['t0'] < 0.75 * len(self.uptake_list)
+
         eq_results["enthalpy_kJ_per_mol"] = float(enthalpy)
         eq_results["enthalpy_sd_kJ_per_mol"] = float(enthalpy_sd)
 
         self.equilibrated_results = eq_results
 
-    def save_results(self, file_name: str = "GCMC_Results.json") -> None:
+    def save_results(self,
+                     file_name: str = "GCMC_Results.json",
+                     LLM: bool = True,
+                     batch_size: Union[int, bool] = False,
+                     run_ADF: bool = False,
+                     uncertainty: str = "uSD",) -> None:
         """
         Save a json file with the main results of the simulation.
+
+        Parameters
+        ----------
+        file_name : str
+            Name of the output file. Default is 'GCMC_Results.json'.
+        LLM : bool
+            If True, use the Leftmost-Local Minima (LLM) method to determine the equilibration time.
+            This is only recommended for high-throughput simulations, and sometimes can underestimate
+            the true equilibration point.
+            Default is True.
+        batch_size : int
+            Batch size to use for speedup the equilibration process. 
+            Default is False, which means 2% of the total number of steps.
+        run_ADF : bool
+            If True, run the Augmented Dickey-Fuller (ADF) test to confirm for stationarity.
+            Default is False.
+        uncertainty : str
+            The type of uncertainty to use for the equilibration process. Default is "uSD".
+            Options are:
+            - "uSD": uncorrelated Standard Deviation
+            - "uSE": uncorrelated Standard Error
+            - "SD": Standard Deviation
+            - "SE": Standard Error
+
         """
+
+        self.equilibrate(LLM=LLM, batch_size=batch_size, run_ADF=run_ADF, uncertainty=uncertainty)
 
         results = {
             "temperature_K": self.T,
@@ -325,6 +363,8 @@ class GCMC(BaseSimulator):
             "uncorr_samples": self.equilibrated_results.get("uncorr_samples", None),
             "enthalpy_kJ_per_mol": self.equilibrated_results.get("enthalpy_kJ_per_mol", None),
             "enthalpy_sd_kJ_per_mol": self.equilibrated_results.get("enthalpy_sd_kJ_per_mol", None),
+            "uptake_nmol": self.equilibrated_results.get("average", 0),
+            "uptake_sd_nmol": self.equilibrated_results.get("uncertainty", 0),
             "uptake_mmol_g": self.equilibrated_results.get("average", 0)
             * self.conv_factors["mol/kg"],
             "uptake_sd_mmol_g": self.equilibrated_results.get("uncertainty", 0)
@@ -342,10 +382,10 @@ class GCMC(BaseSimulator):
             * self.conv_factors["cm^3 STP/cm^3"],
             "uptake_percent_wt": self.equilibrated_results.get("average", 0)
             * self.conv_factors["mg/g"]
-            * 1e-3,
+            * 1e-1,
             "uptake_sd_percent_wt": self.equilibrated_results.get("uncertainty", 0)
             * self.conv_factors["mg/g"]
-            * 1e-3,
+            * 1e-1,
         }
 
         with open(os.path.join(self.out_folder, file_name), "w") as f:
