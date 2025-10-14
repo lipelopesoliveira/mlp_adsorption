@@ -17,7 +17,6 @@ from flames.logger import GCMCLogger
 from flames.operations import (
     check_overlap,
     random_mol_insertion,
-    random_rotation,
     random_rotation_limited,
     random_translation,
 )
