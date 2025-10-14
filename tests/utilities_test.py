@@ -110,8 +110,8 @@ def test_check_weights_missing_multiple_keys_warns():
         # Should issue 2 warnings
         assert len(w) == 2
         msgs = [str(wi.message) for wi in w]
-        assert "missing the key 'translation'" in msgs[0]
-        assert "missing the key 'rotation'" in msgs[1]
+        assert "missing the key 'translation'" in msgs[1]
+        assert "missing the key 'rotation'" in msgs[0]
 
     # Check that missing keys were added as zero
     for key in ["translation", "rotation"]:
