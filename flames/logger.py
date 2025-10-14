@@ -46,15 +46,14 @@ class BaseLogger:
 
         header = f"""
 ===========================================================================
-
-             FFFFFFF LL        AAAAA   MM      M  EEEEEEE  SSSSS  
-             F       LL       A     A  M M M M M  E       SS     
-             FFFFF   LL       AAAAAAA  M   M   M  EEEE     SSSSS 
-             F       LL       A     A  M       M  E            SS
-             F       LLLLLLL  A     A  M       M  EEEEEEE  SSSSS
-
-              FLAMES - Flexible Lattice Adsorption by Monte Carlo
-                             Engine Simulation
+         _______  __          ___      .___  ___.  _______     _______.
+        |   ____||  |        /   \     |   \/   | |   ____|   /       |
+        |  |__   |  |       /  ^  \    |  \  /  | |  |__     |   (----`
+        |   __|  |  |      /  /_\  \   |  |\/|  | |   __|     \   \    
+        |  |     |  `----./  _____  \  |  |  |  | |  |____.----)   |   
+        |__|     |_______/__/     \__\ |__|  |__| |_______|_______/    
+                                                               
+          Flexible Lattice Adsorption by Monte Carlo Engine Simulation
                         powered by Python + ASE
                     Author: Felipe Lopes de Oliveira
 ===========================================================================
@@ -151,13 +150,13 @@ Conversion factors:
     Conversion factor molecules/unit cell -> mg/g:           {self.sim.conv_factors['mg/g']:.9f}
     Conversion factor molecules/unit cell -> cm^3 STP/gr:    {self.sim.conv_factors['cm^3 STP/gr']:.9f}
     Conversion factor molecules/unit cell -> cm^3 STP/cm^3:  {self.sim.conv_factors['cm^3 STP/cm^3']:.9f}
-    Conversion factor molecules/unit cell -> %wt:            {self.sim.conv_factors['mg/g'] * 1e-3:.9f}
+    Conversion factor molecules/unit cell -> %wt:            {self.sim.conv_factors['mg/g'] * 1e-1:.9f}
 
 Partial pressure:
-        {self.sim.P:>15.5f} Pascal
-        {self.sim.P / 1e5:>15.5f} bar
-        {self.sim.P / 101325:>15.5f} atm
-        {self.sim.P / (101325 * 760):>15.5f} Torr
+        {self.sim.P:>25.15f} Pascal
+        {self.sim.P / 1e5:>25.15f} bar
+        {self.sim.P / 101325:>25.15f} atm
+        {self.sim.P / (101325 * 760):>25.15f} Torr
 ===========================================================================
 """
         self._print(header)
@@ -240,7 +239,7 @@ Starting GCMC simulation
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
  Iteration |  Number of  |  Uptake  |    Tot En.   |Av. Ads. En.|  Pacc  |  Pdel  |  Ptra  |  Prot  |  Time
-      -    |  Molecules  | [mmol/g] |     [eV]     |  [kJ/mol]  |    %   |    %   |   %    |   %    |   [s]
+     -     |  Molecules  | [mmol/g] |     [eV]     |  [kJ/mol]  |    %   |    %   |   %    |   %    |   [s]
 ---------- | ----------- | -------- | ------------ | ---------- | ------ | ------ | ------ | ------ | ------"""
         self._print(header)
 
@@ -381,7 +380,7 @@ Finishing GCMC simulation
     Average loading absolute [mg/g framework]            {avg_uptake * self.sim.conv_factors["mg/g"]:12.5f} +/- {std_uptake * self.sim.conv_factors["mg/g"]:12.5f} [-]
     Average loading absolute [cm^3 (STP)/gr framework]   {avg_uptake * self.sim.conv_factors["cm^3 STP/gr"]:12.5f} +/- {std_uptake * self.sim.conv_factors["cm^3 STP/gr"]:12.5f} [-]
     Average loading absolute [cm^3 (STP)/cm^3 framework] {avg_uptake * self.sim.conv_factors["cm^3 STP/cm^3"]:12.5f} +/- {std_uptake * self.sim.conv_factors["cm^3 STP/cm^3"]:12.5f} [-]
-    Average loading absolute [%wt framework]             {avg_uptake * self.sim.conv_factors["mg/g"] * 1e-3:12.5f} +/- {std_uptake * self.sim.conv_factors["mg/g"] * 1e-3:12.5f} [-]
+    Average loading absolute [%wt framework]             {avg_uptake * self.sim.conv_factors["mg/g"] * 1e-1:12.5f} +/- {std_uptake * self.sim.conv_factors["mg/g"] * 1e-1:12.5f} [-]
 
 
     Enthalpy of adsorption: [kJ/mol]                     {enthalpy:12.5f} +/- {enthalpy_sd:12.5f} [kJ/mol]
@@ -455,8 +454,8 @@ Finishing Widom simulation
 
     Average properties of the system:
     ------------------------------------------------------------------------------
-    Henry coefficient: [mol/kg/Pa]                       {self.sim.kH:12.5e} +/- {0.0:12.5e} [-]
-    Enthalpy of adsorption: [kJ/mol]                     {self.sim.Qst:12.5f} +/- {0.0:12.5f} [-]
+    Henry coefficient: [mol/kg/Pa]      {self.sim.kH:12.5e} +/- {self.sim.kH_std_dv:12.5e} [-]
+    Enthalpy of adsorption: [kJ/mol]    {self.sim.Qst:12.5f} +/- {self.sim.Qst_std_dv:12.5f} [-]
 
 ===========================================================================
 Simulation finished successfully!

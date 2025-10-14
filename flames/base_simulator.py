@@ -40,6 +40,7 @@ class BaseSimulator:
         vdw_factor: float = 0.6,
         max_deltaE: float = 1.555,
         save_frequency: int = 100,
+        save_rejected: bool = False,
         output_to_file: bool = True,
         debug: bool = False,
         fugacity_coeff: float = 1.0,
@@ -71,6 +72,8 @@ class BaseSimulator:
             This is used to avoid overflow due to problematic calculations (default is 1.555 eV / 150 kJ/mol).
         save_frequency : int, optional
             Frequency at which to save the simulation state and results (default is 100).
+        save_rejected : bool, optional
+            If True, saves the rejected moves in a trajectory file (default is False).
         output_to_file : bool, optional
             If True, writes the output to a file named 'GCMC_Output.out' in the 'results' directory
         debug : bool, optional
@@ -106,6 +109,13 @@ class BaseSimulator:
 
         self.trajectory = Trajectory(
             os.path.join(self.out_folder, "Movies", "Trajectory.traj"),
+            "a",
+        )
+
+        self.save_rejected = save_rejected
+
+        self.rejected_trajectory = Trajectory(
+            os.path.join(self.out_folder, "Movies", "Trajectory_rejected.traj"),
             "a",
         )
 
@@ -188,6 +198,7 @@ class BaseSimulator:
             The new framework structure as an ASE Atoms object.
         """
         self.framework = framework_atoms
+        self.framework.set_tags(np.zeros(len(self.framework), dtype=int))
 
         self.ideal_supercell = self.get_ideal_supercell()
 
@@ -217,6 +228,7 @@ class BaseSimulator:
             The new adsorbate structure as an ASE Atoms object.
         """
         self.adsorbate = adsorbate_atoms
+        self.adsorbate.set_tags(np.ones(len(self.adsorbate), dtype=int))
         self.adsorbate.calc = self.model
         self.adsorbate.set_cell(self.framework.get_cell())
         self.adsorbate.set_pbc([True, True, True])

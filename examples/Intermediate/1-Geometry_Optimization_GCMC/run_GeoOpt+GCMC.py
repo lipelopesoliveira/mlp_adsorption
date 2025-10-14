@@ -112,3 +112,5 @@ gcmc.logger.print_header()
 gcmc.run(MCSteps)
 
 gcmc.logger.print_summary()
+
+gcmc.save_results()
