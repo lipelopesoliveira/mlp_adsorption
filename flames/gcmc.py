@@ -40,6 +40,7 @@ class GCMC(BaseSimulator):
         save_frequency: int = 100,
         save_rejected: bool = False,
         output_to_file: bool = True,
+        output_folder: Union[str, None] = None,
         debug: bool = False,
         fugacity_coeff: float = 1.0,
         random_seed: Union[int, None] = None,
@@ -97,6 +98,9 @@ class GCMC(BaseSimulator):
             If True, saves the rejected moves in a trajectory file (default is False).
         output_to_file : bool, optional
             If True, writes the output to a file named 'GCMC_Output.out' in the 'results' directory
+            (default is True).
+        output_folder : str | None, optional
+            Folder to save the output files. If None, a folder named 'results_<T>_<P>' will be created.
         debug : bool, optional
             If True, prints detailed debug information during the simulation (default is False).
         fugacity_coeff : float, optional

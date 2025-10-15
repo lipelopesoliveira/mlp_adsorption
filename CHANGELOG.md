@@ -12,7 +12,21 @@
 
 ### Removed 🗑️
 
-## v[0.4.2] - 2025-10-10 (Unreleased)
+## v[0.4.3] - 2025-10-15
+
+### New Features 🎉
+
+- Added support for custom output folders in the `GCMC` and `Widom` classes. Users can now specify a custom folder for saving output files through the `output_folder` parameter. If not provided, a default folder named 'results_<T>_<P>' will be created based on the simulation temperature and pressure.
+
+### Fixed 🐛
+
+### Enhanced ✨
+
+### Documentation 📖
+
+### Removed 🗑️
+
+## v[0.4.2] - 2025-10-14
 
 ### New Features 🎉
 
