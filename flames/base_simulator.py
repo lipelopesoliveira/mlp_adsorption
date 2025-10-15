@@ -40,7 +40,9 @@ class BaseSimulator:
         vdw_factor: float = 0.6,
         max_deltaE: float = 1.555,
         save_frequency: int = 100,
+        save_rejected: bool = False,
         output_to_file: bool = True,
+        output_folder: Union[str, None] = None,
         debug: bool = False,
         fugacity_coeff: float = 1.0,
         random_seed: Union[int, None] = None,
@@ -71,8 +73,13 @@ class BaseSimulator:
             This is used to avoid overflow due to problematic calculations (default is 1.555 eV / 150 kJ/mol).
         save_frequency : int, optional
             Frequency at which to save the simulation state and results (default is 100).
+        save_rejected : bool, optional
+            If True, saves the rejected moves in a trajectory file (default is False).
         output_to_file : bool, optional
             If True, writes the output to a file named 'GCMC_Output.out' in the 'results' directory
+        output_folder : str | None, optional
+            Folder to save the output files. If None, a folder named 'results_<T>_<P>' will be created
+            based on the temperature and pressure (default is None).
         debug : bool, optional
             If True, prints detailed debug information during the simulation (default is False).
         fugacity_coeff : float, optional
@@ -92,8 +99,10 @@ class BaseSimulator:
         self.automatic_supercell = automatic_supercell
 
         # -- General definitions for output --
-
-        self.out_folder = f"results_{temperature:.2f}_{pressure:.2f}"
+        if output_folder is not None:
+            self.out_folder = output_folder
+        else:
+            self.out_folder = f"results_{temperature:.2f}_{pressure:.2f}"
         os.makedirs(self.out_folder, exist_ok=True)
         os.makedirs(os.path.join(self.out_folder, "Movies"), exist_ok=True)
 
@@ -106,6 +115,13 @@ class BaseSimulator:
 
         self.trajectory = Trajectory(
             os.path.join(self.out_folder, "Movies", "Trajectory.traj"),
+            "a",
+        )
+
+        self.save_rejected = save_rejected
+
+        self.rejected_trajectory = Trajectory(
+            os.path.join(self.out_folder, "Movies", "Trajectory_rejected.traj"),
             "a",
         )
 
@@ -188,6 +204,7 @@ class BaseSimulator:
             The new framework structure as an ASE Atoms object.
         """
         self.framework = framework_atoms
+        self.framework.set_tags(np.zeros(len(self.framework), dtype=int))
 
         self.ideal_supercell = self.get_ideal_supercell()
 
@@ -217,6 +234,7 @@ class BaseSimulator:
             The new adsorbate structure as an ASE Atoms object.
         """
         self.adsorbate = adsorbate_atoms
+        self.adsorbate.set_tags(np.ones(len(self.adsorbate), dtype=int))
         self.adsorbate.calc = self.model
         self.adsorbate.set_cell(self.framework.get_cell())
         self.adsorbate.set_pbc([True, True, True])

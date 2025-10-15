@@ -83,3 +83,5 @@ for i, pressure in enumerate(pressure_list):
 
     gcmc.run(MCSteps)
     gcmc.logger.print_summary()
+
+    gcmc.save_results()

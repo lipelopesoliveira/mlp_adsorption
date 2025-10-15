@@ -12,6 +12,47 @@
 
 ### Removed 🗑️
 
+## v[0.4.3] - 2025-10-15
+
+### New Features 🎉
+
+- Added support for custom output folders in the `GCMC` and `Widom` classes. Users can now specify a custom folder for saving output files through the `output_folder` parameter. If not provided, a default folder named 'results_<T>_<P>' will be created based on the simulation temperature and pressure.
+
+### Fixed 🐛
+
+### Enhanced ✨
+
+### Documentation 📖
+
+### Removed 🗑️
+
+## v[0.4.2] - 2025-10-14
+
+### New Features 🎉
+
+- Added the `GCMC.equilibrate` method to allow users to perform equilibration analysis separately from the main simulation run. This method uses the pyMSER library to analyze the uptake data and determine when the system has reached equilibrium.
+- Added the `GCMC.save_results` method to save the results of the equilibration analysis to a JSON file. This includes key metrics such as average uptake, uncertainty, and enthalpy of adsorption.
+- Allow for custom move weights in the GCMC simulation. Users can now specify different probabilities for insertion, deletion, translation, and rotation moves through the `move_weights` parameter when initializing the `GCMC` class. This provides greater flexibility in tailoring the simulation to specific systems or research needs.
+- Improved the logging of Widom simulation results to include standard deviations for both the Henry coefficient and the enthalpy of adsorption. The standard deviations are calculated using 5-fold cross-validation, providing a more robust measure of uncertainty in the results.
+- Added the `Widom.save_results` method to include standard deviations for the Henry coefficient and enthalpy of adsorption.
+- Added the `save_rejected` parameter to both the `GCMC` and `Widom` classes. When set to `True`, this parameter enables the saving of rejected moves to a separate trajectory file, allowing users to analyze these configurations post-simulation.
+
+### Fixed 🐛
+
+- The %wt conversion factor was incorrectly calculated using a factor of 1e-3 instead of 1e-1. This has been corrected in the `GCMC` class and related calculations to ensure accurate representation of adsorption data in weight percent.
+- The restart method in the `GCMC` class was not properly resetting the simulation state. This has been fixed to ensure that all relevant attributes are correctly reinitialized when restarting a simulation.
+
+### Enhanced ✨
+
+- Improved the handling of tags in the ASE Atoms objects for both the framework and adsorbate molecules. The framework atoms are now tagged with `0`, and adsorbate atoms are tagged with `1`. This tagging system helps differentiate between framework and adsorbate atoms during simulations and analyses. This is also a necessary step for future implementations of multiple adsorbates.
+- Now the rotation movements are restricted to an arc of -15 to +15 degrees around an random axis instead of a full random rotation. This change aims to improve the acceptance rate of rotation moves in the GCMC simulation by making smaller, more controlled adjustments to the adsorbate positions. This angle can be adjusted by the user through the `max_rotation_angle` parameter when initializing the `GCMC` class.
+
+### Documentation 📖
+
+- Examples have been updated to save the results of the simulations using the new `save_results` method.
+
+### Removed 🗑️
+
 ## v[0.4.1] - 2025-09-19
 
 ### New Features 🎉
