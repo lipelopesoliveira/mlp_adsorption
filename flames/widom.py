@@ -30,6 +30,7 @@ class Widom(BaseSimulator):
         save_frequency: int = 100,
         save_rejected: bool = False,
         output_to_file: bool = True,
+        output_folder: Union[str, None] = None,
         debug: bool = False,
         random_seed: Union[int, None] = None,
         cutoff_radius: float = 6.0,
@@ -70,6 +71,8 @@ class Widom(BaseSimulator):
         output_to_file : bool, optional
             If True, writes the output to a file named 'Widom_Output.out' in the 'results' directory
             (default is True).
+        output_folder: Union[str, None], optional
+            Folder to save the output files. If None, a folder named 'results_<T>_<P>' will be created.
         debug : bool, optional
             If True, enables debug mode with more verbose output (default is False).
         random_seed : int | None
@@ -93,6 +96,7 @@ class Widom(BaseSimulator):
             save_frequency=save_frequency,
             save_rejected=save_rejected,
             output_to_file=output_to_file,
+            output_folder=output_folder,
             debug=debug,
             fugacity_coeff=0.0,
             random_seed=random_seed,
