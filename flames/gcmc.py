@@ -384,42 +384,48 @@ class GCMC(BaseSimulator):
         self.equilibrate(LLM=LLM, batch_size=batch_size, run_ADF=run_ADF, uncertainty=uncertainty)
 
         results = {
-            "temperature_K": self.T,
-            "pressure_Pa": self.P,
-            "fugacity_coefficient": self.fugacity_coeff,
-            "fugacity_Pa": self.fugacity_coeff * self.P,
-            "n_steps": len(self.uptake_list),
-            "t0": self.equilibrated_results.get("t0", None),
-            "average": self.equilibrated_results.get("average", None),
-            "uncertainty": self.equilibrated_results.get("uncertainty", None),
-            "equilibrated": self.equilibrated_results.get("equilibrated", None),
-            "ac_time": self.equilibrated_results.get("ac_time", None),
-            "uncorr_samples": self.equilibrated_results.get("uncorr_samples", None),
-            "enthalpy_kJ_per_mol": self.equilibrated_results.get("enthalpy_kJ_per_mol", None),
-            "enthalpy_sd_kJ_per_mol": self.equilibrated_results.get("enthalpy_sd_kJ_per_mol", None),
-            "uptake_nmol": self.equilibrated_results.get("average", 0),
-            "uptake_sd_nmol": self.equilibrated_results.get("uncertainty", 0),
-            "uptake_mmol_g": self.equilibrated_results.get("average", 0)
-            * self.conv_factors["mol/kg"],
-            "uptake_sd_mmol_g": self.equilibrated_results.get("uncertainty", 0)
-            * self.conv_factors["mol/kg"],
-            "uptake_mg_g": self.equilibrated_results.get("average", 0) * self.conv_factors["mg/g"],
-            "uptake_sd_mg_g": self.equilibrated_results.get("uncertainty", 0)
-            * self.conv_factors["mg/g"],
-            "uptake_cm3__g": self.equilibrated_results.get("average", 0)
-            * self.conv_factors["cm^3 STP/gr"],
-            "uptake_sd_cm3_g": self.equilibrated_results.get("uncertainty", 0)
-            * self.conv_factors["cm^3 STP/gr"],
-            "uptake_cm3_cm3": self.equilibrated_results.get("average", 0)
-            * self.conv_factors["cm^3 STP/cm^3"],
-            "uptake_sd_cm3_cm3": self.equilibrated_results.get("uncertainty", 0)
-            * self.conv_factors["cm^3 STP/cm^3"],
-            "uptake_percent_wt": self.equilibrated_results.get("average", 0)
-            * self.conv_factors["mg/g"]
-            * 1e-1,
-            "uptake_sd_percent_wt": self.equilibrated_results.get("uncertainty", 0)
-            * self.conv_factors["mg/g"]
-            * 1e-1,
+            "simulation": {
+                "temperature_K": self.T,
+                "pressure_Pa": self.P,
+                "fugacity_coefficient": self.fugacity_coeff,
+                "fugacity_Pa": self.fugacity_coeff * self.P,
+            },
+            "equilibration": {
+                "n_steps": len(self.uptake_list),
+                "t0": self.equilibrated_results.get("t0", None),
+                "average": self.equilibrated_results.get("average", None),
+                "uncertainty": self.equilibrated_results.get("uncertainty", None),
+                "equilibrated": self.equilibrated_results.get("equilibrated", None),
+                "ac_time": self.equilibrated_results.get("ac_time", None),
+                "uncorr_samples": self.equilibrated_results.get("uncorr_samples", None),
+            },
+            "enthalpy": {
+                "kJ_mol": {
+                    'mean': self.equilibrated_results.get("enthalpy_kJ_per_mol", None),
+                    'sd': self.equilibrated_results.get("enthalpy_sd_kJ_per_mol", None),
+                }
+            }
+        }
+
+        # --- Uptake data (computed from conversion factors) ---
+        avrg = self.equilibrated_results.get("average", 0)
+        stdv = self.equilibrated_results.get("uncertainty", 0)
+
+        uptake_units = {
+            "nmol": 1,
+            "mmol_g": self.conv_factors["mol/kg"],
+            "mg_g": self.conv_factors["mg/g"],
+            "cm3_g": self.conv_factors["cm^3 STP/gr"],
+            "cm3_cm3": self.conv_factors["cm^3 STP/cm^3"],
+            "percent_wt": self.conv_factors["mg/g"] * 1e-1,
+        }
+
+        results["uptake"] = {
+            unit: {
+                "mean": avrg * factor,
+                "sd": stdv * factor,
+            }
+            for unit, factor in uptake_units.items()
         }
 
         with open(os.path.join(self.out_folder, file_name), "w") as f:

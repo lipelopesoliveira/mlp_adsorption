@@ -25,6 +25,7 @@
 - Introduced the `max_overlap_tries` parameter in `GCMC` and `Widom` classes to try `n` attempts for placing an adsorbate without van der Waals overlap. If a valid position is not found within the specified number of tries, the insertion is rejected. This applies to insertion, rotation and translation moves.
 - Only create the `Trajectory_rejected.traj` file if the `save_rejected` parameter is set to `True` when initializing the `BaseSimulator` class.
 - Abstracted a few methods on the `Widom` class for better code reusability.
+- Refactor the results json to improve the clarity
 
 ### Documentation 📖
 
