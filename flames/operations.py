@@ -5,9 +5,7 @@ from scipy.spatial.transform import Rotation
 
 
 def random_rotation(
-    original_position: np.ndarray,
-    cell: np.ndarray,
-    rnd_generator: np.random.Generator
+    original_position: np.ndarray, cell: np.ndarray, rnd_generator: np.random.Generator
 ) -> np.ndarray:
     """
     Generates a random rotation of the original position vector around its geometrical center
@@ -55,7 +53,7 @@ def random_rotation_limited(
     original_position: np.ndarray,
     cell: np.ndarray,
     rnd_generator: np.random.Generator,
-    theta_max: float
+    theta_max: float,
 ) -> np.ndarray:
     """
     Generates a random rotation of the molecule around a random axis,
@@ -106,7 +104,7 @@ def random_translation(
     original_position: np.ndarray,
     cell: np.ndarray,
     max_translation: float,
-    rnd_generator: np.random.Generator
+    rnd_generator: np.random.Generator,
 ) -> np.ndarray:
     """
     Generates a random translation vector for the original positions on the interval
@@ -205,7 +203,9 @@ def random_mol_insertion(
 
     tmp_molecule = molecule.copy()
 
-    tmp_molecule.set_positions(random_rotation(molecule.get_positions(), framework.cell.array, rnd_generator))
+    tmp_molecule.set_positions(
+        random_rotation(molecule.get_positions(), framework.cell.array, rnd_generator)
+    )
 
     tmp_molecule.set_positions(
         random_position_cell(tmp_molecule.get_positions(), framework.cell.array, rnd_generator)

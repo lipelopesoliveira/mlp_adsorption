@@ -717,8 +717,8 @@ class GCMC(BaseSimulator):
             pos[i_start:i_end] = random_rotation_limited(
                 original_position=pos[i_start:i_end],
                 cell=self.current_system.cell.array,
-                rnd_generator=self.rnd_generator, 
-                theta_max=self.max_rotation
+                rnd_generator=self.rnd_generator,
+                theta_max=self.max_rotation,
             )
             atoms_trial.set_positions(pos)  # type: ignore
 
