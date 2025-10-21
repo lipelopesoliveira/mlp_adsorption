@@ -731,49 +731,74 @@ def nPT_NoseHoover(
 
     return atoms
 
-def unwrap_positions(positions, cell, pbc=True, reference_index=0):
-    """
-    Unwrap atomic positions so that all atoms in a molecule are close together.
-
-    Parameters
-    ----------
-    positions : (n, 3) ndarray
-        Atomic Cartesian coordinates.
-    cell : (3, 3) ndarray
-        Unit cell vectors.
-    pbc : bool or sequence of bool
-        Whether each cell direction is periodic.
-    reference_index : int, optional
-        Index of the atom to be used as reference for unwrapping (default: 0).
-        All other atoms will be translated so they are as close as possible to
-        this atom, considering periodic boundaries.
-
-    Returns
-    -------
-    unwrapped : (n, 3) ndarray
-        New coordinates where all atoms are close to each other.
-    """
-    positions = np.asarray(positions, dtype=float)
-    cell = np.asarray(cell, dtype=float)
-    inv_cell = np.linalg.inv(cell.T)
-
-    if not hasattr(pbc, "__len__"):
+def pbc2pbc(pbc):
+    """Helper function for dealing with pbc."""
+    if pbc is None:
+        pbc = False
+    if not hasattr(pbc, '__len__'):
         pbc = (pbc,) * 3
-    pbc = np.array(pbc, dtype=bool)
+    return np.asarray(pbc)
 
-    # Convert to fractional coordinates
-    frac = positions @ inv_cell
+def complete_cell(cell):
+    """Return 3x3 cell array from cell object."""
+    if cell is None:
+        cell = np.zeros((3, 3))
+    cell = np.asarray(cell)
+    if cell.shape == (3,):
+        cell = np.diag(cell)
+    return cell
 
-    # Use the reference atom as anchor
-    ref = frac[reference_index].copy()
-    unwrapped_frac = frac.copy()
+def unwrap_positions(positions, cell, pbc=True, ref_atom=0):
+    """Unwrap positions relative to a reference atom.
 
-    for i in range(len(frac)):
-        diff = frac[i] - ref
-        # Apply minimum image convention for periodic axes
-        diff[pbc] -= np.round(diff[pbc])
-        unwrapped_frac[i] = ref + diff
+    This function translates atoms by integer multiples of the
+    lattice vectors so that they form a connected set,
+    minimizing the distance to a reference atom. This is the
+    reverse of wrap_positions.
 
+    Parameters:
+
+    positions: float ndarray of shape (n, 3)
+        Positions of the atoms.
+    cell: float ndarray of shape (3, 3)
+        Unit cell vectors.
+    pbc: one or 3 bool
+        For each axis in the unit cell, decides whether 
+        unwrapping is applied.
+    ref_atom: int
+        The index of the atom to use as the reference point (default 0).
+        All other atoms will be unwrapped to be as close as
+        possible to this atom.
+    """
+
+    # Ensure pbc is a (3,) boolean array
+    pbc = pbc2pbc(pbc)
+    
+    # Ensure cell is a (3, 3) array
+    cell = complete_cell(cell)
+
+    # Convert positions to fractional coordinates
+    # We solve cell.T * f.T = p.T  =>  f = (solve(cell.T, p.T)).T
+    fractional_positions = np.linalg.solve(cell.T, np.asarray(positions).T).T
+    
+    # Get the reference atom's fractional position
+    ref_f_pos = fractional_positions[ref_atom]
+
+    # Calculate fractional differences relative to the reference atom
+    # deltas.shape = (n, 3)
+    deltas = fractional_positions - ref_f_pos
+    
+    # Apply unwrapping logic
+    # For periodic directions, find the closest image by
+    # subtracting the nearest integer.
+    # np.rint(x) rounds x to the nearest integer.
+    for i in range(3):
+        if pbc[i]:
+            deltas[:, i] -= np.rint(deltas[:, i])
+            
+    # The new unwrapped fractional positions are the reference
+    # position plus the "closest image" deltas
+    unwrapped_fractional = ref_f_pos + deltas
+    
     # Convert back to Cartesian coordinates
-    unwrapped = unwrapped_frac @ cell
-    return unwrapped
+    return np.dot(unwrapped_fractional, cell)
