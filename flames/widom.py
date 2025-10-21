@@ -390,7 +390,7 @@ class Widom(BaseSimulator):
 
         return deltaE, atoms_trial
 
-    def _run_iteration(self, iteration: int) -> None:
+    def step(self, iteration: int) -> None:
         """
         Run a single iteration of the Widom insertion method.
 
@@ -439,4 +439,4 @@ class Widom(BaseSimulator):
         self.logger.print_header()
 
         for iteration in tqdm(range(1, N + 1), disable=(self.out_file is None), desc="Widom Step"):
-            self._run_iteration(iteration)
+            self.step(iteration)

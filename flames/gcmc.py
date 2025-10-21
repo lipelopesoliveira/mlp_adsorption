@@ -181,6 +181,13 @@ class GCMC(BaseSimulator):
 
         self.mov_dict: dict = {"insertion": [], "deletion": [], "translation": [], "rotation": []}
 
+        self.movements: dict = {
+            "insertion": self.try_insertion,
+            "deletion": self.try_deletion,
+            "rotation": self.try_rotation,
+            "translation": self.try_translation,
+        }
+
         # Base iteration for restarting the simulation. This is for tracking the iteration count only
         self.base_iteration: int = 0
 
@@ -505,6 +512,27 @@ class GCMC(BaseSimulator):
         # Apply Metropolis acceptance/rejection rule
         return rnd_number < acc
 
+    def _save_state(self, actual_iteration: int) -> None:
+
+        if actual_iteration % self.save_every == 0:
+
+            self.trajectory.write(self.current_system)  # type: ignore
+
+            np.save(
+                os.path.join(self.out_folder, f"uptake_{self.P:.5f}.npy"),
+                np.array(self.uptake_list),
+            )
+
+            np.save(
+                os.path.join(self.out_folder, f"total_energy_{self.P:.5f}.npy"),
+                np.array(self.total_energy_list),
+            )
+
+            np.save(
+                os.path.join(self.out_folder, f"total_ads_{self.P:.5f}.npy"),
+                np.array(self.total_ads_list),
+            )
+
     def try_insertion(self) -> bool:
         """
         Try to insert a new adsorbate molecule into the framework.
@@ -727,83 +755,93 @@ class GCMC(BaseSimulator):
             self._save_rejected_if_enabled(atoms_trial)
             return False
 
+    def _pick_random_move(self) -> str:
+        """
+        Randomly select a move from the `move_weights` dict.
+        If there is no molecule on the system, always return insertion.
+
+        Returns
+        -------
+        move: str
+        """
+
+        if self.N_ads == 0:
+            move = "insertion"
+
+        else:
+            move = self.rnd_generator.choice(
+                a=list(self.move_weights.keys()), p=list(self.move_weights.values())
+            )
+
+        return move
+
+    def get_average_ads_energy(self) -> float:
+        """
+        Compute the average adsorption energy per adsorbed molecule.
+
+        The adsorption energy is calculated as:
+            E_ads_avg = [E_total - (N_ads * E_adsorbate) - E_framework] / N_ads
+
+        where:
+            - E_total: current total energy of the system (simulation)
+            - N_ads: number of adsorbed molecules
+            - E_adsorbate: energy of an isolated adsorbate molecule
+            - E_framework: energy of the empty framework
+
+        The result is converted from simulation units to kJ/mol per adsorbate.
+
+        Returns
+        -------
+        float
+            The average adsorption energy per molecule in kJ/mol.
+            Returns 0.0 if no molecules are adsorbed (N_ads == 0).
+        """
+
+        if self.N_ads == 0:
+            return 0.0
+
+        # Total adsorption energy (system - framework - isolated adsorbates * n adsorbates)
+        adsorption_energy_total = (
+            self.current_total_energy - self.framework_energy - (self.N_ads * self.adsorbate_energy)
+        )
+
+        # Convert to kJ/mol and normalize per adsorbate
+        E_ads_avg = adsorption_energy_total / (units.kJ / units.mol) / self.N_ads
+
+        return E_ads_avg
+
+    def step(self, iteration: int):
+
+        actual_iteration = iteration + self.base_iteration
+
+        step_time_start = datetime.datetime.now()
+
+        # Randomly select a move based on the move weights
+        move = self._pick_random_move()
+
+        accepted = self.movements[move]
+        self.mov_dict[move].append(1 if accepted else 0)
+
+        self.uptake_list.append(self.N_ads)
+        self.total_energy_list.append(self.current_total_energy)
+        self.total_ads_list.append(
+            self.current_total_energy - (self.N_ads * self.adsorbate_energy) - self.framework_energy
+        )
+
+        average_ads_energy = self.get_average_ads_energy()
+
+        self.logger.print_step_info(
+            step=actual_iteration,
+            average_ads_energy=average_ads_energy,
+            step_time=(datetime.datetime.now() - step_time_start).total_seconds(),
+        )
+
+        self._save_state(actual_iteration)
+
     def run(self, N) -> None:
         """Run the Grand Canonical Monte Carlo simulation for N iterations."""
 
         self.logger.print_run_header()
 
         for iteration in tqdm(range(1, N + 1), disable=(self.out_file is None), desc="GCMC Step"):
-
-            actual_iteration = iteration + self.base_iteration
-
-            step_time_start = datetime.datetime.now()
-
-            # Randomly select a move based on the move weights
-            move = (
-                self.rnd_generator.choice(
-                    a=list(self.move_weights.keys()), p=list(self.move_weights.values())
-                )
-                if self.N_ads > 0
-                else "insertion"
-            )
-
-            # Insertion
-            if move == "insertion" or self.N_ads == 0:
-                accepted = self.try_insertion()
-                self.mov_dict["insertion"].append(1 if accepted else 0)
-
-            # Deletion
-            elif move == "deletion":
-                accepted = self.try_deletion()
-                self.mov_dict["deletion"].append(1 if accepted else 0)
-
-            # Translation
-            elif move == "translation":
-                accepted = self.try_translation()
-                self.mov_dict["translation"].append(1 if accepted else 0)
-
-            # Rotation
-            elif move == "rotation":
-                accepted = self.try_rotation()
-                self.mov_dict["rotation"].append(1 if accepted else 0)
-
-            self.uptake_list.append(self.N_ads)
-            self.total_energy_list.append(self.current_total_energy)
-            self.total_ads_list.append(
-                self.current_total_energy
-                - (self.N_ads * self.adsorbate_energy)
-                - self.framework_energy
-            )
-
-            average_ads_energy = (
-                self.current_total_energy
-                - (self.N_ads * self.adsorbate_energy)
-                - self.framework_energy
-            ) / (units.kJ / units.mol)
-
-            average_ads_energy = average_ads_energy / self.N_ads if self.N_ads > 0 else 0
-
-            self.logger.print_step_info(
-                step=actual_iteration,
-                average_ads_energy=average_ads_energy,
-                step_time=(datetime.datetime.now() - step_time_start).total_seconds(),
-            )
-
-            if actual_iteration % self.save_every == 0:
-
-                self.trajectory.write(self.current_system)  # type: ignore
-
-                np.save(
-                    os.path.join(self.out_folder, f"uptake_{self.P:.5f}.npy"),
-                    np.array(self.uptake_list),
-                )
-
-                np.save(
-                    os.path.join(self.out_folder, f"total_energy_{self.P:.5f}.npy"),
-                    np.array(self.total_energy_list),
-                )
-
-                np.save(
-                    os.path.join(self.out_folder, f"total_ads_{self.P:.5f}.npy"),
-                    np.array(self.total_ads_list),
-                )
+            self.step(iteration)
