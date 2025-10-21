@@ -11,6 +11,7 @@ from ase.calculators import calculator
 from ase.io import Trajectory, read
 from tqdm import tqdm
 
+from flames import VERSION
 from flames.base_simulator import BaseSimulator
 from flames.eos import PengRobinsonEOS
 from flames.logger import GCMCLogger
@@ -392,13 +393,15 @@ class GCMC(BaseSimulator):
 
         results = {
             "simulation": {
+                "code_version": VERSION,
                 "temperature_K": self.T,
                 "pressure_Pa": self.P,
                 "fugacity_coefficient": self.fugacity_coeff,
                 "fugacity_Pa": self.fugacity_coeff * self.P,
+                "move_weights": self.mov_dict,
+                "n_steps": len(self.uptake_list),
             },
             "equilibration": {
-                "n_steps": len(self.uptake_list),
                 "t0": self.equilibrated_results.get("t0", None),
                 "average": self.equilibrated_results.get("average", None),
                 "uncertainty": self.equilibrated_results.get("uncertainty", None),
@@ -418,21 +421,12 @@ class GCMC(BaseSimulator):
         avrg = self.equilibrated_results.get("average", 0)
         stdv = self.equilibrated_results.get("uncertainty", 0)
 
-        uptake_units = {
-            "nmol": 1,
-            "mmol_g": self.conv_factors["mol/kg"],
-            "mg_g": self.conv_factors["mg/g"],
-            "cm3_g": self.conv_factors["cm^3 STP/gr"],
-            "cm3_cm3": self.conv_factors["cm^3 STP/cm^3"],
-            "percent_wt": self.conv_factors["mg/g"] * 1e-1,
-        }
-
         results["uptake"] = {
             unit: {
                 "mean": avrg * factor,
                 "sd": stdv * factor,
             }
-            for unit, factor in uptake_units.items()
+            for unit, factor in self.conv_factors.items()
         }
 
         with open(os.path.join(self.out_folder, file_name), "w") as f:
