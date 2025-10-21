@@ -89,6 +89,8 @@ class GCMC(BaseSimulator):
             This is used to avoid overflow due to problematic calculations (default is 1.555 eV / 150 kJ/mol).
         vdw_factor : float, optional
             Factor to scale the Van der Waals radii (default is 0.6).
+        max_overlap_tries : int, optional
+            Maximum number of tries to insert/move a molecule without overlap (default is 100).
         max_translation : float, optional
             Maximum translation distance (default is 1.0).
         max_rotation : float, optional
