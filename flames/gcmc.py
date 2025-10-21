@@ -398,7 +398,7 @@ class GCMC(BaseSimulator):
                 "pressure_Pa": self.P,
                 "fugacity_coefficient": self.fugacity_coeff,
                 "fugacity_Pa": self.fugacity_coeff * self.P,
-                "move_weights": self.mov_dict,
+                "move_weights": self.move_weights,
                 "n_steps": len(self.uptake_list),
             },
             "equilibration": {
