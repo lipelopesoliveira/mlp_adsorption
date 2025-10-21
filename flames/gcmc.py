@@ -651,7 +651,8 @@ class GCMC(BaseSimulator):
             i_end = self.n_atoms_framework + self.n_adsorbate_atoms * (i_ads + 1)
 
             pos[i_start:i_end] = random_translation(
-                original_positions=pos[i_start:i_end],
+                original_position=pos[i_start:i_end],
+                cell=self.current_system.cell.array,
                 max_translation=self.max_translation,
                 rnd_generator=self.rnd_generator,
             )
@@ -714,7 +715,10 @@ class GCMC(BaseSimulator):
             i_end = self.n_atoms_framework + self.n_adsorbate_atoms * (i_ads + 1)
 
             pos[i_start:i_end] = random_rotation_limited(
-                pos[i_start:i_end], rnd_generator=self.rnd_generator, theta_max=self.max_rotation
+                original_position=pos[i_start:i_end],
+                cell=self.current_system.cell.array,
+                rnd_generator=self.rnd_generator, 
+                theta_max=self.max_rotation
             )
             atoms_trial.set_positions(pos)  # type: ignore
 

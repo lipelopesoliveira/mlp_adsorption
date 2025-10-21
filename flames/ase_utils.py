@@ -730,3 +730,50 @@ def nPT_NoseHoover(
     print(footer, file=out_file, flush=True)
 
     return atoms
+
+def unwrap_positions(positions, cell, pbc=True, reference_index=0):
+    """
+    Unwrap atomic positions so that all atoms in a molecule are close together.
+
+    Parameters
+    ----------
+    positions : (n, 3) ndarray
+        Atomic Cartesian coordinates.
+    cell : (3, 3) ndarray
+        Unit cell vectors.
+    pbc : bool or sequence of bool
+        Whether each cell direction is periodic.
+    reference_index : int, optional
+        Index of the atom to be used as reference for unwrapping (default: 0).
+        All other atoms will be translated so they are as close as possible to
+        this atom, considering periodic boundaries.
+
+    Returns
+    -------
+    unwrapped : (n, 3) ndarray
+        New coordinates where all atoms are close to each other.
+    """
+    positions = np.asarray(positions, dtype=float)
+    cell = np.asarray(cell, dtype=float)
+    inv_cell = np.linalg.inv(cell.T)
+
+    if not hasattr(pbc, "__len__"):
+        pbc = (pbc,) * 3
+    pbc = np.array(pbc, dtype=bool)
+
+    # Convert to fractional coordinates
+    frac = positions @ inv_cell
+
+    # Use the reference atom as anchor
+    ref = frac[reference_index].copy()
+    unwrapped_frac = frac.copy()
+
+    for i in range(len(frac)):
+        diff = frac[i] - ref
+        # Apply minimum image convention for periodic axes
+        diff[pbc] -= np.round(diff[pbc])
+        unwrapped_frac[i] = ref + diff
+
+    # Convert back to Cartesian coordinates
+    unwrapped = unwrapped_frac @ cell
+    return unwrapped
