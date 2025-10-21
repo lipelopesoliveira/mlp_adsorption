@@ -819,7 +819,7 @@ class GCMC(BaseSimulator):
         # Randomly select a move based on the move weights
         move = self._pick_random_move()
 
-        accepted = self.movements[move]
+        accepted = self.movements[move]()
         self.mov_dict[move].append(1 if accepted else 0)
 
         self.uptake_list.append(self.N_ads)
