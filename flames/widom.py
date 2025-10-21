@@ -120,24 +120,94 @@ class Widom(BaseSimulator):
         self.boltz_fac = np.exp(-self.beta * self.int_energy_list)
 
         # kH = β <exp(-β ΔE)> [mol kg-1 Pa-1]
-        self.kH = (
-            self.beta
-            * self.boltz_fac.mean()
-            * (units.J / units.mol)
-            / (self.framework_density * 1e3)
-        )
+        self.kH = self._compute_kH(self.boltz_fac)
 
         self.kH_std_dv = 0.0
 
-        # Qst = - < ΔE * exp(-β ΔE) > / <exp(-β ΔE)>  + kB.T # [kJ/mol]
-        self.Qst = (
-            (self.int_energy_list * self.boltz_fac).mean() / self.boltz_fac.mean()
-            - (units.kB * self.T)
-        ) / (units.kJ / units.mol)
+        # Compute the adsorption energy (Qst)
+        self.Qst = self._compute_Qst(self.int_energy_list, self.boltz_fac)
 
         self.Qst_std_dv = 0.0
 
         self.max_overlap_tries = max_overlap_tries
+        self.MAX_ENERGY_ERROR = 1000.0
+
+    def _compute_kH(self, boltz_fac: np.ndarray) -> float:
+        """
+        Compute the Henry coefficient (kH) using the Boltzmann factors.
+
+        kH = β <exp(-β ΔE)> [mol kg-1 Pa-1]
+
+        Parameters
+        ----------
+        boltz_fac : np.ndarray
+            Array of Boltzmann factors corresponding to the integral energies.
+        
+        Returns
+        -------
+            float: The Henry coefficient in mol kg-1 Pa-1
+        """
+
+        return self.beta * boltz_fac.mean() * units.J / (units.mol * self.framework_density * 1e3)
+
+    def _compute_kH_std(self, boltz_fac: np.ndarray) -> float:
+        """
+        Compute the standard deviation of the Henry coefficient (kH) using the Boltzmann factors.
+
+        kH = β <exp(-β ΔE)> [mol kg-1 Pa-1]
+
+        Parameters
+        ----------
+        boltz_fac : np.ndarray
+            Array of Boltzmann factors corresponding to the integral energies.
+        
+        Returns
+        -------
+            float: The standard deviation of the Henry coefficient in mol kg-1 Pa-1
+        """
+
+        return (self.beta * boltz_fac.mean(axis=-1) * (units.J / units.mol) / (self.framework_density * 1e3)).std()
+        
+    def _compute_Qst(self, int_energy_list: np.ndarray, boltz_fac: np.ndarray) -> float:
+        """
+        Compute the adsorption energy (Qst) using the integral energy list and Boltzmann factors.
+
+        Qst = - < ΔE * exp(-β ΔE) > / <exp(-β ΔE)>  + kB.T # [kJ/mol]
+
+        Parameters
+        ----------
+        int_energy_list : np.ndarray
+            Array of integral energies from the Widom insertions.
+        boltz_fac : np.ndarray
+            Array of Boltzmann factors corresponding to the integral energies.
+
+        Returns
+        -------
+            float: The Qst energy in kJ/mol
+        """
+        return ((int_energy_list * boltz_fac).mean() / boltz_fac.mean() - units.kB * self.T) / (units.kJ / units.mol)
+    
+    def _compute_Qst_std(self, int_energy_list: np.ndarray, boltz_fac: np.ndarray) -> float:
+        """
+        Compute the standard deviation of the adsorption energy (Qst) using the integral energy list and Boltzmann factors.
+
+        Qst = - < ΔE * exp(-β ΔE) > / <exp(-β ΔE)>  + kB.T # [kJ/mol]
+
+        Parameters
+        ----------
+        int_energy_list : np.ndarray
+            Array of integral energies from the Widom insertions.
+        boltz_fac : np.ndarray
+            Array of Boltzmann factors corresponding to the integral energies.
+
+        Returns
+        -------
+            float: The standard deviation of Qst energy in kJ/mol
+        """
+        return (
+            ((int_energy_list * boltz_fac).mean(axis=-1) / boltz_fac.mean(axis=-1) - units.kB * self.T)
+            / (units.kJ / units.mol)
+        ).std()
 
     def _save_rejected_if_enabled(self, atoms_trial: ase.Atoms) -> None:
         """
@@ -183,9 +253,7 @@ class Widom(BaseSimulator):
         if deltaE < self.minimum_energy:
             self.minimum_configuration = atoms_trial.copy()
             self.minimum_energy = deltaE
-            tmp_name = "minimum_configuration_{:.2f}.cif".format(
-                deltaE / (units.kJ / units.mol)
-            )
+            tmp_name = f"minimum_configuration_{deltaE / (units.kJ / units.mol):.2f}.cif"
 
             write(
                 os.path.join(os.path.join(self.out_folder, "Movies", tmp_name)),
@@ -193,7 +261,7 @@ class Widom(BaseSimulator):
                 format="cif",
             )
 
-    def update_statistics(self, deltaE) -> None:
+    def update_statistics(self, deltaE: float) -> None:
         """
         Update the statistics of the Widom insertion method after a new insertion.
 
@@ -207,19 +275,8 @@ class Widom(BaseSimulator):
 
         self.boltz_fac = np.exp(-self.beta * self.int_energy_list)
 
-        # kH = β <exp(-β ΔE)> [mol kg-1 Pa-1]
-        self.kH = (
-            self.beta
-            * self.boltz_fac.mean()
-            * (units.J / units.mol)
-            / (self.framework_density * 1e3)
-        )
-
-        # Qst = - < ΔE * exp(-β ΔE) > / <exp(-β ΔE)>  + kB.T # [kJ/mol]
-        self.Qst = (
-            (self.int_energy_list * self.boltz_fac).mean() / self.boltz_fac.mean()
-            - (units.kB * self.T)
-        ) / (units.kJ / units.mol)
+        self.kH = self._compute_kH(self.boltz_fac)
+        self.Qst = self._compute_Qst(self.int_energy_list, self.boltz_fac)
 
         # Calculate standard deviation using cross-validation
         if len(self.int_energy_list) > 5:
@@ -228,22 +285,9 @@ class Widom(BaseSimulator):
             cv_boltz_fac = np.exp(-self.beta * cv_int_energy_list)
 
             # Calculate standard deviation using cross-validation
-            self.kH_std_dv = (
-                (
-                    self.beta
-                    * cv_boltz_fac.mean(axis=-1)
-                    * (units.J / units.mol)
-                    / (self.framework_density * 1e3)
-                )
-            ).std()
+            self.kH_std_dv = self._compute_kH_std(cv_boltz_fac)
 
-            self.Qst_std_dv = (
-                (
-                    (cv_int_energy_list * cv_boltz_fac).mean(axis=-1) / cv_boltz_fac.mean(axis=-1)
-                    - (units.kB * self.T)
-                )
-                / (units.kJ / units.mol)
-            ).std()
+            self.Qst_std_dv = self._compute_Qst_std(cv_int_energy_list, cv_boltz_fac)
 
     def save_results(self, file_name: str = "Widom_Results.json") -> None:
         """
@@ -319,8 +363,8 @@ class Widom(BaseSimulator):
             if not overlaped:
                 break
         else:
-            # Return 10000 if no valid insertion found after max tries
-            return 10000.0, atoms_trial  
+            # Return MAX_ENERGY_ERROR if no valid insertion found after max tries
+            return self.MAX_ENERGY_ERROR, atoms_trial
 
         # Set the same calculator to the trial atoms
         atoms_trial.calc = self.model
@@ -332,50 +376,58 @@ class Widom(BaseSimulator):
         atoms_trial.info["interaction_energy"] = deltaE
 
         if np.abs(deltaE) > np.abs(self.max_deltaE):
-            return 1000.0, atoms_trial  # Return 1000 energy to indicate error
+            return self.MAX_ENERGY_ERROR, atoms_trial  # Return MAX_ENERGY_ERROR to indicate error
 
         return deltaE, atoms_trial
 
-    def run(self, N) -> None:
 
-        header = """
-Iteration  |  dE (eV)  |  dE (kJ/mol)  | kH [mol kg-1 Pa-1]  |  dH (kJ/mol) | Time (s)
----------------------------------------------------------------------------------------"""
-        print(header, file=self.out_file, flush=True)
+    def _run_iteration(self, iteration: int) -> None:
+        """
+        Run a single iteration of the Widom insertion method.
+        
+        Parameters
+        ----------
+        iteration : int
+            The current iteration number.
+        """
+        actual_iteration = iteration + self.base_iteration
+
+        step_time_start = datetime.datetime.now()
+
+        accepted = False
+
+        # Try a valid insertion up to max_overlap_tries times until accepted to count as one Widom insertion
+        for _ in range(self.max_overlap_tries):
+            deltaE, atoms_trial = self.try_insertion()
+            accepted = deltaE < units.kB * self.T
+
+            if accepted:
+                break
+
+            self._save_rejected_if_enabled(atoms_trial)
+
+        self._save_minimum_configuration(deltaE, atoms_trial)  # type: ignore
+
+        self.trajectory.write(atoms_trial)  # type: ignore
+
+        # Append int_energy_list
+        self.update_statistics(deltaE)  # type: ignore
+        self._save_state(actual_iteration)
+
+        self.logger.print_iteration_info(
+            [
+                actual_iteration,
+                deltaE,                             # type: ignore
+                deltaE / (units.kJ / units.mol),    # type: ignore
+                self.kH,
+                self.Qst,
+                (datetime.datetime.now() - step_time_start).total_seconds(),
+            ],
+        )
+
+    def run(self, N: int) -> None:
+        
+        self.logger.print_header()
 
         for iteration in tqdm(range(1, N + 1), disable=(self.out_file is None), desc="Widom Step"):
-
-            actual_iteration = iteration + self.base_iteration
-
-            step_time_start = datetime.datetime.now()
-
-            accepted = False
-
-            # Try a valid insertion up to 1000 times until accepted to count as one Widom insertion
-            for _ in range(1000):
-                deltaE, atoms_trial = self.try_insertion()
-                accepted = deltaE < units.kB * self.T
-
-                if accepted:
-                    break
-
-                self._save_rejected_if_enabled(atoms_trial)
-
-            self._save_minimum_configuration(deltaE, atoms_trial)  # type: ignore
-
-            self.trajectory.write(atoms_trial)  # type: ignore
-
-            # Append int_energy_list
-            self.update_statistics(deltaE)  # type: ignore
-            self._save_state(actual_iteration)
-
-            self.logger.print_iteration_info(
-                [
-                    actual_iteration,
-                    deltaE,                             # type: ignore
-                    deltaE / (units.kJ / units.mol),    # type: ignore
-                    self.kH,
-                    self.Qst,
-                    (datetime.datetime.now() - step_time_start).total_seconds(),
-                ],
-            )
+            self._run_iteration(iteration)
