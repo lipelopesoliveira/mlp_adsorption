@@ -25,6 +25,7 @@ class Widom(BaseSimulator):
         model: calculator.Calculator,
         vdw_radii: np.ndarray,
         vdw_factor: float = 0.6,
+        max_overlap_tries: int = 1000,
         max_deltaE: float = 1.555,
         device: str = "cpu",
         save_frequency: int = 100,
@@ -59,6 +60,8 @@ class Widom(BaseSimulator):
             Van der Waals radii of the atoms in the framework and adsorbate.
         vdw_factor : float, optional
             Factor to scale the Van der Waals radii (default is 0.6).
+        max_overlap_tries : int, optional
+            Maximum number of tries to insert/move a molecule without overlap (default is 100).
         max_deltaE : float, optional
             Maximum energy difference (in eV) to consider for acceptance criteria.
             This is used to avoid overflow due to problematic calculations (default is 1.555 eV / 150 kJ/mol).
@@ -133,6 +136,62 @@ class Widom(BaseSimulator):
         ) / (units.kJ / units.mol)
 
         self.Qst_std_dv = 0.0
+
+        self.max_overlap_tries = max_overlap_tries
+
+    def _save_rejected_if_enabled(self, atoms_trial: ase.Atoms) -> None:
+        """
+        Helper to conditionally write the rejected configuration to the trajectory.
+
+        Parameters
+        ----------
+        atoms_trial : ase.Atoms
+            The trial configuration that was rejected.
+        """
+        if self.save_rejected:
+            self.rejected_trajectory.write(atoms_trial)  # type: ignore
+
+    def _save_state(self, actual_iteration: int) -> None:
+        """
+        Save the current state of the simulation if the iteration matches the save frequency.
+
+        Parameters
+        ----------
+        actual_iteration : int
+            The current iteration number.
+        """
+
+        if actual_iteration % self.save_every == 0:
+
+            np.save(
+                os.path.join(self.out_folder, f"int_energy_{self.P:.5f}.npy"),
+                np.array(self.int_energy_list),
+            )
+
+    def _save_minimum_configuration(self, deltaE: float, atoms_trial: ase.Atoms) -> None:
+        """
+        Save the minimum energy configuration found during the simulation if the latest insertion has a lower energy.
+
+        Parameters
+        ----------
+        deltaE : float
+            The change in energy associated with the latest insertion.
+        atoms_trial : ase.Atoms
+            The trial configuration of the latest insertion.
+        """
+
+        if deltaE < self.minimum_energy:
+            self.minimum_configuration = atoms_trial.copy()
+            self.minimum_energy = deltaE
+            tmp_name = "minimum_configuration_{:.2f}.cif".format(
+                deltaE / (units.kJ / units.mol)
+            )
+
+            write(
+                os.path.join(os.path.join(self.out_folder, "Movies", tmp_name)),
+                atoms_trial,
+                format="cif",
+            )
 
     def update_statistics(self, deltaE) -> None:
         """
@@ -236,29 +295,40 @@ class Widom(BaseSimulator):
 
         Returns
         -------
-        bool
-            True if the insertion was accepted, False otherwise.
+        deltaE : float
+            The change in energy associated with the insertion. If the insertion fails, returns a large value (1000.0).
+        atoms_trial : ase.Atoms
+            The trial configuration after the insertion attempt.
         """
 
-        atoms_trial = random_mol_insertion(self.framework, self.adsorbate, self.rnd_generator)
+        # Ensure atoms_trial is always defined so it can be returned in failure cases
+        atoms_trial = self.framework.copy()
 
-        overlaped = check_overlap(
-            atoms=atoms_trial,
-            group1_indices=np.arange(self.n_atoms_framework),
-            group2_indices=np.arange(
-                self.n_atoms_framework, self.n_atoms_framework + self.n_adsorbate_atoms
-            ),
-            vdw_radii=self.vdw,
-        )
+        for _ in range(max(self.max_overlap_tries, 1)):
+            atoms_trial = random_mol_insertion(self.framework, self.adsorbate, self.rnd_generator)
 
-        if overlaped:
-            return False, atoms_trial  # Return 1000 energy to indicate overlap
+            overlaped = check_overlap(
+                atoms=atoms_trial,
+                group1_indices=np.arange(self.n_atoms_framework),
+                group2_indices=np.arange(
+                    self.n_atoms_framework, self.n_atoms_framework + self.n_adsorbate_atoms
+                ),
+                vdw_radii=self.vdw,
+            )
 
+            if not overlaped:
+                break
+        else:
+            # Return 10000 if no valid insertion found after max tries
+            return 10000.0, atoms_trial  
+
+        # Set the same calculator to the trial atoms
         atoms_trial.calc = self.model
-        e_new = atoms_trial.get_potential_energy()
 
-        deltaE = e_new - self.framework_energy - self.adsorbate_energy
+        # Calculate the interaction energy of the trial configuration
+        deltaE = atoms_trial.get_potential_energy() - self.framework_energy - self.adsorbate_energy
 
+        # Add interaction energy to the info dictionary
         atoms_trial.info["interaction_energy"] = deltaE
 
         if np.abs(deltaE) > np.abs(self.max_deltaE):
@@ -281,55 +351,31 @@ Iteration  |  dE (eV)  |  dE (kJ/mol)  | kH [mol kg-1 Pa-1]  |  dH (kJ/mol) | Ti
 
             accepted = False
 
-            deltaE = 0.0
-
-            atoms_trial = self.framework.copy()
-
-            insert_iter = 0
-
-            while not accepted:
-                insert_iter += 1
+            # Try a valid insertion up to 1000 times until accepted to count as one Widom insertion
+            for _ in range(1000):
                 deltaE, atoms_trial = self.try_insertion()
-                if deltaE is False:
-                    continue
-                if deltaE < units.kB * self.T or insert_iter > 1000:
-                    accepted = True
-                else:
-                    if self.save_rejected:
-                        self.rejected_trajectory.write(atoms_trial)  # type: ignore
+                accepted = deltaE < units.kB * self.T
 
-            if deltaE < self.minimum_energy:
-                self.minimum_configuration = atoms_trial.copy()
-                self.minimum_energy = deltaE
-                tmp_name = "minimum_configuration_{:.2f}.cif".format(
-                    deltaE / (units.kJ / units.mol)
-                )
+                if accepted:
+                    break
 
-                write(
-                    os.path.join(os.path.join(self.out_folder, "Movies", tmp_name)),
-                    atoms_trial,
-                    format="cif",
-                )
+                self._save_rejected_if_enabled(atoms_trial)
+
+            self._save_minimum_configuration(deltaE, atoms_trial)  # type: ignore
 
             self.trajectory.write(atoms_trial)  # type: ignore
 
             # Append int_energy_list
-            self.update_statistics(deltaE)
+            self.update_statistics(deltaE)  # type: ignore
+            self._save_state(actual_iteration)
 
             self.logger.print_iteration_info(
                 [
                     actual_iteration,
-                    deltaE,
-                    deltaE / (units.kJ / units.mol),
+                    deltaE,                             # type: ignore
+                    deltaE / (units.kJ / units.mol),    # type: ignore
                     self.kH,
                     self.Qst,
                     (datetime.datetime.now() - step_time_start).total_seconds(),
                 ],
             )
-
-            if actual_iteration % self.save_every == 0:
-
-                np.save(
-                    os.path.join(self.out_folder, f"int_energy_{self.P:.5f}.npy"),
-                    np.array(self.int_energy_list),
-                )
