@@ -34,6 +34,7 @@ class GCMC(BaseSimulator):
         device: str,
         vdw_radii: np.ndarray,
         vdw_factor: float = 0.6,
+        max_overlap_tries: int = 100,
         max_translation: float = 1.0,
         max_rotation: float = np.radians(15),
         max_deltaE: float = 1.555,
@@ -136,6 +137,7 @@ class GCMC(BaseSimulator):
             save_frequency=save_frequency,
             save_rejected=save_rejected,
             output_to_file=output_to_file,
+            output_folder=output_folder,
             debug=debug,
             fugacity_coeff=fugacity_coeff,
             random_seed=random_seed,
@@ -180,8 +182,23 @@ class GCMC(BaseSimulator):
         # Base iteration for restarting the simulation. This is for tracking the iteration count only
         self.base_iteration: int = 0
 
+        # Maximum number of tries to insert a molecule without overlap
+        self.max_overlap_tries = max_overlap_tries
+
         # Dictionary to store the equilibrated results by pyMSER
         self.equilibrated_results: dict = {}
+
+    def _save_rejected_if_enabled(self, atoms_trial: ase.Atoms) -> None:
+        """
+        Helper to conditionally write the rejected configuration to the trajectory.
+
+        Parameters
+        ----------
+        atoms_trial : ase.Atoms
+            The trial configuration that was rejected.
+        """
+        if self.save_rejected:
+            self.rejected_trajectory.write(atoms_trial)  # type: ignore
 
     def restart(self) -> None:
         """
@@ -486,6 +503,7 @@ class GCMC(BaseSimulator):
         This method randomly places the adsorbate in the framework and checks for van der Waals overlap.
         If there is no overlap, it calculates the new potential energy and decides whether to accept the insertion
         based on the acceptance criteria.
+        If after a number of tries (self.max_overlap_tries) no valid position is found, the insertion is rejected.
 
         Returns
         -------
@@ -493,26 +511,29 @@ class GCMC(BaseSimulator):
             True if the insertion was accepted, False otherwise.
         """
 
-        atoms_trial = random_mol_insertion(self.current_system, self.adsorbate, self.rnd_generator)
+        for _ in range(self.max_overlap_tries):
+            atoms_trial = random_mol_insertion(self.current_system, self.adsorbate, self.rnd_generator)
 
-        overlaped = check_overlap(
-            atoms=atoms_trial,
-            group1_indices=np.arange(len(self.current_system)),
-            group2_indices=np.arange(len(self.current_system), len(atoms_trial)),
-            vdw_radii=self.vdw,
-        )
+            overlaped = check_overlap(
+                atoms=atoms_trial,
+                group1_indices=np.arange(len(self.current_system)),
+                group2_indices=np.arange(len(self.current_system), len(atoms_trial)),
+                vdw_radii=self.vdw,
+            )
 
-        if overlaped:
+            if not overlaped:
+                break
+        else:
             return False
-
+        
+        # Energy calculation
         atoms_trial.calc = self.model
         e_new = atoms_trial.get_potential_energy()
 
         deltaE = e_new - self.current_total_energy - self.adsorbate_energy
 
         if np.abs(deltaE) > np.abs(self.max_deltaE):
-            if self.save_rejected:
-                self.rejected_trajectory.write(atoms_trial)  # type: ignore
+            self._save_rejected_if_enabled(atoms_trial)
             return False
 
         # Apply the acceptance criteria for insertion
@@ -521,10 +542,9 @@ class GCMC(BaseSimulator):
             self.current_total_energy = e_new
             self.N_ads += 1
             return True
-        else:
-            if self.save_rejected:
-                self.rejected_trajectory.write(atoms_trial)  # type: ignore
-            return False
+        
+        self._save_rejected_if_enabled(atoms_trial)
+        return False
 
     def try_deletion(self) -> bool:
         """
@@ -575,35 +595,49 @@ class GCMC(BaseSimulator):
             return False
 
     def try_translation(self) -> bool:
+        """
+        Try to translate an adsorbate molecule within the framework.
+        This method randomly selects an adsorbate molecule and applies a random translation.
+        It checks for van der Waals overlap and calculates the new potential energy.
+
+        Returns
+        -------
+        bool
+            True if the translation was accepted, False otherwise.
+        """
+
         if self.N_ads == 0:
             return False
+        
+        for _ in range(self.max_overlap_tries):
+            i_ads = self.rnd_generator.integers(low=0, high=self.N_ads, size=1)[0]
+            atoms_trial = self.current_system.copy()
 
-        i_ads = self.rnd_generator.integers(low=0, high=self.N_ads, size=1)[0]
-        atoms_trial = self.current_system.copy()
+            pos = atoms_trial.get_positions()  # type: ignore
 
-        pos = atoms_trial.get_positions()  # type: ignore
+            i_start = self.n_atoms_framework + self.n_adsorbate_atoms * i_ads
+            i_end = self.n_atoms_framework + self.n_adsorbate_atoms * (i_ads + 1)
 
-        i_start = self.n_atoms_framework + self.n_adsorbate_atoms * i_ads
-        i_end = self.n_atoms_framework + self.n_adsorbate_atoms * (i_ads + 1)
+            pos[i_start:i_end] = random_translation(
+                original_positions=pos[i_start:i_end],
+                max_translation=self.max_translation,
+                rnd_generator=self.rnd_generator,
+            )
 
-        pos[i_start:i_end] = random_translation(
-            original_positions=pos[i_start:i_end],
-            max_translation=self.max_translation,
-            rnd_generator=self.rnd_generator,
-        )
+            atoms_trial.set_positions(pos)  # type: ignore
 
-        atoms_trial.set_positions(pos)  # type: ignore
+            overlaped = check_overlap(
+                atoms=atoms_trial,
+                group1_indices=np.concatenate(
+                    [np.arange(0, i_start), np.arange(i_end, len(atoms_trial))]
+                ),
+                group2_indices=np.arange(i_start, i_end),
+                vdw_radii=self.vdw,
+            )
 
-        overlaped = check_overlap(
-            atoms=atoms_trial,
-            group1_indices=np.concatenate(
-                [np.arange(0, i_start), np.arange(i_end, len(atoms_trial))]
-            ),
-            group2_indices=np.arange(i_start, i_end),
-            vdw_radii=self.vdw,
-        )
-
-        if overlaped:
+            if not overlaped:
+                    break
+        else:
             return False
 
         atoms_trial.calc = self.model  # type: ignore
@@ -612,8 +646,7 @@ class GCMC(BaseSimulator):
         deltaE = e_trial - self.current_total_energy
 
         if np.abs(deltaE) > np.abs(self.max_deltaE):
-            if self.save_rejected:
-                self.rejected_trajectory.write(atoms_trial)  # type: ignore
+            self._save_rejected_if_enabled(atoms_trial)
             return False
 
         if self._move_acceptance(deltaE=deltaE, movement_name="Translation"):
@@ -621,36 +654,50 @@ class GCMC(BaseSimulator):
             self.current_total_energy = e_trial
             return True
         else:
-            if self.save_rejected:
-                self.rejected_trajectory.write(atoms_trial)  # type: ignore
+            self._save_rejected_if_enabled(atoms_trial)
             return False
 
     def try_rotation(self) -> bool:
+        """
+        Try to rotate an adsorbate molecule within the framework.
+        This method randomly selects an adsorbate molecule and applies a random rotation.
+        It checks for van der Waals overlap and calculates the new potential energy.
+
+        Returns
+        -------
+        bool
+            True if the rotation was accepted, False otherwise.
+        """
+
         if self.N_ads == 0:
             return False
+        
+        for _ in range(self.max_overlap_tries):
 
-        i_ads = self.rnd_generator.integers(low=0, high=self.N_ads, size=1)[0]
-        atoms_trial = self.current_system.copy()
+            i_ads = self.rnd_generator.integers(low=0, high=self.N_ads, size=1)[0]
+            atoms_trial = self.current_system.copy()
 
-        pos = atoms_trial.get_positions()  # type: ignore
-        i_start = self.n_atoms_framework + self.n_adsorbate_atoms * i_ads
-        i_end = self.n_atoms_framework + self.n_adsorbate_atoms * (i_ads + 1)
+            pos = atoms_trial.get_positions()  # type: ignore
+            i_start = self.n_atoms_framework + self.n_adsorbate_atoms * i_ads
+            i_end = self.n_atoms_framework + self.n_adsorbate_atoms * (i_ads + 1)
 
-        pos[i_start:i_end] = random_rotation_limited(
-            pos[i_start:i_end], rnd_generator=self.rnd_generator, theta_max=self.max_rotation
-        )
-        atoms_trial.set_positions(pos)  # type: ignore
+            pos[i_start:i_end] = random_rotation_limited(
+                pos[i_start:i_end], rnd_generator=self.rnd_generator, theta_max=self.max_rotation
+            )
+            atoms_trial.set_positions(pos)  # type: ignore
 
-        overlaped = check_overlap(
-            atoms=atoms_trial,
-            group1_indices=np.concatenate(
-                [np.arange(0, i_start), np.arange(i_end, len(atoms_trial))]
-            ),
-            group2_indices=np.arange(i_start, i_end),
-            vdw_radii=self.vdw,
-        )
+            overlaped = check_overlap(
+                atoms=atoms_trial,
+                group1_indices=np.concatenate(
+                    [np.arange(0, i_start), np.arange(i_end, len(atoms_trial))]
+                ),
+                group2_indices=np.arange(i_start, i_end),
+                vdw_radii=self.vdw,
+            )
 
-        if overlaped:
+            if not overlaped:
+                    break
+        else:
             return False
 
         atoms_trial.calc = self.model  # type: ignore
@@ -659,8 +706,7 @@ class GCMC(BaseSimulator):
         deltaE = e_trial - self.current_total_energy
 
         if np.abs(deltaE) > np.abs(self.max_deltaE):
-            if self.save_rejected:
-                self.rejected_trajectory.write(atoms_trial)  # type: ignore
+            self._save_rejected_if_enabled(atoms_trial)
             return False
 
         if self._move_acceptance(deltaE=deltaE, movement_name="Rotation"):
@@ -668,8 +714,7 @@ class GCMC(BaseSimulator):
             self.current_total_energy = e_trial
             return True
         else:
-            if self.save_rejected:
-                self.rejected_trajectory.write(atoms_trial)  # type: ignore
+            self._save_rejected_if_enabled(atoms_trial)
             return False
 
     def run(self, N) -> None:
@@ -683,9 +728,10 @@ class GCMC(BaseSimulator):
 
             step_time_start = datetime.datetime.now()
 
+            # Randomly select a move based on the move weights
             move = self.rnd_generator.choice(
                 a=list(self.move_weights.keys()), p=list(self.move_weights.values())
-            )
+            ) if self.N_ads > 0 else "insertion"
 
             # Insertion
             if move == "insertion" or self.N_ads == 0:
