@@ -10,6 +10,7 @@ from ase.calculators import calculator
 from ase.io import write
 from tqdm import tqdm
 
+from flames import VERSION
 from flames.base_simulator import BaseSimulator
 from flames.logger import WidomLogger
 from flames.operations import check_overlap, random_mol_insertion
@@ -310,6 +311,7 @@ class Widom(BaseSimulator):
         """
 
         results = {
+            "code_version": VERSION,
             "temperature_K": self.T,
             "henry_coefficient_mol_kg-1_Pa-1": self.kH,
             "henry_coefficient_std_mol_kg-1_Pa-1": self.kH_std_dv,
