@@ -401,10 +401,10 @@ class GCMC(BaseSimulator):
             },
             "enthalpy": {
                 "kJ_mol": {
-                    'mean': self.equilibrated_results.get("enthalpy_kJ_per_mol", None),
-                    'sd': self.equilibrated_results.get("enthalpy_sd_kJ_per_mol", None),
+                    "mean": self.equilibrated_results.get("enthalpy_kJ_per_mol", None),
+                    "sd": self.equilibrated_results.get("enthalpy_sd_kJ_per_mol", None),
                 }
-            }
+            },
         }
 
         # --- Uptake data (computed from conversion factors) ---
