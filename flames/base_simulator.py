@@ -120,10 +120,11 @@ class BaseSimulator:
 
         self.save_rejected = save_rejected
 
-        self.rejected_trajectory = Trajectory(
-            os.path.join(self.out_folder, "Movies", "Trajectory_rejected.traj"),
-            "a",
-        )
+        if self.save_rejected:
+            self.rejected_trajectory = Trajectory(
+                os.path.join(self.out_folder, "Movies", "Trajectory_rejected.traj"),
+                "a",
+            )
 
         self.save_every = save_frequency
         self.debug = debug
