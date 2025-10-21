@@ -514,7 +514,9 @@ class GCMC(BaseSimulator):
         """
 
         for _ in range(self.max_overlap_tries):
-            atoms_trial = random_mol_insertion(self.current_system, self.adsorbate, self.rnd_generator)
+            atoms_trial = random_mol_insertion(
+                self.current_system, self.adsorbate, self.rnd_generator
+            )
 
             overlaped = check_overlap(
                 atoms=atoms_trial,
@@ -527,7 +529,7 @@ class GCMC(BaseSimulator):
                 break
         else:
             return False
-        
+
         # Energy calculation
         atoms_trial.calc = self.model
         e_new = atoms_trial.get_potential_energy()
@@ -544,7 +546,7 @@ class GCMC(BaseSimulator):
             self.current_total_energy = e_new
             self.N_ads += 1
             return True
-        
+
         self._save_rejected_if_enabled(atoms_trial)
         return False
 
@@ -610,7 +612,7 @@ class GCMC(BaseSimulator):
 
         if self.N_ads == 0:
             return False
-        
+
         for _ in range(self.max_overlap_tries):
             i_ads = self.rnd_generator.integers(low=0, high=self.N_ads, size=1)[0]
             atoms_trial = self.current_system.copy()
@@ -638,7 +640,7 @@ class GCMC(BaseSimulator):
             )
 
             if not overlaped:
-                    break
+                break
         else:
             return False
 
@@ -673,7 +675,7 @@ class GCMC(BaseSimulator):
 
         if self.N_ads == 0:
             return False
-        
+
         for _ in range(self.max_overlap_tries):
 
             i_ads = self.rnd_generator.integers(low=0, high=self.N_ads, size=1)[0]
@@ -698,7 +700,7 @@ class GCMC(BaseSimulator):
             )
 
             if not overlaped:
-                    break
+                break
         else:
             return False
 
@@ -731,9 +733,13 @@ class GCMC(BaseSimulator):
             step_time_start = datetime.datetime.now()
 
             # Randomly select a move based on the move weights
-            move = self.rnd_generator.choice(
-                a=list(self.move_weights.keys()), p=list(self.move_weights.values())
-            ) if self.N_ads > 0 else "insertion"
+            move = (
+                self.rnd_generator.choice(
+                    a=list(self.move_weights.keys()), p=list(self.move_weights.values())
+                )
+                if self.N_ads > 0
+                else "insertion"
+            )
 
             # Insertion
             if move == "insertion" or self.N_ads == 0:

@@ -142,7 +142,7 @@ class Widom(BaseSimulator):
         ----------
         boltz_fac : np.ndarray
             Array of Boltzmann factors corresponding to the integral energies.
-        
+
         Returns
         -------
             float: The Henry coefficient in mol kg-1 Pa-1
@@ -160,14 +160,19 @@ class Widom(BaseSimulator):
         ----------
         boltz_fac : np.ndarray
             Array of Boltzmann factors corresponding to the integral energies.
-        
+
         Returns
         -------
             float: The standard deviation of the Henry coefficient in mol kg-1 Pa-1
         """
 
-        return (self.beta * boltz_fac.mean(axis=-1) * (units.J / units.mol) / (self.framework_density * 1e3)).std()
-        
+        return (
+            self.beta
+            * boltz_fac.mean(axis=-1)
+            * (units.J / units.mol)
+            / (self.framework_density * 1e3)
+        ).std()
+
     def _compute_Qst(self, int_energy_list: np.ndarray, boltz_fac: np.ndarray) -> float:
         """
         Compute the adsorption energy (Qst) using the integral energy list and Boltzmann factors.
@@ -185,8 +190,10 @@ class Widom(BaseSimulator):
         -------
             float: The Qst energy in kJ/mol
         """
-        return ((int_energy_list * boltz_fac).mean() / boltz_fac.mean() - units.kB * self.T) / (units.kJ / units.mol)
-    
+        return ((int_energy_list * boltz_fac).mean() / boltz_fac.mean() - units.kB * self.T) / (
+            units.kJ / units.mol
+        )
+
     def _compute_Qst_std(self, int_energy_list: np.ndarray, boltz_fac: np.ndarray) -> float:
         """
         Compute the standard deviation of the adsorption energy (Qst) using the integral energy list and Boltzmann factors.
@@ -205,7 +212,10 @@ class Widom(BaseSimulator):
             float: The standard deviation of Qst energy in kJ/mol
         """
         return (
-            ((int_energy_list * boltz_fac).mean(axis=-1) / boltz_fac.mean(axis=-1) - units.kB * self.T)
+            (
+                (int_energy_list * boltz_fac).mean(axis=-1) / boltz_fac.mean(axis=-1)
+                - units.kB * self.T
+            )
             / (units.kJ / units.mol)
         ).std()
 
@@ -380,11 +390,10 @@ class Widom(BaseSimulator):
 
         return deltaE, atoms_trial
 
-
     def _run_iteration(self, iteration: int) -> None:
         """
         Run a single iteration of the Widom insertion method.
-        
+
         Parameters
         ----------
         iteration : int
@@ -417,8 +426,8 @@ class Widom(BaseSimulator):
         self.logger.print_iteration_info(
             [
                 actual_iteration,
-                deltaE,                             # type: ignore
-                deltaE / (units.kJ / units.mol),    # type: ignore
+                deltaE,  # type: ignore
+                deltaE / (units.kJ / units.mol),  # type: ignore
                 self.kH,
                 self.Qst,
                 (datetime.datetime.now() - step_time_start).total_seconds(),
@@ -426,7 +435,7 @@ class Widom(BaseSimulator):
         )
 
     def run(self, N: int) -> None:
-        
+
         self.logger.print_header()
 
         for iteration in tqdm(range(1, N + 1), disable=(self.out_file is None), desc="Widom Step"):
