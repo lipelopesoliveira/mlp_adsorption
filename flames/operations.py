@@ -1,7 +1,8 @@
 import ase
 import numpy as np
-from flames.ase_utils import unwrap_positions
 from scipy.spatial.transform import Rotation
+
+from flames.ase_utils import unwrap_positions
 
 
 def random_rotation(
