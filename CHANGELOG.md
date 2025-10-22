@@ -19,7 +19,7 @@
 ### Fixed 🐛
 
 - Fix the bug where the `output_folder` parameter was not being properly passed to the `BaseSimulator` on `GCMC` class.
-- Fix a major bug on rotating molecules that has part of its atoms on one unit cell and parts on other.
+- Fix a major bug in rotating molecules that have part of their atoms in one unit cell and parts in another.
 
 ### Enhanced ✨
 
