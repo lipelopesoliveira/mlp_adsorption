@@ -730,3 +730,78 @@ def nPT_NoseHoover(
     print(footer, file=out_file, flush=True)
 
     return atoms
+
+
+def pbc2pbc(pbc):
+    """Helper function for dealing with pbc."""
+    if pbc is None:
+        pbc = False
+    if not hasattr(pbc, "__len__"):
+        pbc = (pbc,) * 3
+    return np.asarray(pbc)
+
+
+def complete_cell(cell):
+    """Return 3x3 cell array from cell object."""
+    if cell is None:
+        cell = np.ones((3, 3))
+    cell = np.asarray(cell)
+    if cell.shape == (3,):
+        cell = np.diag(cell)
+    return cell
+
+
+def unwrap_positions(positions, cell, pbc=True, ref_atom=0):
+    """Unwrap positions relative to a reference atom.
+
+    This function translates atoms by integer multiples of the
+    lattice vectors so that they form a connected set,
+    minimizing the distance to a reference atom. This is the
+    reverse of wrap_positions.
+
+    Parameters:
+
+    positions: float ndarray of shape (n, 3)
+        Positions of the atoms.
+    cell: float ndarray of shape (3, 3)
+        Unit cell vectors.
+    pbc: one or 3 bool
+        For each axis in the unit cell, decides whether
+        unwrapping is applied.
+    ref_atom: int
+        The index of the atom to use as the reference point (default 0).
+        All other atoms will be unwrapped to be as close as
+        possible to this atom.
+    """
+
+    # Ensure pbc is a (3,) boolean array
+    pbc = pbc2pbc(pbc)
+
+    # Ensure cell is a (3, 3) array
+    cell = complete_cell(cell)
+
+    # Convert positions to fractional coordinates
+    # We solve cell.T * f.T = p.T  =>  f = (solve(cell.T, p.T)).T
+    fractional_positions = np.linalg.solve(cell.T, np.asarray(positions).T).T
+
+    # Get the reference atom's fractional position
+    ref_f_pos = fractional_positions[ref_atom]
+
+    # Calculate fractional differences relative to the reference atom
+    # deltas.shape = (n, 3)
+    deltas = fractional_positions - ref_f_pos
+
+    # Apply unwrapping logic
+    # For periodic directions, find the closest image by
+    # subtracting the nearest integer.
+    # np.rint(x) rounds x to the nearest integer.
+    for i in range(3):
+        if pbc[i]:
+            deltas[:, i] -= np.rint(deltas[:, i])
+
+    # The new unwrapped fractional positions are the reference
+    # position plus the "closest image" deltas
+    unwrapped_fractional = ref_f_pos + deltas
+
+    # Convert back to Cartesian coordinates
+    return np.dot(unwrapped_fractional, cell)

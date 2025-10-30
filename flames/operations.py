@@ -2,9 +2,11 @@ import ase
 import numpy as np
 from scipy.spatial.transform import Rotation
 
+from flames.ase_utils import unwrap_positions
+
 
 def random_rotation(
-    original_position: np.ndarray, rnd_generator: np.random.Generator
+    original_position: np.ndarray, cell: np.ndarray, rnd_generator: np.random.Generator
 ) -> np.ndarray:
     """
     Generates a random rotation of the original position vector around its geometrical center
@@ -15,7 +17,8 @@ def random_rotation(
     original_position (np.ndarray):
         The original position of the atom or molecule to be rotated as a 3D vector.
         Can be a single point (shape `(3,)`) or multiple points (shape `(N, 3)`).
-
+    cell (np.ndarray):
+        Unit cell used to unwrap the atomic positions and perform the rotation correctly
     rnd_generator (np.random.Generator):
         A random number generator instance for reproducibility.
 
@@ -24,28 +27,34 @@ def random_rotation(
         np.ndarray:
             A 3D vector or array of vectors representing the rotated position(s).
     """
-    # 1. Calculate the geometric center (centroid) of the points.
-    center = np.mean(original_position, axis=0)
+    # 1. Unwap the molecule positions to perform the rotation correctly
+    unrwap_pos = unwrap_positions(positions=original_position, cell=cell)
 
-    # 2. Translate the points so their center is at the origin (0, 0, 0).
+    # 2. Calculate the geometric center (centroid) of the points.
+    center = np.mean(unrwap_pos, axis=0)
+
+    # 3. Translate the points so their center is at the origin (0, 0, 0).
     # Rotation is always performed around the origin.
-    centered_points = np.array(original_position) - center
+    centered_points = np.array(unrwap_pos) - center
 
-    # 3. Generate a uniform random rotation in 3D space.
+    # 4. Generate a uniform random rotation in 3D space.
     #    Pass the provided generator to the 'random_state' parameter.
     random_rot = Rotation.random(rng=rnd_generator)
 
-    # 4. Apply the random rotation to the centered points.
+    # 5. Apply the random rotation to the centered points.
     rotated_centered_points = random_rot.apply(centered_points)
 
-    # 5. Translate the rotated points back to their original center.
+    # 6. Translate the rotated points back to their original center.
     rotated_points = rotated_centered_points + center
 
     return rotated_points
 
 
 def random_rotation_limited(
-    original_position: np.ndarray, rnd_generator: np.random.Generator, theta_max: float
+    original_position: np.ndarray,
+    cell: np.ndarray,
+    rnd_generator: np.random.Generator,
+    theta_max: float,
 ) -> np.ndarray:
     """
     Generates a random rotation of the molecule around a random axis,
@@ -55,6 +64,8 @@ def random_rotation_limited(
     ----------
     original_position : np.ndarray
         Coordinates of shape (N, 3) or (3,) representing atoms in space.
+    cell (np.ndarray):
+        Unit cell used to unwrap the atomic positions and perform the rotation correctly
     rnd_generator : np.random.Generator
         Random number generator for reproducibility.
     theta_max : float
@@ -65,11 +76,14 @@ def random_rotation_limited(
     np.ndarray
         Rotated coordinates with the same shape as input.
     """
+    # 1. Unwap the molecule positions to perform the rotation correctly
+    unrwap_pos = unwrap_positions(positions=original_position, cell=cell)
+
     # Compute geometric center
-    center = np.mean(original_position, axis=0)
+    center = np.mean(unrwap_pos, axis=0)
 
     # Center coordinates at origin
-    centered_points = np.array(original_position) - center
+    centered_points = np.array(unrwap_pos) - center
 
     # --- Generate random axis uniformly on the unit sphere ---
     axis = rnd_generator.normal(size=3)
@@ -88,7 +102,10 @@ def random_rotation_limited(
 
 
 def random_translation(
-    original_positions: np.ndarray, max_translation: float, rnd_generator: np.random.Generator
+    original_position: np.ndarray,
+    cell: np.ndarray,
+    max_translation: float,
+    rnd_generator: np.random.Generator,
 ) -> np.ndarray:
     """
     Generates a random translation vector for the original positions on the interval
@@ -96,13 +113,13 @@ def random_translation(
 
     Parameters
     ----------
-    original_positions (np.ndarray):
+    original_position (np.ndarray):
         The original positions of the atoms or molecules to be translated as a 3D vector.
         Can be a single point (shape `(3,)`) or multiple points (shape `(N, 3)`).
-
+    cell (np.ndarray):
+        Unit cell used to unwrap the atomic positions and perform the rotation correctly
     max_shift (float):
         The maximum shift for the translation.
-
     rnd_generator (np.random.Generator):
         A random number generator instance for reproducibility.
 
@@ -116,8 +133,11 @@ def random_translation(
         -max_translation / 2, max_translation / 2, size=(1, 3)
     )
 
+    # 2. Unrap the atomic positions
+    unwrap_pos = unwrap_positions(positions=original_position, cell=cell)
+
     # 2. Apply the translation to the original positions.
-    translated_positions = original_positions + translation_vectors
+    translated_positions = unwrap_pos + translation_vectors
 
     return translated_positions
 
@@ -146,10 +166,12 @@ def random_position_cell(
             A 3D random position inside the unit cell.
     """
 
+    unwrap_pos = unwrap_positions(positions=original_position, cell=lattice_vectors)
+
     # Ensure original_position is a numpy array at the origin
     # Note: This line might not be necessary depending on your use case.
     # It centers the input `original_position` array before applying the translation.
-    original_position = np.array(original_position) - np.average(original_position, axis=0)
+    original_position = np.array(unwrap_pos) - np.average(unwrap_pos, axis=0)
 
     # 2. Use the 'rnd_generator' to generate random numbers
     random_fractions = rnd_generator.random(3)
@@ -157,7 +179,7 @@ def random_position_cell(
     # Convert fractional coordinates to a Cartesian vector
     translation_vector = random_fractions @ lattice_vectors
 
-    return original_position + translation_vector
+    return unwrap_pos + translation_vector
 
 
 def random_mol_insertion(
@@ -182,7 +204,9 @@ def random_mol_insertion(
 
     tmp_molecule = molecule.copy()
 
-    tmp_molecule.set_positions(random_rotation(molecule.get_positions(), rnd_generator))
+    tmp_molecule.set_positions(
+        random_rotation(molecule.get_positions(), framework.cell.array, rnd_generator)
+    )
 
     tmp_molecule.set_positions(
         random_position_cell(tmp_molecule.get_positions(), framework.cell.array, rnd_generator)
