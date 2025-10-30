@@ -51,6 +51,7 @@ class GCMC(BaseSimulator):
         criticalTemperature: Union[float, None] = None,
         criticalPressure: Union[float, None] = None,
         acentricFactor: Union[float, None] = None,
+        LLM: bool = True,
         move_weights: dict = {
             "insertion": 0.25,
             "deletion": 0.25,
@@ -122,6 +123,9 @@ class GCMC(BaseSimulator):
             Critical pressure of the adsorbate in Pascal.
         acentricFactor : float, optional
             Acentric factor of the adsorbate.
+        LLM : bool, optional
+            Use Leftmost Local Minima on the determination of the equilibration point. This can underestimate the
+            equilibration point in some situations, but generate good averages for well-behaved scenarios.
         move_weights : dict, optional
             A dictionary containing the move weights for 'insertion', 'deletion', 'translation', and 'rotation'.
             Default is equal weights for all moves.
@@ -197,6 +201,9 @@ class GCMC(BaseSimulator):
 
         # Dictionary to store the equilibrated results by pyMSER
         self.equilibrated_results: dict = {}
+
+        # Uses Leftmost Local Minima
+        self.LLM = LLM
 
     def _save_rejected_if_enabled(self, atoms_trial: ase.Atoms) -> None:
         """
@@ -293,7 +300,6 @@ class GCMC(BaseSimulator):
 
     def equilibrate(
         self,
-        LLM: bool = True,
         batch_size: Union[int, bool] = False,
         run_ADF: bool = False,
         uncertainty: str = "uSD",
@@ -325,7 +331,7 @@ class GCMC(BaseSimulator):
 
         eq_results = pymser.equilibrate(
             self.uptake_list,
-            LLM=LLM,
+            LLM=self.LLM,
             batch_size=int(len(self.uptake_list) / 50) if batch_size is False else batch_size,
             ADF_test=run_ADF,
             uncertainty=uncertainty,
@@ -356,7 +362,6 @@ class GCMC(BaseSimulator):
     def save_results(
         self,
         file_name: str = "GCMC_Results.json",
-        LLM: bool = True,
         batch_size: Union[int, bool] = False,
         run_ADF: bool = False,
         uncertainty: str = "uSD",
@@ -389,7 +394,7 @@ class GCMC(BaseSimulator):
 
         """
 
-        self.equilibrate(LLM=LLM, batch_size=batch_size, run_ADF=run_ADF, uncertainty=uncertainty)
+        self.equilibrate(batch_size=batch_size, run_ADF=run_ADF, uncertainty=uncertainty)
 
         results = {
             "simulation": {
@@ -402,6 +407,7 @@ class GCMC(BaseSimulator):
                 "n_steps": len(self.uptake_list),
             },
             "equilibration": {
+                "LLM": self.LLM,
                 "t0": self.equilibrated_results.get("t0", None),
                 "average": self.equilibrated_results.get("average", None),
                 "uncertainty": self.equilibrated_results.get("uncertainty", None),
