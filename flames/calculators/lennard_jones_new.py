@@ -4,6 +4,7 @@ from ase.calculators.calculator import Calculator, all_changes
 from numba import njit
 from vesin import NeighborList
 
+
 @njit(fastmath=True, parallel=False, cache=True)
 def compute_lj_numba(
     i_idx, j_idx, distances, atom_types, A_table, B_table, shift_table
