@@ -1,11 +1,11 @@
 import numpy as np
 from ase import units
 from ase.calculators.calculator import Calculator, all_changes
-from numba import njit
+from numba import njit, prange
 from vesin import NeighborList
 
 
-@njit(fastmath=True, parallel=False, cache=True)
+@njit(fastmath=True, parallel=True, cache=True)
 def compute_lj_numba(
     i_idx, j_idx, distances, atom_types, A_table, B_table, shift_table
 ) -> tuple[float, np.ndarray]:
@@ -14,7 +14,7 @@ def compute_lj_numba(
     energies = np.zeros(len(atom_types))
 
     # Loop over unique pairs (Vesin full_list=False halves the iterations)
-    for k in range(len(i_idx)):
+    for k in prange(len(i_idx)):
         i = i_idx[k]
         j = j_idx[k]
         r = distances[k]
@@ -43,10 +43,33 @@ def compute_lj_numba(
 
 
 class CustomLennardJones(Calculator):
+    r"""
+    Custom Lennard-Jones calculator for periodic systems, optimized with Vesin and Numba.
+    This calculator uses a neighbor list to efficiently compute the Lennard-Jones potential energy and forces for a system of particles. The Lennard-Jones potential is given by:
+
+    .. math::
+
+        U(r) = 4 \epsilon \left[ \left( \frac{\sigma}{r} \right)^{12} - \left( \frac{\sigma}{r} \right)^{6} \right]
+
+    where :math:`\epsilon` is the depth of the potential well, :math:`\sigma` is the finite distance at which the inter-particle potential is zero, and :math:`r` is the distance between particles.
+    The calculator supports multiple particle types, each with its own :math:`\epsilon` and :math:`\sigma` parameters, and uses Lorentz-Berthelot mixing rules for interactions between different types.
+
+    Parameters
+    ----------
+    lj_parameters : dict
+        A dictionary containing the Lennard-Jones parameters for each particle type. The keys are the particle labels,
+        and the values are dictionaries with 'epsilon' and 'sigma' keys.
+
+    vdw_cutoff : float, optional
+        The cutoff distance for the van der Waals interactions.
+        Default is 12.0 Angstroms.
+
+    shifted : bool, optional
+        If True, applies a shift to the potential to ensure it goes to zero at the cutoff distance.
+        Default is False.
+    """
+
     implemented_properties = ["energy", "energies"]
-    default_parameters = {
-        "shifted": False,
-    }
     nolabel = True
 
     def __init__(self, lj_parameters: dict, **kwargs):
