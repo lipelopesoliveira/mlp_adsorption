@@ -3,9 +3,6 @@ import os
 import sys
 from typing import Any, Dict, Optional, TextIO, Type
 
-import ase
-import ase.units
-import numpy as np
 from ase import Atoms, units
 from ase.calculators.calculator import Calculator
 from ase.io.trajectory import Trajectory, TrajectoryReader, TrajectoryWriter
@@ -15,15 +12,12 @@ from ase.md.md import MolecularDynamics
 from ase.md.melchionna import MelchionnaNPT
 from ase.md.nose_hoover_chain import (
     IsotropicMTKNPT,
-    MTKBarostat,
     NoseHooverChainNVT,
-    NoseHooverChainThermostat,
 )
 from ase.md.nptberendsen import Inhomogeneous_NPTBerendsen, NPTBerendsen
 from ase.md.nvtberendsen import NVTBerendsen
 from ase.md.velocitydistribution import MaxwellBoltzmannDistribution, Stationary
 from ase.md.verlet import VelocityVerlet
-from scipy.special import exprel
 
 from flames.mtknpt import MTKNPT
 
