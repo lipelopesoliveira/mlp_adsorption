@@ -1,8 +1,8 @@
+import ase
+import numpy as np
+from ase.atoms import Atoms
 from ase.md.md import MolecularDynamics
 from scipy.special import exprel
-import numpy as np
-import ase
-from ase.atoms import Atoms
 
 # Coefficients for the fourth-order Suzuki-Yoshida integration scheme
 # Ref: H. Yoshida, Phys. Lett. A 150, 5-7, 262-268 (1990).
@@ -28,6 +28,7 @@ class MTKBarostat:
         Other cell fluctuations such as partially allowed off-diagonal
         components are not supported in the current implementation.
     """
+
     def __init__(
         self,
         num_atoms_global: int,
@@ -74,20 +75,14 @@ class MTKBarostat:
         )
         return float(energy)
 
-    def integrate_nhc_baro(
-            self, p_cell: np.ndarray, delta: float
-        ) -> np.ndarray:
+    def integrate_nhc_baro(self, p_cell: np.ndarray, delta: float) -> np.ndarray:
         """Integrate exp(i * L_NHC-baro * delta)"""
         for _ in range(self._ploop):
             for coeff in FOURTH_ORDER_COEFFS:
-                p_cell = self._integrate_nhc_baro_loop(
-                    p_cell, coeff * delta / self._ploop
-                )
+                p_cell = self._integrate_nhc_baro_loop(p_cell, coeff * delta / self._ploop)
         return p_cell
 
-    def _integrate_nhc_baro_loop(
-        self, p_cell: np.ndarray, delta: float
-    ) -> np.ndarray:
+    def _integrate_nhc_baro_loop(self, p_cell: np.ndarray, delta: float) -> np.ndarray:
         delta2 = delta / 2
         delta4 = delta / 4
 
@@ -100,13 +95,9 @@ class MTKBarostat:
 
         return p_cell
 
-    def _integrate_p_xi_j(
-        self, p_cell: np.ndarray, j: int, delta2: float, delta4: float
-    ) -> None:
+    def _integrate_p_xi_j(self, p_cell: np.ndarray, j: int, delta2: float, delta4: float) -> None:
         if j < self._pchain - 1:
-            self._p_xi[j] *= np.exp(
-                -delta4 * self._p_xi[j + 1] / self._R[j + 1]
-            )
+            self._p_xi[j] *= np.exp(-delta4 * self._p_xi[j + 1] / self._R[j + 1])
 
         if j == 0:
             g_j = np.sum(p_cell**2) / self._W - self._cell_dof * self._kT
@@ -115,9 +106,7 @@ class MTKBarostat:
         self._p_xi[j] += delta2 * g_j
 
         if j < self._pchain - 1:
-            self._p_xi[j] *= np.exp(
-                -delta4 * self._p_xi[j + 1] / self._R[j + 1]
-            )
+            self._p_xi[j] *= np.exp(-delta4 * self._p_xi[j + 1] / self._R[j + 1])
 
     def _integrate_xi(self, delta: float) -> None:
         for j in range(self._pchain):
@@ -126,11 +115,13 @@ class MTKBarostat:
     def _integrate_nhc_p_cell(self, p_cell: np.ndarray, delta: float) -> None:
         p_cell *= np.exp(-delta * self._p_xi[0] / self._R[0])
 
+
 class NoseHooverChainThermostat:
     """Nose-Hoover chain style thermostats.
 
     See `NoseHooverChainNVT` for the references.
     """
+
     def __init__(
         self,
         *,
@@ -172,18 +163,13 @@ class NoseHooverChainThermostat:
         """Integrate exp(i * L_NHC * delta) and update momenta `p`."""
         for _ in range(self._tloop):
             for coeff in FOURTH_ORDER_COEFFS:
-                p = self._integrate_nhc_loop(
-                    p, coeff * delta / self._tloop
-                )
+                p = self._integrate_nhc_loop(p, coeff * delta / self._tloop)
 
         return p
 
-    def _integrate_p_eta_j(self, p: np.ndarray, j: int,
-                           delta2: float, delta4: float) -> None:
+    def _integrate_p_eta_j(self, p: np.ndarray, j: int, delta2: float, delta4: float) -> None:
         if j < self._tchain - 1:
-            self._p_eta[j] *= np.exp(
-                -delta4 * self._p_eta[j + 1] / self._Q[j + 1]
-            )
+            self._p_eta[j] *= np.exp(-delta4 * self._p_eta[j + 1] / self._Q[j + 1])
 
         if j == 0:
             g_j = np.sum(p**2 / self._masses) - self._ndof * self._kT
@@ -192,9 +178,7 @@ class NoseHooverChainThermostat:
         self._p_eta[j] += delta2 * g_j
 
         if j < self._tchain - 1:
-            self._p_eta[j] *= np.exp(
-                -delta4 * self._p_eta[j + 1] / self._Q[j + 1]
-            )
+            self._p_eta[j] *= np.exp(-delta4 * self._p_eta[j + 1] / self._Q[j + 1])
 
     def _integrate_eta(self, delta: float) -> None:
         self._eta += delta * self._p_eta / self._Q
@@ -214,7 +198,6 @@ class NoseHooverChainThermostat:
             self._integrate_p_eta_j(p, j, delta2, delta4)
 
         return p
-
 
 
 class MTKNPT(MolecularDynamics):
@@ -304,8 +287,7 @@ class MTKNPT(MolecularDynamics):
             pdamp=pdamp,
             pchain=pchain,
             ploop=ploop,
-            vol_constraint=vol_constraint
-
+            vol_constraint=vol_constraint,
         )
 
         self._temperature_K = temperature_K
