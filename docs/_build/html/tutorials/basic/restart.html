@@ -208,13 +208,16 @@
 <li class="toctree-l1"><a class="reference internal" href="gcmc.html">GCMC Simulation</a></li>
 <li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Restarting Simulations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="isotherm.html">GCMC Adsorption Isotherm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="multiple_ads.html">Multi-component GCMC Simulation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Tutorials: Intermediate</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../intermediate/hybrid_gcmc_md.html">Hybrid GCMC/MD Simulation</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Tutorials: Calculators</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../calculators/lennard_jones.html">Lennard-Jones Potential</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../calculators/ewald.html">Lennard-Jones Potential</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../calculators/combining.html">Combining Potentials</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../calculators/cp2k.html">Lennard-Jones Potential</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../calculators/ewald.html">Ewald Sum for Electrostatic Interactions</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Tutorials: Advanced</span></p>
 <ul>
@@ -308,8 +311,14 @@ and the previous data will only be used to calculate the average enthaly of adso
 
 <span class="n">device</span> <span class="o">=</span> <span class="s2">"cuda"</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="s2">"cpu"</span>
 
-<span class="n">FrameworkPath</span> <span class="o">=</span> <span class="s2">"mg-mof-74.cif"</span>
-<span class="n">AdsorbatePath</span> <span class="o">=</span> <span class="s2">"co2.xyz"</span>
+<span class="n">framework</span><span class="p">:</span> <span class="n">ase</span><span class="o">.</span><span class="n">Atoms</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="s2">"mg-mof-74.cif"</span><span class="p">)</span>
+
+<span class="n">adsorbate</span> <span class="o">=</span> <span class="n">Adsorbate</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">"CO2"</span><span class="p">,</span>
+    <span class="n">structure</span><span class="o">=</span><span class="s2">"co2.xyz"</span><span class="p">,</span>
+    <span class="n">eos</span><span class="o">=</span><span class="p">{</span><span class="s2">"criticalTemperature"</span><span class="p">:</span> <span class="mf">304.1282</span><span class="p">,</span> <span class="s2">"criticalPressure"</span><span class="p">:</span> <span class="mf">7377300.0</span><span class="p">,</span> <span class="s2">"acentricFactor"</span><span class="p">:</span> <span class="mf">0.22394</span><span class="p">},</span>
+    <span class="n">move_weights</span><span class="o">=</span><span class="p">{</span><span class="s2">"insertion"</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span> <span class="s2">"deletion"</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span> <span class="s2">"translation"</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span> <span class="s2">"rotation"</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">}</span>
+<span class="p">)</span>
 
 <span class="n">model</span> <span class="o">=</span> <span class="n">mace_mp</span><span class="p">(</span>
     <span class="n">model</span><span class="o">=</span><span class="s2">"medium-0b2"</span><span class="p">,</span>
@@ -320,13 +329,6 @@ and the previous data will only be used to calculate the average enthaly of adso
     <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
 <span class="p">)</span>
 
-
-<span class="c1"># Load the framework structure</span>
-<span class="n">framework</span><span class="p">:</span> <span class="n">ase</span><span class="o">.</span><span class="n">Atoms</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="n">FrameworkPath</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
-
-<span class="c1"># Load the adsorbate structure</span>
-<span class="n">adsorbate</span><span class="p">:</span> <span class="n">ase</span><span class="o">.</span><span class="n">Atoms</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="n">AdsorbatePath</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
-
 <span class="n">Temperature</span> <span class="o">=</span> <span class="mf">298.0</span>
 
 <span class="n">NSteps</span> <span class="o">=</span> <span class="mi">3000</span>
@@ -334,7 +336,7 @@ and the previous data will only be used to calculate the average enthaly of adso
 <span class="n">widom</span> <span class="o">=</span> <span class="n">Widom</span><span class="p">(</span>
     <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span>
     <span class="n">framework_atoms</span><span class="o">=</span><span class="n">framework</span><span class="p">,</span>
-    <span class="n">adsorbate_atoms</span><span class="o">=</span><span class="n">adsorbate</span><span class="p">,</span>
+    <span class="n">adsorbates</span><span class="o">=</span><span class="n">adsorbate</span><span class="p">,</span>
     <span class="n">temperature</span><span class="o">=</span><span class="n">Temperature</span><span class="p">,</span>
     <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
     <span class="n">vdw_radii</span><span class="o">=</span><span class="n">vdw_radii</span><span class="p">,</span>
@@ -403,12 +405,16 @@ This is useful if the simulation was interrupted or if you want to extend the si
 <span class="n">framework</span><span class="p">:</span> <span class="n">ase</span><span class="o">.</span><span class="n">Atoms</span> <span class="o">=</span> <span class="n">read_cif</span><span class="p">(</span><span class="s2">"MFI.cif"</span><span class="p">)</span>
 
 <span class="c1"># Load the adsorbate structure</span>
-<span class="n">adsorbate</span><span class="p">:</span> <span class="n">ase</span><span class="o">.</span><span class="n">Atoms</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="s2">"ch4.xyz"</span><span class="p">)</span>
+<span class="n">adsorbate</span> <span class="o">=</span> <span class="n">Adsorbate</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">"CH4"</span><span class="p">,</span>
+    <span class="n">structure</span><span class="o">=</span><span class="s2">"ch4.xyz"</span><span class="p">,</span>
+    <span class="n">move_weights</span><span class="o">=</span><span class="p">{</span><span class="s2">"insertion"</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span> <span class="s2">"deletion"</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span> <span class="s2">"translation"</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">}</span>
+<span class="p">)</span>
 
 <span class="n">gcmc</span> <span class="o">=</span> <span class="n">GCMC</span><span class="p">(</span>
     <span class="n">model</span><span class="o">=</span><span class="n">calc</span><span class="p">,</span>
     <span class="n">framework_atoms</span><span class="o">=</span><span class="n">framework</span><span class="p">,</span>
-    <span class="n">adsorbate_atoms</span><span class="o">=</span><span class="n">adsorbate</span><span class="p">,</span>
+    <span class="n">adsorbates</span><span class="o">=</span><span class="n">adsorbate</span><span class="p">,</span>
     <span class="n">temperature</span><span class="o">=</span><span class="mf">298.15</span><span class="p">,</span>
     <span class="n">pressure</span><span class="o">=</span><span class="mf">1e5</span><span class="p">,</span>
     <span class="n">device</span><span class="o">=</span><span class="s2">"cpu"</span><span class="p">,</span>
@@ -418,13 +424,6 @@ This is useful if the simulation was interrupted or if you want to extend the si
     <span class="n">cutoff_radius</span><span class="o">=</span><span class="mf">12.0</span><span class="p">,</span>
     <span class="n">automatic_supercell</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="n">LLM</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-    <span class="n">move_weights</span><span class="o">=</span><span class="p">{</span>
-        <span class="s2">"insertion"</span><span class="p">:</span> <span class="mf">0.25</span><span class="p">,</span>
-        <span class="s2">"deletion"</span><span class="p">:</span> <span class="mf">0.25</span><span class="p">,</span>
-        <span class="s2">"translation"</span><span class="p">:</span> <span class="mf">0.25</span><span class="p">,</span>
-        <span class="s2">"rotation"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-        <span class="s2">"reinsertion"</span><span class="p">:</span> <span class="mf">0.25</span><span class="p">,</span>
-    <span class="p">},</span>
 <span class="p">)</span>
 
 <span class="n">gcmc</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">print_header</span><span class="p">()</span>
@@ -515,12 +514,16 @@ You can use this file to restart a new simulation from the last configuration of
 <span class="n">framework</span><span class="p">:</span> <span class="n">ase</span><span class="o">.</span><span class="n">Atoms</span> <span class="o">=</span> <span class="n">read_cif</span><span class="p">(</span><span class="s2">"MFI.cif"</span><span class="p">)</span>
 
 <span class="c1"># Load the adsorbate structure</span>
-<span class="n">adsorbate</span><span class="p">:</span> <span class="n">ase</span><span class="o">.</span><span class="n">Atoms</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="s2">"ch4.xyz"</span><span class="p">)</span>
+<span class="n">adsorbate</span> <span class="o">=</span> <span class="n">Adsorbate</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">"CH4"</span><span class="p">,</span>
+    <span class="n">structure</span><span class="o">=</span><span class="s2">"ch4.xyz"</span><span class="p">,</span>
+    <span class="n">move_weights</span><span class="o">=</span><span class="p">{</span><span class="s2">"insertion"</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span> <span class="s2">"deletion"</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span> <span class="s2">"translation"</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">}</span>
+<span class="p">)</span>
 
 <span class="n">gcmc</span> <span class="o">=</span> <span class="n">GCMC</span><span class="p">(</span>
     <span class="n">model</span><span class="o">=</span><span class="n">calc</span><span class="p">,</span>
     <span class="n">framework_atoms</span><span class="o">=</span><span class="n">framework</span><span class="p">,</span>
-    <span class="n">adsorbate_atoms</span><span class="o">=</span><span class="n">adsorbate</span><span class="p">,</span>
+    <span class="n">adsorbates</span><span class="o">=</span><span class="n">adsorbate</span><span class="p">,</span>
     <span class="n">temperature</span><span class="o">=</span><span class="mf">298.15</span><span class="p">,</span>
     <span class="n">pressure</span><span class="o">=</span><span class="mf">1e5</span><span class="p">,</span>
     <span class="n">device</span><span class="o">=</span><span class="s2">"cpu"</span><span class="p">,</span>
@@ -530,13 +533,6 @@ You can use this file to restart a new simulation from the last configuration of
     <span class="n">cutoff_radius</span><span class="o">=</span><span class="mf">12.0</span><span class="p">,</span>
     <span class="n">automatic_supercell</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="n">LLM</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-    <span class="n">move_weights</span><span class="o">=</span><span class="p">{</span>
-        <span class="s2">"insertion"</span><span class="p">:</span> <span class="mf">0.25</span><span class="p">,</span>
-        <span class="s2">"deletion"</span><span class="p">:</span> <span class="mf">0.25</span><span class="p">,</span>
-        <span class="s2">"translation"</span><span class="p">:</span> <span class="mf">0.25</span><span class="p">,</span>
-        <span class="s2">"rotation"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-        <span class="s2">"reinsertion"</span><span class="p">:</span> <span class="mf">0.25</span><span class="p">,</span>
-    <span class="p">},</span>
 <span class="p">)</span>
 
 <span class="n">gcmc</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">print_header</span><span class="p">()</span>

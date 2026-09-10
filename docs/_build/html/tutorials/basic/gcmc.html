@@ -208,13 +208,16 @@
 <li class="toctree-l1 current current-page"><a class="current reference internal" href="#">GCMC Simulation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="restart.html">Restarting Simulations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="isotherm.html">GCMC Adsorption Isotherm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="multiple_ads.html">Multi-component GCMC Simulation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Tutorials: Intermediate</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../intermediate/hybrid_gcmc_md.html">Hybrid GCMC/MD Simulation</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Tutorials: Calculators</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../calculators/lennard_jones.html">Lennard-Jones Potential</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../calculators/ewald.html">Lennard-Jones Potential</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../calculators/combining.html">Combining Potentials</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../calculators/cp2k.html">Lennard-Jones Potential</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../calculators/ewald.html">Ewald Sum for Electrostatic Interactions</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Tutorials: Advanced</span></p>
 <ul>
@@ -308,6 +311,7 @@ During these simulations, the porous material is typically modeled as a rigid ho
 <span class="kn">from</span><span class="w"> </span><span class="nn">ase.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">read</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">mace.calculators</span><span class="w"> </span><span class="kn">import</span> <span class="n">mace_mp</span>
 
+<span class="kn">from</span><span class="w"> </span><span class="nn">flames.adsorbate</span><span class="w"> </span><span class="kn">import</span> <span class="n">Adsorbate</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">flames.gcmc</span><span class="w"> </span><span class="kn">import</span> <span class="n">GCMC</span>
 
 <span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s2">"ignore"</span><span class="p">,</span> <span class="n">category</span><span class="o">=</span><span class="ne">UserWarning</span><span class="p">)</span>
@@ -326,14 +330,15 @@ During these simulations, the porous material is typically modeled as a rigid ho
     <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
 <span class="p">)</span>
 
-<span class="n">FrameworkPath</span> <span class="o">=</span> <span class="s2">"mg-mof-74.cif"</span>
-<span class="n">AdsorbatePath</span> <span class="o">=</span> <span class="s2">"co2.xyz"</span>
-
 <span class="c1"># Load the framework structure</span>
-<span class="n">framework</span><span class="p">:</span> <span class="n">ase</span><span class="o">.</span><span class="n">Atoms</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="n">FrameworkPath</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
+<span class="n">framework</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="s2">"mg-mof-74.cif"</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
 
-<span class="c1"># Load the adsorbate structure</span>
-<span class="n">adsorbate</span><span class="p">:</span> <span class="n">ase</span><span class="o">.</span><span class="n">Atoms</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="n">AdsorbatePath</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
+<span class="n">adsorbate</span> <span class="o">=</span> <span class="n">Adsorbate</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">"CO2"</span><span class="p">,</span>
+    <span class="n">structure</span><span class="o">=</span><span class="s2">"co2.xyz"</span><span class="p">,</span>
+    <span class="n">eos</span><span class="o">=</span><span class="p">{</span><span class="s2">"criticalTemperature"</span><span class="p">:</span> <span class="mf">304.1282</span><span class="p">,</span> <span class="s2">"criticalPressure"</span><span class="p">:</span> <span class="mf">7377300.0</span><span class="p">,</span> <span class="s2">"acentricFactor"</span><span class="p">:</span> <span class="mf">0.22394</span><span class="p">},</span>
+    <span class="n">move_weights</span><span class="o">=</span><span class="p">{</span><span class="s2">"insertion"</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span> <span class="s2">"deletion"</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span> <span class="s2">"translation"</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span> <span class="s2">"rotation"</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">}</span>
+<span class="p">)</span>
 
 <span class="n">TTemperature</span> <span class="o">=</span> <span class="mf">298.0</span>  <span class="c1"># in Kelvin</span>
 <span class="n">pressure</span> <span class="o">=</span> <span class="mi">100_000</span>  <span class="c1"># in Pa = 1 bar</span>
@@ -342,18 +347,15 @@ During these simulations, the porous material is typically modeled as a rigid ho
 <span class="n">gcmc</span> <span class="o">=</span> <span class="n">GCMC</span><span class="p">(</span>
     <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span>
     <span class="n">framework_atoms</span><span class="o">=</span><span class="n">framework</span><span class="p">,</span>
-    <span class="n">adsorbate_atoms</span><span class="o">=</span><span class="n">adsorbate</span><span class="p">,</span>
+    <span class="n">adsorbates</span><span class="o">=</span><span class="n">adsorbate</span><span class="p">,</span>
     <span class="n">temperature</span><span class="o">=</span><span class="n">Temperature</span><span class="p">,</span>
     <span class="n">pressure</span><span class="o">=</span><span class="n">pressure</span><span class="p">,</span>
     <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
     <span class="n">vdw_radii</span><span class="o">=</span><span class="n">vdw_radii</span><span class="p">,</span>
     <span class="n">vdw_factor</span><span class="o">=</span><span class="mf">0.6</span><span class="p">,</span>
     <span class="n">save_frequency</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-    <span class="n">debug</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">debug</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="n">output_to_file</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="n">criticalTemperature</span><span class="o">=</span><span class="mf">304.1282</span><span class="p">,</span>
-    <span class="n">criticalPressure</span><span class="o">=</span><span class="mf">7377300.0</span><span class="p">,</span>
-    <span class="n">acentricFactor</span><span class="o">=</span><span class="mf">0.22394</span><span class="p">,</span>
     <span class="n">random_seed</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span>
     <span class="n">cutoff_radius</span><span class="o">=</span><span class="mf">6.0</span><span class="p">,</span>
     <span class="n">automatic_supercell</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
@@ -371,6 +373,12 @@ During these simulations, the porous material is typically modeled as a rigid ho
 <section id="breaking-down-the-input-script">
 <h2>Breaking down the input script<a class="headerlink" href="#breaking-down-the-input-script" title="Link to this heading">¶</a></h2>
 <p>The first block of the code is similar to the one used in the Widom insertion tutorial, where we import the necessary libraries, set up the device, load the model and read the framework and adsorbate structures.</p>
+<section id="reading-the-structure">
+<h3>Reading the structure<a class="headerlink" href="#reading-the-structure" title="Link to this heading">¶</a></h3>
+<p>Note here that the <code class="docutils literal notranslate"><span class="pre">Adsorbate</span></code> object now has two additional parameters: <code class="docutils literal notranslate"><span class="pre">eos</span></code> and <code class="docutils literal notranslate"><span class="pre">move_weights</span></code>.
+The <code class="docutils literal notranslate"><span class="pre">eos</span></code> parameter is a dictionary that contains the critical temperature, critical pressure, and acentric factor of the adsorbate for calculating the fugacity coefficient using the Peng Robinsion equation. Aditionally, it is possible to pass a custom EOS object.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">move_weights</span></code> parameter is a dictionary that contains the weights for each type of move in the GCMC simulation. The weights are normalized so that the sum of all weights is equal to 1.</p>
+</section>
 <section id="running-the-simulation">
 <h3>Running the simulation<a class="headerlink" href="#running-the-simulation" title="Link to this heading">¶</a></h3>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">Temperature</span> <span class="o">=</span> <span class="mf">298.0</span>
@@ -380,18 +388,15 @@ During these simulations, the porous material is typically modeled as a rigid ho
 <span class="n">gcmc</span> <span class="o">=</span> <span class="n">GCMC</span><span class="p">(</span>
     <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span>
     <span class="n">framework_atoms</span><span class="o">=</span><span class="n">framework</span><span class="p">,</span>
-    <span class="n">adsorbate_atoms</span><span class="o">=</span><span class="n">adsorbate</span><span class="p">,</span>
+    <span class="n">adsorbates</span><span class="o">=</span><span class="n">adsorbate</span><span class="p">,</span>
     <span class="n">temperature</span><span class="o">=</span><span class="n">Temperature</span><span class="p">,</span>
     <span class="n">pressure</span><span class="o">=</span><span class="n">pressure</span><span class="p">,</span>
     <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
     <span class="n">vdw_radii</span><span class="o">=</span><span class="n">vdw_radii</span><span class="p">,</span>
     <span class="n">vdw_factor</span><span class="o">=</span><span class="mf">0.6</span><span class="p">,</span>
     <span class="n">save_frequency</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-    <span class="n">debug</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">debug</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="n">output_to_file</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="n">criticalTemperature</span><span class="o">=</span><span class="mf">304.1282</span><span class="p">,</span>
-    <span class="n">criticalPressure</span><span class="o">=</span><span class="mf">7377300.0</span><span class="p">,</span>
-    <span class="n">acentricFactor</span><span class="o">=</span><span class="mf">0.22394</span><span class="p">,</span>
     <span class="n">random_seed</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span>
     <span class="n">cutoff_radius</span><span class="o">=</span><span class="mf">6.0</span><span class="p">,</span>
     <span class="n">automatic_supercell</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
@@ -415,7 +420,6 @@ During these simulations, the porous material is typically modeled as a rigid ho
 </div>
 <p>You should change the <code class="docutils literal notranslate"><span class="pre">cutoff_radius</span></code> according to your system and potential used, usually 6.0 Å is a good starting point but check carefully the cutoff of your potential.</p>
 <p>The <code class="docutils literal notranslate"><span class="pre">automatic_supercell</span></code> option will create a supercell big enough to fit twice the cutoff radius.</p>
-<p>The <code class="docutils literal notranslate"><span class="pre">criticalTemperature</span></code>, <code class="docutils literal notranslate"><span class="pre">criticalPressure</span></code>, and <code class="docutils literal notranslate"><span class="pre">acentricFactor</span></code> are used to calculate the fugacity coefficient, which is used to convert the pressure to fugacity, that is the correct thermodynamic variable to be used in GCMC simulations. If no value is provided, the code will assume ideal gas behavior and use the pressure as fugacity, which is a good approximation at low pressures but can lead to significant errors at high pressures.</p>
 </section>
 </section>
 <section id="analyzing-the-output">
@@ -823,6 +827,7 @@ Simulation duration: 6:32:28.669883
 <li><a class="reference internal" href="#brief-introduction-about-gcmc-simulation">Brief introduction about GCMC simulation</a></li>
 <li><a class="reference internal" href="#setting-the-stage">Setting the stage</a></li>
 <li><a class="reference internal" href="#breaking-down-the-input-script">Breaking down the input script</a><ul>
+<li><a class="reference internal" href="#reading-the-structure">Reading the structure</a></li>
 <li><a class="reference internal" href="#running-the-simulation">Running the simulation</a></li>
 </ul>
 </li>

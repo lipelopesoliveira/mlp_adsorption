@@ -35,7 +35,8 @@ The script below will run the simulation at 298 K (25°C).
     from ase.data import vdw_radii
     from ase.io import read
     from mace.calculators import mace_mp
-
+    
+    from flames.adsorbate import Adsorbate
     from flames.widom import Widom
 
     warnings.filterwarnings("ignore", category=UserWarning)
@@ -54,14 +55,12 @@ The script below will run the simulation at 298 K (25°C).
         device=device,
     )
 
-    FrameworkPath = "mg-mof-74.cif"
-    AdsorbatePath = "co2.xyz"
+    framework = read("mg-mof-74.cif")
 
-    # Load the framework structure
-    framework: ase.Atoms = read(FrameworkPath)  # type: ignore
-
-    # Load the adsorbate structure
-    adsorbate: ase.Atoms = read(AdsorbatePath)  # type: ignore
+    adsorbate = Adsorbate(
+        name="CO2",
+        structure="co2.xyz",
+    )
 
     Temperature = 298.0
 
@@ -154,17 +153,18 @@ Reading the structure
 
 .. code:: python
 
-    FrameworkPath = "mg-mof-74.cif"
-    AdsorbatePath = "co2.xyz"
+    framework = read("mg-mof-74.cif")
 
-    # Load the framework structure
-    framework: ase.Atoms = read(FrameworkPath)  # type: ignore
-
-    # Load the adsorbate structure
-    adsorbate: ase.Atoms = read(AdsorbatePath)  # type: ignore
+    adsorbate = Adsorbate(
+        name="CO2",
+        structure="co2.xyz",
+    )
 
 This part of the code will read the framework and the adsorbate files. It uses the ``read`` function from ``ase``, which is very powerful and can read most file formats. 
 Here, just make sure that the framework file is in a file format that is compatible with periodic boundary conditions and has a unt cell correctly defined.
+
+For the adsorbate, a `Adsorbate` object is created, which will be used to define the adsorbate molecule. The ``structure`` parameter is the path to the file that contains the adsorbate structure.
+The file can be in any format that is compatible with ASE, such as ``xyz``, ``cif``, ``vasp``, etc.
 
 In case you want to make sure that your framework was read properly, you can create a separate python script and visualize the structure with the ``ase`` visualizator:
 

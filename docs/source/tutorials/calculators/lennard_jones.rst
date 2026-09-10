@@ -386,4 +386,3 @@ References
 ~~~~~~~~~~
 
 .. [1] Bai, P., Tsapatsis, M. and Siepmann, J.I., 2013. TraPPE-zeo: Transferable potentials for phase equilibria force field for all-silica zeolites. The Journal of Physical Chemistry C, 117(46), pp.24375-24387.
-.. [2] Batatia, I., Benner, P., Chiang, Y., Elena, A.M., Kovács, D.P., Riebesell, J., Advincula, X.R., Asta, M., Avaylon, M., Baldwin, W.J. and Berger, F., 2025. A foundation model for atomistic materials chemistry. The Journal of Chemical Physics, 163(18). https://pubs.aip.org/aip/jcp/article/163/18/184110/3372267/A-foundation-model-for-atomistic-materials

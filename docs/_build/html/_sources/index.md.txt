@@ -26,12 +26,15 @@ tutorials/basic/widom
 tutorials/basic/gcmc
 tutorials/basic/restart
 tutorials/basic/isotherm
+tutorials/basic/multiple_ads
 ```
 
 ```{toctree}
 :maxdepth: 2
 :hidden:
 :caption: Tutorials: Intermediate
+
+tutorials/intermediate/hybrid_gcmc_md
 
 ```
 
@@ -42,8 +45,6 @@ tutorials/basic/isotherm
 
 tutorials/calculators/lennard_jones
 tutorials/calculators/ewald
-tutorials/calculators/combining
-tutorials/calculators/cp2k
 
 ```
 

@@ -3,12 +3,12 @@
   <head><meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="index" title="Index" href="../../genindex.html"><link rel="search" title="Search" href="../../search.html"><link rel="next" title="Hybrid TMMC/MD Simulation" href="hybrid_tmmc_md.html"><link rel="prev" title="Ewald Sum for Electrostatic Interactions" href="../calculators/ewald.html">
+<link rel="index" title="Index" href="../../genindex.html"><link rel="search" title="Search" href="../../search.html"><link rel="next" title="Lennard-Jones Potential" href="../calculators/lennard_jones.html"><link rel="prev" title="Multi-component GCMC Simulation" href="../basic/multiple_ads.html">
         <link rel="prefetch" href="../../_static/logo-light-mode.png" as="image">
         <link rel="prefetch" href="../../_static/logo-dark-mode.png" as="image">
 
     <link rel="shortcut icon" href="../../_static/favicon.ico"><!-- Generated with Sphinx 8.1.3 and Furo 2025.12.19 -->
-        <title>Mixed calculators for GCMC/MD simulations - FLAMES v0.4.9</title>
+        <title>Hybrid GCMC/MD Simulation - FLAMES v0.4.9</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
@@ -211,8 +211,8 @@
 <li class="toctree-l1"><a class="reference internal" href="../basic/multiple_ads.html">Multi-component GCMC Simulation</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Tutorials: Intermediate</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../intermediate/hybrid_gcmc_md.html">Hybrid GCMC/MD Simulation</a></li>
+<ul class="current">
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Hybrid GCMC/MD Simulation</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Tutorials: Calculators</span></p>
 <ul>
@@ -220,9 +220,9 @@
 <li class="toctree-l1"><a class="reference internal" href="../calculators/ewald.html">Ewald Sum for Electrostatic Interactions</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Tutorials: Advanced</span></p>
-<ul class="current">
-<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Mixed calculators for GCMC/MD simulations</a></li>
-<li class="toctree-l1"><a class="reference internal" href="hybrid_tmmc_md.html">Hybrid TMMC/MD Simulation</a></li>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../advanced/hybrid_gcmc_md_mixed_calc.html">Mixed calculators for GCMC/MD simulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../advanced/hybrid_tmmc_md.html">Hybrid TMMC/MD Simulation</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Theoretical Background</span></p>
 <ul>
@@ -263,7 +263,7 @@
         </a>
         <div class="content-icon-container">
           <div class="view-this-page">
-  <a class="muted-link" href="../../_sources/tutorials/advanced/hybrid_gcmc_md_mixed_calc.rst.txt" title="View this page">
+  <a class="muted-link" href="../../_sources/tutorials/intermediate/hybrid_gcmc_md.rst.txt" title="View this page">
     <svg><use href="#svg-eye"></use></svg>
     <span class="visually-hidden">View this page</span>
   </a>
@@ -281,119 +281,231 @@
           </label>
         </div>
         <article role="main" id="furo-main-content">
-          <section id="mixed-calculators-for-gcmc-md-simulations">
-<h1>Mixed calculators for GCMC/MD simulations<a class="headerlink" href="#mixed-calculators-for-gcmc-md-simulations" title="Link to this heading">¶</a></h1>
-<p>This example explores the use of different calculators for the GCMC and MD simulations.
-The GCMC simulation will use a classical force field (DREIDING) using the custom <cite>LennarJones</cite> calculator,
-while the MD simulation will use the <cite>mace</cite> calculator.
-This is useful when you want to introduce some dynamics in the system using a MLP calculator for the MD simulation,
-but you still want to use a classical force field calculator for the GCMC simulation.</p>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>This model is used here just as an example, you should look carefully into the mace documentation to undestand how the potential work and which one is the best for your specific case.</p>
-</div>
-<p>The script below will run the simulation at 298 K (25°C).</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+          <section id="hybrid-gcmc-md-simulation">
+<h1>Hybrid GCMC/MD Simulation<a class="headerlink" href="#hybrid-gcmc-md-simulation" title="Link to this heading">¶</a></h1>
+<section id="brief-introduction-about-hybrid-gcmc-md-simulation">
+<h2>Brief introduction about Hybrid GCMC/MD simulation<a class="headerlink" href="#brief-introduction-about-hybrid-gcmc-md-simulation" title="Link to this heading">¶</a></h2>
+<p>Standard Grand Canonical Monte Carlo (GCMC) simulations typically treat the porous host material as a rigid lattice. While efficient, this rigid approximation fails for materials that exhibit structural flexibility, such as “breathing” MOFs (e.g., MIL-53) or soft porous crystals. Furthermore, in highly packed pores, standard Monte Carlo translation and rotation moves can suffer from extremely low acceptance rates, leaving the system trapped in local energy minima.</p>
+<p>Hybrid GCMC/MD bridges this gap by alternating between stochastic GCMC steps and deterministic Molecular Dynamics (MD) trajectories. The GCMC phase handles the exchange of molecules with the theoretical reservoir (insertions and deletions) to establish the correct chemical potential. The MD phase allows the atomic positions of both the framework and the guest molecules to evolve naturally over time, relaxing structural stresses, exploring configurational space, and allowing the unit cell to expand or contract.</p>
+</section>
+<hr class="docutils" />
+<section id="setting-the-stage">
+<h2>Setting the stage<a class="headerlink" href="#setting-the-stage" title="Link to this heading">¶</a></h2>
+<p>In this example, we will run a hybrid simulation on Mg-MOF-74 loaded with CO:sub:<cite>2</cite>. While Mg-MOF-74 is relatively rigid compared to breathing MOFs, a hybrid approach allows the guest molecules to find optimal configurations around the open-metal sites more effectively than random MC moves alone.</p>
+<p>The simulation alternates 5 times between 3,000 GCMC steps and 3,000 MD steps.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+
+<span class="c1"># Hide UserWarning and RuntimeWarning messages</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">ase</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">ase.constraints</span><span class="w"> </span><span class="kn">import</span> <span class="n">FixBondLengths</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">ase.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">vdw_radii</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">ase.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">read</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">mace.calculators</span><span class="w"> </span><span class="kn">import</span> <span class="n">mace_mp</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">numba</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_num_threads</span><span class="p">,</span> <span class="n">set_num_threads</span>
 
+<span class="kn">from</span><span class="w"> </span><span class="nn">flames.adsorbate</span><span class="w"> </span><span class="kn">import</span> <span class="n">Adsorbate</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">flames.gcmc</span><span class="w"> </span><span class="kn">import</span> <span class="n">GCMC</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">flames.lennard_jones</span><span class="w"> </span><span class="kn">import</span> <span class="n">CustomLennardJones</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">flames.utilities</span><span class="w"> </span><span class="kn">import</span> <span class="n">read_cif</span>
 
-<span class="n">NUM_THREADS_TO_USE</span> <span class="o">=</span> <span class="mi">1</span>
-<span class="n">set_num_threads</span><span class="p">(</span><span class="n">NUM_THREADS_TO_USE</span><span class="p">)</span>
+<span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s2">"ignore"</span><span class="p">,</span> <span class="n">category</span><span class="o">=</span><span class="ne">UserWarning</span><span class="p">)</span>
+<span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s2">"ignore"</span><span class="p">,</span> <span class="n">category</span><span class="o">=</span><span class="ne">RuntimeWarning</span><span class="p">)</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="n">get_num_threads</span><span class="p">())</span>
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">"KMP_DUPLICATE_LIB_OK"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"TRUE"</span>
 
-<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">"DREIDING.json"</span><span class="p">,</span> <span class="s2">"r"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-    <span class="n">lj_params</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
+<span class="n">device</span> <span class="o">=</span> <span class="s2">"cuda"</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="s2">"cpu"</span>
 
-<span class="n">calc1</span> <span class="o">=</span> <span class="n">CustomLennardJones</span><span class="p">(</span><span class="n">lj_params</span><span class="p">,</span> <span class="n">vdw_cutoff</span><span class="o">=</span><span class="mf">12.8</span><span class="p">,</span> <span class="n">shifted</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">FrameworkPath</span> <span class="o">=</span> <span class="s2">"mg-mof-74.cif"</span>
+<span class="n">AdsorbatePath</span> <span class="o">=</span> <span class="s2">"co2.xyz"</span>
 
-<span class="n">calc2</span> <span class="o">=</span> <span class="n">mace_mp</span><span class="p">(</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">mace_mp</span><span class="p">(</span>
     <span class="n">model</span><span class="o">=</span><span class="s2">"medium-0b2"</span><span class="p">,</span>
     <span class="n">dispersion</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
     <span class="n">damping</span><span class="o">=</span><span class="s2">"zero"</span><span class="p">,</span>  <span class="c1"># choices: ["zero", "bj", "zerom", "bjm"]</span>
     <span class="n">dispersion_xc</span><span class="o">=</span><span class="s2">"pbe"</span><span class="p">,</span>
     <span class="n">default_dtype</span><span class="o">=</span><span class="s2">"float32"</span><span class="p">,</span>
-    <span class="n">device</span><span class="o">=</span><span class="s2">"cuda"</span><span class="p">,</span>
+    <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
 <span class="p">)</span>
 
 <span class="c1"># Load the framework structure</span>
-<span class="n">framework</span><span class="p">:</span> <span class="n">ase</span><span class="o">.</span><span class="n">Atoms</span> <span class="o">=</span> <span class="n">read_cif</span><span class="p">(</span><span class="s2">"GZU-1.cif"</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
+<span class="n">framework</span><span class="p">:</span> <span class="n">ase</span><span class="o">.</span><span class="n">Atoms</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="n">FrameworkPath</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
 
 <span class="c1"># Load the adsorbate structure</span>
-<span class="n">adsorbate</span><span class="p">:</span> <span class="n">ase</span><span class="o">.</span><span class="n">Atoms</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="s2">"ch4.xyz"</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
-
-<span class="n">c</span> <span class="o">=</span> <span class="n">FixBondLengths</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">]])</span>
-<span class="n">adsorbate</span><span class="o">.</span><span class="n">set_constraint</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+<span class="n">adsorbate</span> <span class="o">=</span> <span class="n">Adsorbate</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">"CO2"</span><span class="p">,</span>
+    <span class="n">structure</span><span class="o">=</span><span class="n">AdsorbatePath</span><span class="p">,</span>
+    <span class="n">eos</span><span class="o">=</span><span class="p">{</span><span class="s2">"criticalTemperature"</span><span class="p">:</span> <span class="mf">304.1282</span><span class="p">,</span> <span class="s2">"criticalPressure"</span><span class="p">:</span> <span class="mf">7377300.0</span><span class="p">,</span> <span class="s2">"acentricFactor"</span><span class="p">:</span> <span class="mf">0.22394</span><span class="p">},</span>
+<span class="p">)</span>
 
 <span class="n">Temperature</span> <span class="o">=</span> <span class="mf">298.0</span>  <span class="c1"># in Kelvin</span>
-<span class="n">pressure</span> <span class="o">=</span> <span class="mi">1_000_000</span>  <span class="c1"># in Pa = 1 bar</span>
-<span class="n">MCSteps</span> <span class="o">=</span> <span class="mi">10_000</span>
-<span class="n">MDSteps</span> <span class="o">=</span> <span class="mi">10_000</span>
+<span class="n">pressure</span> <span class="o">=</span> <span class="mi">100_000</span>  <span class="c1"># in Pa = 1 bar</span>
+<span class="n">MCSteps</span> <span class="o">=</span> <span class="mi">3_000</span>
+<span class="n">MDSteps</span> <span class="o">=</span> <span class="mi">3_000</span>
 
 <span class="nb">print</span><span class="p">(</span>
     <span class="sa">f</span><span class="s2">"Running GCMC simulation for pressure: </span><span class="si">{</span><span class="n">pressure</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> Pa at temperature: </span><span class="si">{</span><span class="n">Temperature</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> K"</span>
 <span class="p">)</span>
 
 <span class="n">gcmc</span> <span class="o">=</span> <span class="n">GCMC</span><span class="p">(</span>
-    <span class="n">model</span><span class="o">=</span><span class="n">calc1</span><span class="p">,</span>
+    <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span>
     <span class="n">framework_atoms</span><span class="o">=</span><span class="n">framework</span><span class="p">,</span>
-    <span class="n">adsorbate_atoms</span><span class="o">=</span><span class="n">adsorbate</span><span class="p">,</span>
+    <span class="n">adsorbates</span><span class="o">=</span><span class="n">adsorbate</span><span class="p">,</span>
     <span class="n">temperature</span><span class="o">=</span><span class="n">Temperature</span><span class="p">,</span>
     <span class="n">pressure</span><span class="o">=</span><span class="n">pressure</span><span class="p">,</span>
-    <span class="n">device</span><span class="o">=</span><span class="s2">"cpu"</span><span class="p">,</span>
+    <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
     <span class="n">vdw_radii</span><span class="o">=</span><span class="n">vdw_radii</span><span class="p">,</span>
     <span class="n">vdw_factor</span><span class="o">=</span><span class="mf">0.6</span><span class="p">,</span>
     <span class="n">save_frequency</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
     <span class="n">debug</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
     <span class="n">output_to_file</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="n">cutoff_radius</span><span class="o">=</span><span class="mf">8.0</span><span class="p">,</span>
+    <span class="n">cutoff_radius</span><span class="o">=</span><span class="mf">6.0</span><span class="p">,</span>
     <span class="n">automatic_supercell</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="n">LLM</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-    <span class="n">move_weights</span><span class="o">=</span><span class="p">{</span>
-        <span class="s2">"insertion"</span><span class="p">:</span> <span class="mf">0.25</span><span class="p">,</span>
-        <span class="s2">"deletion"</span><span class="p">:</span> <span class="mf">0.25</span><span class="p">,</span>
-        <span class="s2">"translation"</span><span class="p">:</span> <span class="mf">0.25</span><span class="p">,</span>
-        <span class="s2">"rotation"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-        <span class="s2">"reinsertion"</span><span class="p">:</span> <span class="mf">0.25</span><span class="p">,</span>
-    <span class="p">},</span>
 <span class="p">)</span>
 
 <span class="n">gcmc</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">print_header</span><span class="p">()</span>
 
 <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">):</span>
     <span class="n">gcmc</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">MCSteps</span><span class="p">)</span>
-    <span class="n">gcmc</span><span class="o">.</span><span class="n">npt</span><span class="p">(</span>
+    <span class="n">gcmc</span><span class="o">.</span><span class="n">md</span><span class="p">(</span>
         <span class="n">nsteps</span><span class="o">=</span><span class="n">MDSteps</span><span class="p">,</span>
         <span class="n">time_step</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
-        <span class="n">mode</span><span class="o">=</span><span class="s2">"aniso_flex"</span><span class="p">,</span>
-        <span class="n">calculator</span><span class="o">=</span><span class="n">calc2</span><span class="p">,</span>
+        <span class="n">ensemble</span><span class="o">=</span><span class="s2">"NPT"</span><span class="p">,</span>
+        <span class="n">thermostat</span><span class="o">=</span><span class="s2">"MTK"</span><span class="p">,</span>
         <span class="n">movie_interval</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-        <span class="n">output_interval</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
     <span class="p">)</span>
-
 
 <span class="n">gcmc</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">MCSteps</span><span class="p">)</span>
 <span class="n">gcmc</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">print_summary</span><span class="p">()</span>
 <span class="n">gcmc</span><span class="o">.</span><span class="n">save_results</span><span class="p">()</span>
 </pre></div>
 </div>
+</section>
 <hr class="docutils" />
 <section id="breaking-down-the-input-script">
 <h2>Breaking down the input script<a class="headerlink" href="#breaking-down-the-input-script" title="Link to this heading">¶</a></h2>
-<p>The script starts by importing the necessary libraries and modules, including ASE, MACE, and FLAMES. It then sets the number of threads to use for parallel processing.</p>
-<p>The <cite>calc1</cite> variable is initialized with the <cite>CustomLennardJones</cite> calculator using the DREIDING force field parameters,
-while <cite>calc2</cite> is initialized with the <cite>mace_mp</cite> calculator for the MD simulation.</p>
-<p>The <cite>for</cite> loop runs the GCMC simulation for a specified number of steps, followed by an NPT MD simulation using the MACE calculator.
-Note that for the <cite>GCMC</cite> simulation, the <cite>model</cite> parameter is set to <cite>calc1</cite>, while for the <cite>npt</cite> method, the <cite>calculator</cite> parameter is set to <cite>calc2</cite>.</p>
+<p>The initial setup, including the machine learning potential, framework structure, and adsorbate definition, remains unchanged. The critical difference lies in the execution loop at the end of the script.</p>
+<section id="the-hybrid-execution-loop">
+<h3>The Hybrid Execution Loop<a class="headerlink" href="#the-hybrid-execution-loop" title="Link to this heading">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">):</span>
+    <span class="n">gcmc</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">MCSteps</span><span class="p">)</span>
+    <span class="n">gcmc</span><span class="o">.</span><span class="n">md</span><span class="p">(</span>
+        <span class="n">nsteps</span><span class="o">=</span><span class="n">MDSteps</span><span class="p">,</span>
+        <span class="n">time_step</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+        <span class="n">ensemble</span><span class="o">=</span><span class="s2">"NPT"</span><span class="p">,</span>
+        <span class="n">thermostat</span><span class="o">=</span><span class="s2">"MTK"</span><span class="p">,</span>
+        <span class="n">movie_interval</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="p">)</span>
+
+<span class="n">gcmc</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">MCSteps</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This loop creates the hybrid alternating cycle.</p>
+<ol class="arabic simple">
+<li><p><strong>``gcmc.run(MCSteps)``</strong>: The system attempts 3,000 GCMC moves (insertions, deletions, translations, rotations). The framework remains frozen during this specific function call.</p></li>
+<li><p><strong>``gcmc.md(…)``</strong>: The system switches to Molecular Dynamics for 3,000 steps. Particle insertions and deletions are paused. Both the framework atoms and the currently adsorbed molecules move according to Newton’s equations of motion, guided by the forces calculated by the MACE potential.</p></li>
+<li><p><strong>Final ``gcmc.run(MCSteps)``</strong>: The script finishes with a pure GCMC block to ensure the final statistics reflect the equilibrium particle exchange with the reservoir.</p></li>
+</ol>
+</section>
+</section>
+<section id="ensembles-and-md-drivers-available">
+<h2>Ensembles and MD Drivers Available<a class="headerlink" href="#ensembles-and-md-drivers-available" title="Link to this heading">¶</a></h2>
+<p>When calling <code class="docutils literal notranslate"><span class="pre">gcmc.md()</span></code>, you must specify the <code class="docutils literal notranslate"><span class="pre">ensemble</span></code> and <code class="docutils literal notranslate"><span class="pre">thermostat</span></code> (or barostat) driver. FLAMES supports three main thermodynamic ensembles and multiple algorithms to control temperature and pressure. You can fine-tune these drivers by passing specific keyword arguments (<code class="docutils literal notranslate"><span class="pre">kwargs</span></code>) directly to the <code class="docutils literal notranslate"><span class="pre">gcmc.md()</span></code> call.</p>
+<section id="nve-microcanonical-ensemble">
+<h3>NVE (Microcanonical Ensemble)<a class="headerlink" href="#nve-microcanonical-ensemble" title="Link to this heading">¶</a></h3>
+<p>Simulates an isolated system with a constant Number of particles, Volume, and Energy. No external temperature or pressure control is applied.</p>
+<ul class="simple">
+<li><p><strong>Driver:</strong> <code class="docutils literal notranslate"><span class="pre">&quot;velocityverlet&quot;</span></code></p></li>
+<li><p><strong>Kwargs:</strong> No additional parameters required.</p></li>
+</ul>
+</section>
+<section id="nvt-canonical-ensemble">
+<h3>NVT (Canonical Ensemble)<a class="headerlink" href="#nvt-canonical-ensemble" title="Link to this heading">¶</a></h3>
+<p>Maintains a constant Number of particles, Volume, and Temperature. The unit cell remains completely rigid, but the kinetic energy is scaled to match the target temperature.</p>
+<ul class="simple">
+<li><p><strong>Berendsen</strong> (<code class="docutils literal notranslate"><span class="pre">thermostat=&quot;berendsen&quot;</span></code>):
+Uses a weak coupling scheme to an external heat bath. It is excellent for bringing a system quickly to the target temperature but does not sample the true canonical ensemble.</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">taut</span></code>: Time constant for the thermostat in fs (default: 1.0).</p></li>
+</ul>
+</li>
+<li><p><strong>Nose-Hoover</strong> (<code class="docutils literal notranslate"><span class="pre">thermostat=&quot;nosehoover&quot;</span></code>):
+Uses a deterministic continuous dynamics method (Nose-Hoover chains) that accurately samples the true NVT ensemble.</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">tdamp</span></code>: Time constant for temperature fluctuations in fs (default: 50.0).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">tchain</span></code>: Number of thermostats in the chain (default: 3).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">tloop</span></code>: Number of integration loops (default: 1).</p></li>
+</ul>
+</li>
+<li><p><strong>Langevin</strong> (<code class="docutils literal notranslate"><span class="pre">thermostat=&quot;langevin&quot;</span></code>):
+Uses stochastic dynamics, adding a friction term and random forces to mimic collisions with a fictitious solvent/bath.</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">friction</span></code>: Friction coefficient (default: 0.01).</p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="npt-isothermal-isobaric-ensemble">
+<h3>NPT (Isothermal-Isobaric Ensemble)<a class="headerlink" href="#npt-isothermal-isobaric-ensemble" title="Link to this heading">¶</a></h3>
+<p>Maintains a constant Number of particles, Pressure, and Temperature. The unit cell vectors are allowed to change in length and angle, which is essential for modeling the swelling or “breathing” of flexible frameworks.</p>
+<ul class="simple">
+<li><p><strong>MTK</strong> (<code class="docutils literal notranslate"><span class="pre">thermostat=&quot;mtk&quot;</span></code>):
+The Martyna-Tobias-Klein algorithm. This is the <strong>gold standard</strong> for NPT simulations in modern materials science, as it rigorously samples the isothermal-isobaric ensemble.</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">tdamp</span></code>: Thermostat time constant in fs (default: 50.0).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pdamp</span></code>: Barostat time constant in fs (default: 500.0).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">vol_constraint</span></code>: If <code class="docutils literal notranslate"><span class="pre">True</span></code>, the volume is kept constant while the cell shape (angles and relative vector lengths) can fluctuate.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">isotropic</span></code>: If <code class="docutils literal notranslate"><span class="pre">True</span></code>, forces the unit cell to expand/contract equally in all directions (cannot be used with <code class="docutils literal notranslate"><span class="pre">vol_constraint=True</span></code>).</p></li>
+</ul>
+</li>
+<li><p><strong>Berendsen</strong> (<code class="docutils literal notranslate"><span class="pre">thermostat=&quot;berendsen&quot;</span></code>):
+Similar to its NVT counterpart, this applies an exponential scaling to both coordinates and box vectors. Good for fast initial volume relaxation.</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">isotropic</span></code>: Whether to use isotropic pressure coupling (default: False).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">compressibility</span></code>: Material compressibility in bar<sup>-1</sup> (default: 1e-4).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">taup</span></code>: Barostat time constant in fs (default: 500.0).</p></li>
+</ul>
+</li>
+<li><p><strong>Nose-Hoover / Melchionna</strong> (<code class="docutils literal notranslate"><span class="pre">thermostat=&quot;nosehoover&quot;</span></code>):
+An implementation of the Nose-Hoover dynamics modified by Melchionna for NPT systems.</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">ttime</span></code>: Thermostat time constant in fs (default: 25.0).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ptime</span></code>: Parrinello-Rahman barostat time constant in fs (default: 75.0).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">bulk_modulus</span></code>: Material bulk modulus in GPa (default: 30.0).</p></li>
+</ul>
+</li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="under-the-hood-terminal-logging-and-trajectories">
+<h2>Under the Hood: Terminal Logging and Trajectories<a class="headerlink" href="#under-the-hood-terminal-logging-and-trajectories" title="Link to this heading">¶</a></h2>
+<p>When the MD wrapper takes over, the terminal output seamlessly shifts to reflect the dynamics. The <code class="docutils literal notranslate"><span class="pre">_md_core</span></code> function attaches an internal logger that prints the system’s states at the interval defined by <code class="docutils literal notranslate"><span class="pre">output_interval</span></code>.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>======================================================================================
+Starting NPT MD Simulation using NPT-Mtk
+
+General Parameters:
+    Temperature: 298.00 K
+    Time Step: 0.50 fs
+    Number of MD Steps: 3000
+    Output Interval: 100 steps
+    Movie Interval: 1 steps
+
+Method-Specific Parameters:
+    Driver: MTKNPT
+    Trajectory File: ./NPT-mtk_298.00K_0.traj
+    pdamp: 500.0
+    tdamp: 50.0
+    tchain: 3
+    pchain: 3
+
+    Step   |  Pot. Energy   |  Kin. Energy   |  Total Energy  |  Temperature  |  Stress  |   Volume    | Elapsed Time
+    [-]    |      [eV]      |      [eV]      |      [eV]      |      [K]      |   [GPa]  |    [A^3]    |      [s]
+ --------- | -------------- | -------------- | -------------- | ------------- | -------- | ----------- | -------------
+        0  |   -2351.243408 |     112.564100 |   -2238.679308 |      298.000  |    -0.00 |     8241.97 |       0.0
+      100  |   -2348.112341 |     108.412000 |   -2239.700341 |      286.321  |     0.02 |     8245.12 |       2.1
+      ...
+</pre></div>
+</div>
+<p>Simultaneously, a trajectory file (<code class="docutils literal notranslate"><span class="pre">.traj</span></code> format) is generated. If you run multiple MD blocks via a <code class="docutils literal notranslate"><span class="pre">for</span></code> loop (as seen in the hybrid simulation script), FLAMES prevents overwriting by appending an index to the filename (e.g., <code class="docutils literal notranslate"><span class="pre">NPT-Mtk_298.00K_0.traj</span></code>, <code class="docutils literal notranslate"><span class="pre">NPT-Mtk_298.00K_1.traj</span></code>). You can open these trajectory files directly in the <code class="docutils literal notranslate"><span class="pre">ase-gui</span></code> to visualize the framework breathing and guest molecule diffusion over time.</p>
 </section>
 </section>
 
@@ -402,23 +514,23 @@ Note that for the <cite>GCMC</cite> simulation, the <cite>model</cite> parameter
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="hybrid_tmmc_md.html">
+          <a class="next-page" href="../calculators/lennard_jones.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">Hybrid TMMC/MD Simulation</div>
+                <div class="title">Lennard-Jones Potential</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
-          <a class="prev-page" href="../calculators/ewald.html">
+          <a class="prev-page" href="../basic/multiple_ads.html">
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
               <div class="page-info">
                 <div class="context">
                   <span>Previous</span>
                 </div>
                 
-                <div class="title">Ewald Sum for Electrostatic Interactions</div>
+                <div class="title">Multi-component GCMC Simulation</div>
                 
               </div>
             </a>
@@ -459,8 +571,20 @@ Note that for the <cite>GCMC</cite> simulation, the <cite>model</cite> parameter
         <div class="toc-tree-container">
           <div class="toc-tree">
             <ul>
-<li><a class="reference internal" href="#">Mixed calculators for GCMC/MD simulations</a><ul>
-<li><a class="reference internal" href="#breaking-down-the-input-script">Breaking down the input script</a></li>
+<li><a class="reference internal" href="#">Hybrid GCMC/MD Simulation</a><ul>
+<li><a class="reference internal" href="#brief-introduction-about-hybrid-gcmc-md-simulation">Brief introduction about Hybrid GCMC/MD simulation</a></li>
+<li><a class="reference internal" href="#setting-the-stage">Setting the stage</a></li>
+<li><a class="reference internal" href="#breaking-down-the-input-script">Breaking down the input script</a><ul>
+<li><a class="reference internal" href="#the-hybrid-execution-loop">The Hybrid Execution Loop</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#ensembles-and-md-drivers-available">Ensembles and MD Drivers Available</a><ul>
+<li><a class="reference internal" href="#nve-microcanonical-ensemble">NVE (Microcanonical Ensemble)</a></li>
+<li><a class="reference internal" href="#nvt-canonical-ensemble">NVT (Canonical Ensemble)</a></li>
+<li><a class="reference internal" href="#npt-isothermal-isobaric-ensemble">NPT (Isothermal-Isobaric Ensemble)</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#under-the-hood-terminal-logging-and-trajectories">Under the Hood: Terminal Logging and Trajectories</a></li>
 </ul>
 </li>
 </ul>

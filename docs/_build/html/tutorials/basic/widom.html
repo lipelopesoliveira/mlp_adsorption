@@ -208,13 +208,16 @@
 <li class="toctree-l1"><a class="reference internal" href="gcmc.html">GCMC Simulation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="restart.html">Restarting Simulations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="isotherm.html">GCMC Adsorption Isotherm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="multiple_ads.html">Multi-component GCMC Simulation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Tutorials: Intermediate</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../intermediate/hybrid_gcmc_md.html">Hybrid GCMC/MD Simulation</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Tutorials: Calculators</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../calculators/lennard_jones.html">Lennard-Jones Potential</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../calculators/ewald.html">Lennard-Jones Potential</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../calculators/combining.html">Combining Potentials</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../calculators/cp2k.html">Lennard-Jones Potential</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../calculators/ewald.html">Ewald Sum for Electrostatic Interactions</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Tutorials: Advanced</span></p>
 <ul>
@@ -306,6 +309,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">ase.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">read</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">mace.calculators</span><span class="w"> </span><span class="kn">import</span> <span class="n">mace_mp</span>
 
+<span class="kn">from</span><span class="w"> </span><span class="nn">flames.adsorbate</span><span class="w"> </span><span class="kn">import</span> <span class="n">Adsorbate</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">flames.widom</span><span class="w"> </span><span class="kn">import</span> <span class="n">Widom</span>
 
 <span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s2">"ignore"</span><span class="p">,</span> <span class="n">category</span><span class="o">=</span><span class="ne">UserWarning</span><span class="p">)</span>
@@ -324,14 +328,12 @@
     <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
 <span class="p">)</span>
 
-<span class="n">FrameworkPath</span> <span class="o">=</span> <span class="s2">"mg-mof-74.cif"</span>
-<span class="n">AdsorbatePath</span> <span class="o">=</span> <span class="s2">"co2.xyz"</span>
+<span class="n">framework</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="s2">"mg-mof-74.cif"</span><span class="p">)</span>
 
-<span class="c1"># Load the framework structure</span>
-<span class="n">framework</span><span class="p">:</span> <span class="n">ase</span><span class="o">.</span><span class="n">Atoms</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="n">FrameworkPath</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
-
-<span class="c1"># Load the adsorbate structure</span>
-<span class="n">adsorbate</span><span class="p">:</span> <span class="n">ase</span><span class="o">.</span><span class="n">Atoms</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="n">AdsorbatePath</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
+<span class="n">adsorbate</span> <span class="o">=</span> <span class="n">Adsorbate</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">"CO2"</span><span class="p">,</span>
+    <span class="n">structure</span><span class="o">=</span><span class="s2">"co2.xyz"</span><span class="p">,</span>
+<span class="p">)</span>
 
 <span class="n">Temperature</span> <span class="o">=</span> <span class="mf">298.0</span>
 
@@ -409,18 +411,18 @@ If you are running on GPU (which is extremelly recommended) you need to define t
 </section>
 <section id="reading-the-structure">
 <h3>Reading the structure<a class="headerlink" href="#reading-the-structure" title="Link to this heading">¶</a></h3>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">FrameworkPath</span> <span class="o">=</span> <span class="s2">"mg-mof-74.cif"</span>
-<span class="n">AdsorbatePath</span> <span class="o">=</span> <span class="s2">"co2.xyz"</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">framework</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="s2">"mg-mof-74.cif"</span><span class="p">)</span>
 
-<span class="c1"># Load the framework structure</span>
-<span class="n">framework</span><span class="p">:</span> <span class="n">ase</span><span class="o">.</span><span class="n">Atoms</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="n">FrameworkPath</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
-
-<span class="c1"># Load the adsorbate structure</span>
-<span class="n">adsorbate</span><span class="p">:</span> <span class="n">ase</span><span class="o">.</span><span class="n">Atoms</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="n">AdsorbatePath</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
+<span class="n">adsorbate</span> <span class="o">=</span> <span class="n">Adsorbate</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">"CO2"</span><span class="p">,</span>
+    <span class="n">structure</span><span class="o">=</span><span class="s2">"co2.xyz"</span><span class="p">,</span>
+<span class="p">)</span>
 </pre></div>
 </div>
 <p>This part of the code will read the framework and the adsorbate files. It uses the <code class="docutils literal notranslate"><span class="pre">read</span></code> function from <code class="docutils literal notranslate"><span class="pre">ase</span></code>, which is very powerful and can read most file formats.
 Here, just make sure that the framework file is in a file format that is compatible with periodic boundary conditions and has a unt cell correctly defined.</p>
+<p>For the adsorbate, a <cite>Adsorbate</cite> object is created, which will be used to define the adsorbate molecule. The <code class="docutils literal notranslate"><span class="pre">structure</span></code> parameter is the path to the file that contains the adsorbate structure.
+The file can be in any format that is compatible with ASE, such as <code class="docutils literal notranslate"><span class="pre">xyz</span></code>, <code class="docutils literal notranslate"><span class="pre">cif</span></code>, <code class="docutils literal notranslate"><span class="pre">vasp</span></code>, etc.</p>
 <p>In case you want to make sure that your framework was read properly, you can create a separate python script and visualize the structure with the <code class="docutils literal notranslate"><span class="pre">ase</span></code> visualizator:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">ase.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">read</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">ase.visualize</span><span class="w"> </span><span class="kn">import</span> <span class="n">view</span>

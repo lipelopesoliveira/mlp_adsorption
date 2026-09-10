@@ -3,7 +3,7 @@
   <head><meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="index" title="Index" href="../../genindex.html"><link rel="search" title="Search" href="../../search.html"><link rel="next" title="Lennard-Jones Potential" href="ewald.html"><link rel="prev" title="GCMC Adsorption Isotherm" href="../basic/isotherm.html">
+<link rel="index" title="Index" href="../../genindex.html"><link rel="search" title="Search" href="../../search.html"><link rel="next" title="Ewald Sum for Electrostatic Interactions" href="ewald.html"><link rel="prev" title="Hybrid GCMC/MD Simulation" href="../intermediate/hybrid_gcmc_md.html">
         <link rel="prefetch" href="../../_static/logo-light-mode.png" as="image">
         <link rel="prefetch" href="../../_static/logo-dark-mode.png" as="image">
 
@@ -208,13 +208,16 @@
 <li class="toctree-l1"><a class="reference internal" href="../basic/gcmc.html">GCMC Simulation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../basic/restart.html">Restarting Simulations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../basic/isotherm.html">GCMC Adsorption Isotherm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../basic/multiple_ads.html">Multi-component GCMC Simulation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Tutorials: Intermediate</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../intermediate/hybrid_gcmc_md.html">Hybrid GCMC/MD Simulation</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Tutorials: Calculators</span></p>
 <ul class="current">
 <li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Lennard-Jones Potential</a></li>
-<li class="toctree-l1"><a class="reference internal" href="ewald.html">Lennard-Jones Potential</a></li>
-<li class="toctree-l1"><a class="reference internal" href="combining.html">Combining Potentials</a></li>
-<li class="toctree-l1"><a class="reference internal" href="cp2k.html">Lennard-Jones Potential</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ewald.html">Ewald Sum for Electrostatic Interactions</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Tutorials: Advanced</span></p>
 <ul>
@@ -296,7 +299,7 @@ Note that <span class="math notranslate nohighlight">\(\sigma\)</span> is relate
 </div>
 <p>The potentials can be shifted to zero at the cutoff distance by setting <code class="docutils literal notranslate"><span class="pre">shifted=True</span></code> when creating the calculator. Tail correction is not yet available in the current version (v0.5).</p>
 <p>The file containing the parameters for the Lennard-Jones potential is a simple json file.
-Below is an example of a json file containing the parameters for the Lennard-Jones potential for TraPPE-Zeo force field <a class="footnote-reference brackets" href="#id4" id="id1" role="doc-noteref"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></a>:</p>
+Below is an example of a json file containing the parameters for the Lennard-Jones potential for TraPPE-Zeo force field <a class="footnote-reference brackets" href="#id2" id="id1" role="doc-noteref"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></a>:</p>
 <div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
 <span class="nt">"O"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="nt">"sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">3.30</span><span class="p">,</span>
@@ -330,7 +333,7 @@ H H_ch4        0.87313773       0.50410630   -0.35645698
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">ase</span></code> will automatically read the <code class="docutils literal notranslate"><span class="pre">labels</span></code> tag and assign the atom types to the atoms in the structure, and the calculator will use the parameters from the json file to calculate the Lennard-Jones potential.</p>
-<p>For the framework, it is possible to use a <code class="docutils literal notranslate"><span class="pre">.cif</span></code> file format, with the tag <code class="docutils literal notranslate"><span class="pre">_atom_site_label</span></code> to assign the atom types. For example, the Mg-MOF-74 framework can be defined as:</p>
+<p>For the framework, it is possible to use a <code class="docutils literal notranslate"><span class="pre">.cif</span></code> file format, with the tag <code class="docutils literal notranslate"><span class="pre">_atom_site_label</span></code> to assign the atom types. For example, the MFI zeolite can be defined as:</p>
 <div class="highlight-none notranslate"><div class="highlight"><pre><span></span>data_VESTA_phase_1
 
 _chemical_name_common                  'MFI'
@@ -645,29 +648,13 @@ O          1.0     0.391500     0.250000     0.561100    O
 O          1.0     0.608500     0.750000     0.438900    O
 </pre></div>
 </div>
-<p>in this case, since there is no specific atom types defined for the framework, the atom types will be assigned based on the element symbol. For example, all Mg atoms will be assigned the atom type <code class="docutils literal notranslate"><span class="pre">Mg</span></code>, and all O atoms will be assigned the atom type <code class="docutils literal notranslate"><span class="pre">O</span></code>.</p>
-</section>
-<section id="running-simulations-with-the-lennard-jones-potential">
-<h2>Running simulations with the Lennard-Jones potential<a class="headerlink" href="#running-simulations-with-the-lennard-jones-potential" title="Link to this heading">¶</a></h2>
-<p>In this example we will evaluate the Mg-MOF-74, a material well-known for having adsorption of CO <sub>2</sub> on Open-Metal sites, which is very hard to model with classical force fields and usually require electronic structure methods, such DFT, to describe the interaction properly.</p>
-<p>On the <code class="docutils literal notranslate"><span class="pre">flames/examples/Basic/3-Rigid_GCMC</span></code> folder you will find the <code class="docutils literal notranslate"><span class="pre">cif</span></code> file for the Mg-MOF-74 <a class="footnote-reference brackets" href="#id4" id="id2" role="doc-noteref"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></a>. The simulation will be executed with the machine learning potential MACE <a class="footnote-reference brackets" href="#id5" id="id3" role="doc-noteref"><span class="fn-bracket">[</span>2<span class="fn-bracket">]</span></a>, using the <code class="docutils literal notranslate"><span class="pre">medium-0b2</span></code> pre-trained foundation model with <code class="docutils literal notranslate"><span class="pre">D3(0)</span></code> dispersion correction.</p>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>This model is used here just as an example, you should look carefully into the mace documentation to undestand how the potential work and which one is the best for your specific case.</p>
-</div>
-<p>The script below will run the simulation at 298 K (25°C) and 1 bar.</p>
 </section>
 <section id="references">
 <h2>References<a class="headerlink" href="#references" title="Link to this heading">¶</a></h2>
 <aside class="footnote-list brackets">
-<aside class="footnote brackets" id="id4" role="doc-footnote">
-<span class="label"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></span>
-<span class="backrefs">(<a role="doc-backlink" href="#id1">1</a>,<a role="doc-backlink" href="#id2">2</a>)</span>
+<aside class="footnote brackets" id="id2" role="doc-footnote">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id1">1</a><span class="fn-bracket">]</span></span>
 <p>Bai, P., Tsapatsis, M. and Siepmann, J.I., 2013. TraPPE-zeo: Transferable potentials for phase equilibria force field for all-silica zeolites. The Journal of Physical Chemistry C, 117(46), pp.24375-24387.</p>
-</aside>
-<aside class="footnote brackets" id="id5" role="doc-footnote">
-<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id3">2</a><span class="fn-bracket">]</span></span>
-<p>Batatia, I., Benner, P., Chiang, Y., Elena, A.M., Kovács, D.P., Riebesell, J., Advincula, X.R., Asta, M., Avaylon, M., Baldwin, W.J. and Berger, F., 2025. A foundation model for atomistic materials chemistry. The Journal of Chemical Physics, 163(18). <a class="reference external" href="https://pubs.aip.org/aip/jcp/article/163/18/184110/3372267/A-foundation-model-for-atomistic-materials">https://pubs.aip.org/aip/jcp/article/163/18/184110/3372267/A-foundation-model-for-atomistic-materials</a></p>
 </aside>
 </aside>
 </section>
@@ -683,18 +670,18 @@ O          1.0     0.608500     0.750000     0.438900    O
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">Lennard-Jones Potential</div>
+                <div class="title">Ewald Sum for Electrostatic Interactions</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
-          <a class="prev-page" href="../basic/isotherm.html">
+          <a class="prev-page" href="../intermediate/hybrid_gcmc_md.html">
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
               <div class="page-info">
                 <div class="context">
                   <span>Previous</span>
                 </div>
                 
-                <div class="title">GCMC Adsorption Isotherm</div>
+                <div class="title">Hybrid GCMC/MD Simulation</div>
                 
               </div>
             </a>
@@ -737,7 +724,6 @@ O          1.0     0.608500     0.750000     0.438900    O
             <ul>
 <li><a class="reference internal" href="#">Lennard-Jones Potential</a><ul>
 <li><a class="reference internal" href="#brief-introduction-about-the-lennard-jones-potential">Brief introduction about the Lennard-Jones potential</a></li>
-<li><a class="reference internal" href="#running-simulations-with-the-lennard-jones-potential">Running simulations with the Lennard-Jones potential</a></li>
 <li><a class="reference internal" href="#references">References</a></li>
 </ul>
 </li>

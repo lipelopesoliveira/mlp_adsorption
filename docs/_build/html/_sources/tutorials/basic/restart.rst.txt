@@ -38,8 +38,14 @@ The script below will run the Widom simulation at 298 K (25°C).
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
-    FrameworkPath = "mg-mof-74.cif"
-    AdsorbatePath = "co2.xyz"
+    framework: ase.Atoms = read("mg-mof-74.cif")
+    
+    adsorbate = Adsorbate(
+        name="CO2",
+        structure="co2.xyz",
+        eos={"criticalTemperature": 304.1282, "criticalPressure": 7377300.0, "acentricFactor": 0.22394},
+        move_weights={"insertion": 0.5, "deletion": 0.5, "translation": 0.5, "rotation": 0.5}
+    )
 
     model = mace_mp(
         model="medium-0b2",
@@ -50,13 +56,6 @@ The script below will run the Widom simulation at 298 K (25°C).
         device=device,
     )
 
-
-    # Load the framework structure
-    framework: ase.Atoms = read(FrameworkPath)  # type: ignore
-
-    # Load the adsorbate structure
-    adsorbate: ase.Atoms = read(AdsorbatePath)  # type: ignore
-
     Temperature = 298.0
 
     NSteps = 3000
@@ -64,7 +63,7 @@ The script below will run the Widom simulation at 298 K (25°C).
     widom = Widom(
         model=model,
         framework_atoms=framework,
-        adsorbate_atoms=adsorbate,
+        adsorbates=adsorbate,
         temperature=Temperature,
         device=device,
         vdw_radii=vdw_radii,
@@ -145,12 +144,16 @@ The script below will run the simulation at 298 K (25°C) and 1 bar.
     framework: ase.Atoms = read_cif("MFI.cif")
 
     # Load the adsorbate structure
-    adsorbate: ase.Atoms = read("ch4.xyz")
+    adsorbate = Adsorbate(
+        name="CH4",
+        structure="ch4.xyz",
+        move_weights={"insertion": 0.5, "deletion": 0.5, "translation": 0.5}
+    )
 
     gcmc = GCMC(
         model=calc,
         framework_atoms=framework,
-        adsorbate_atoms=adsorbate,
+        adsorbates=adsorbate,
         temperature=298.15,
         pressure=1e5,
         device="cpu",
@@ -160,13 +163,6 @@ The script below will run the simulation at 298 K (25°C) and 1 bar.
         cutoff_radius=12.0,
         automatic_supercell=True,
         LLM=False,
-        move_weights={
-            "insertion": 0.25,
-            "deletion": 0.25,
-            "translation": 0.25,
-            "rotation": 0,
-            "reinsertion": 0.25,
-        },
     )
 
     gcmc.logger.print_header()
@@ -271,12 +267,16 @@ The script below will read the last configuration from the `Trajectory.traj` fil
     framework: ase.Atoms = read_cif("MFI.cif")
 
     # Load the adsorbate structure
-    adsorbate: ase.Atoms = read("ch4.xyz")
+    adsorbate = Adsorbate(
+        name="CH4",
+        structure="ch4.xyz",
+        move_weights={"insertion": 0.5, "deletion": 0.5, "translation": 0.5}
+    )
 
     gcmc = GCMC(
         model=calc,
         framework_atoms=framework,
-        adsorbate_atoms=adsorbate,
+        adsorbates=adsorbate,
         temperature=298.15,
         pressure=1e5,
         device="cpu",
@@ -286,13 +286,6 @@ The script below will read the last configuration from the `Trajectory.traj` fil
         cutoff_radius=12.0,
         automatic_supercell=True,
         LLM=False,
-        move_weights={
-            "insertion": 0.25,
-            "deletion": 0.25,
-            "translation": 0.25,
-            "rotation": 0,
-            "reinsertion": 0.25,
-        },
     )
 
     gcmc.logger.print_header()

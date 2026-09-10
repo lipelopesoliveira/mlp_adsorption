@@ -3,7 +3,7 @@
   <head><meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="index" title="Index" href="../../genindex.html"><link rel="search" title="Search" href="../../search.html"><link rel="next" title="Lennard-Jones Potential" href="../calculators/lennard_jones.html"><link rel="prev" title="Restarting Simulations" href="restart.html">
+<link rel="index" title="Index" href="../../genindex.html"><link rel="search" title="Search" href="../../search.html"><link rel="next" title="Multi-component GCMC Simulation" href="multiple_ads.html"><link rel="prev" title="Restarting Simulations" href="restart.html">
         <link rel="prefetch" href="../../_static/logo-light-mode.png" as="image">
         <link rel="prefetch" href="../../_static/logo-dark-mode.png" as="image">
 
@@ -208,13 +208,16 @@
 <li class="toctree-l1"><a class="reference internal" href="gcmc.html">GCMC Simulation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="restart.html">Restarting Simulations</a></li>
 <li class="toctree-l1 current current-page"><a class="current reference internal" href="#">GCMC Adsorption Isotherm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="multiple_ads.html">Multi-component GCMC Simulation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Tutorials: Intermediate</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../intermediate/hybrid_gcmc_md.html">Hybrid GCMC/MD Simulation</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Tutorials: Calculators</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../calculators/lennard_jones.html">Lennard-Jones Potential</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../calculators/ewald.html">Lennard-Jones Potential</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../calculators/combining.html">Combining Potentials</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../calculators/cp2k.html">Lennard-Jones Potential</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../calculators/ewald.html">Ewald Sum for Electrostatic Interactions</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Tutorials: Advanced</span></p>
 <ul>
@@ -326,10 +329,14 @@ but it has the disadvantage of not being able to run the simulations in parallel
 <span class="p">)</span>
 
 <span class="c1"># Load the framework structure</span>
-<span class="n">framework</span><span class="p">:</span> <span class="n">ase</span><span class="o">.</span><span class="n">Atoms</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="n">FrameworkPath</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
+<span class="n">framework</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="s2">"mg-mof-74.cif"</span><span class="p">)</span>
 
-<span class="c1"># Load the adsorbate structure</span>
-<span class="n">adsorbate</span><span class="p">:</span> <span class="n">ase</span><span class="o">.</span><span class="n">Atoms</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="n">AdsorbatePath</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
+<span class="n">adsorbate</span> <span class="o">=</span> <span class="n">Adsorbate</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">"CO2"</span><span class="p">,</span>
+    <span class="n">structure</span><span class="o">=</span><span class="s2">"co2.xyz"</span><span class="p">,</span>
+    <span class="n">eos</span><span class="o">=</span><span class="p">{</span><span class="s2">"criticalTemperature"</span><span class="p">:</span> <span class="mf">304.1282</span><span class="p">,</span> <span class="s2">"criticalPressure"</span><span class="p">:</span> <span class="mf">7377300.0</span><span class="p">,</span> <span class="s2">"acentricFactor"</span><span class="p">:</span> <span class="mf">0.22394</span><span class="p">},</span>
+    <span class="n">move_weights</span><span class="o">=</span><span class="p">{</span><span class="s2">"insertion"</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span> <span class="s2">"deletion"</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span> <span class="s2">"translation"</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span> <span class="s2">"rotation"</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,}</span>
+<span class="p">)</span>
 
 <span class="n">Temperature</span> <span class="o">=</span> <span class="mf">298.0</span>  <span class="c1"># in Kelvin</span>
 <span class="n">pressure_list</span> <span class="o">=</span> <span class="p">[</span>
@@ -356,16 +363,13 @@ but it has the disadvantage of not being able to run the simulations in parallel
     <span class="n">gcmc</span> <span class="o">=</span> <span class="n">GCMC</span><span class="p">(</span>
         <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span>
         <span class="n">framework_atoms</span><span class="o">=</span><span class="n">framework</span><span class="p">,</span>
-        <span class="n">adsorbate_atoms</span><span class="o">=</span><span class="n">adsorbate</span><span class="p">,</span>
+        <span class="n">adsorbates</span><span class="o">=</span><span class="n">adsorbate</span><span class="p">,</span>
         <span class="n">temperature</span><span class="o">=</span><span class="n">Temperature</span><span class="p">,</span>
         <span class="n">pressure</span><span class="o">=</span><span class="n">pressure</span><span class="p">,</span>
         <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
         <span class="n">vdw_radii</span><span class="o">=</span><span class="n">vdw_radii</span><span class="p">,</span>
         <span class="n">debug</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">output_to_file</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-        <span class="n">criticalTemperature</span><span class="o">=</span><span class="mf">304.1282</span><span class="p">,</span>
-        <span class="n">criticalPressure</span><span class="o">=</span><span class="mf">7377300.0</span><span class="p">,</span>
-        <span class="n">acentricFactor</span><span class="o">=</span><span class="mf">0.22394</span><span class="p">,</span>
         <span class="n">cutoff_radius</span><span class="o">=</span><span class="mf">6.0</span><span class="p">,</span>
         <span class="n">automatic_supercell</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="p">)</span>
@@ -419,12 +423,12 @@ but it has the disadvantage of not being able to run the simulations in parallel
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="../calculators/lennard_jones.html">
+          <a class="next-page" href="multiple_ads.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">Lennard-Jones Potential</div>
+                <div class="title">Multi-component GCMC Simulation</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
