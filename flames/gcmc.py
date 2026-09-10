@@ -1141,10 +1141,10 @@ class GCMC(BaseSimulator):
         # Create a trial system for the deletion
         atoms_trial = self.current_system.copy()
 
+        to_reinsert = atoms_trial[ads_indices[0] : ads_indices[-1] + 1].copy()
+
         # Delete the adsorbate atoms from the trial structure
         del atoms_trial[ads_indices[0] : ads_indices[-1] + 1]
-
-        to_reinsert = [ads.structure for ads in self.adsorbates if ads.tag == adsorbate_tag][0]
 
         temp = random_mol_insertion(atoms_trial, to_reinsert, self.rnd_generator)
 
