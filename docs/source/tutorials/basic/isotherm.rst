@@ -54,10 +54,14 @@ The script below will run the simulation sequentially at 298 K (25°C) with pres
     )
 
     # Load the framework structure
-    framework: ase.Atoms = read(FrameworkPath)  # type: ignore
+    framework = read("mg-mof-74.cif")
 
-    # Load the adsorbate structure
-    adsorbate: ase.Atoms = read(AdsorbatePath)  # type: ignore
+    adsorbate = Adsorbate(
+        name="CO2",
+        structure="co2.xyz",
+        eos={"criticalTemperature": 304.1282, "criticalPressure": 7377300.0, "acentricFactor": 0.22394},
+        move_weights={"insertion": 0.5, "deletion": 0.5, "translation": 0.5, "rotation": 0.5,}
+    )
 
     Temperature = 298.0  # in Kelvin
     pressure_list = [
@@ -84,16 +88,13 @@ The script below will run the simulation sequentially at 298 K (25°C) with pres
         gcmc = GCMC(
             model=model,
             framework_atoms=framework,
-            adsorbate_atoms=adsorbate,
+            adsorbates=adsorbate,
             temperature=Temperature,
             pressure=pressure,
             device=device,
             vdw_radii=vdw_radii,
             debug=False,
             output_to_file=True,
-            criticalTemperature=304.1282,
-            criticalPressure=7377300.0,
-            acentricFactor=0.22394,
             cutoff_radius=6.0,
             automatic_supercell=True,
         )

@@ -64,7 +64,7 @@ For example, the CH :sub:`4` molecule can be defined as:
 
 ``ase`` will automatically read the ``labels`` tag and assign the atom types to the atoms in the structure, and the calculator will use the parameters from the json file to calculate the Lennard-Jones potential.
 
-For the framework, it is possible to use a ``.cif`` file format, with the tag ``_atom_site_label`` to assign the atom types. For example, the Mg-MOF-74 framework can be defined as:
+For the framework, it is possible to use a ``.cif`` file format, with the tag ``_atom_site_label`` to assign the atom types. For example, the MFI zeolite can be defined as:
 
 .. code:: none
 
@@ -380,21 +380,6 @@ For the framework, it is possible to use a ``.cif`` file format, with the tag ``
     O          1.0     0.891500     0.250000     0.938900    O
     O          1.0     0.391500     0.250000     0.561100    O
     O          1.0     0.608500     0.750000     0.438900    O
-
-
-in this case, since there is no specific atom types defined for the framework, the atom types will be assigned based on the element symbol. For example, all Mg atoms will be assigned the atom type ``Mg``, and all O atoms will be assigned the atom type ``O``.
-
-
-Running simulations with the Lennard-Jones potential
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-In this example we will evaluate the Mg-MOF-74, a material well-known for having adsorption of CO :sub:`2` on Open-Metal sites, which is very hard to model with classical force fields and usually require electronic structure methods, such DFT, to describe the interaction properly. 
-
-On the ``flames/examples/Basic/3-Rigid_GCMC`` folder you will find the ``cif`` file for the Mg-MOF-74 [1]_. The simulation will be executed with the machine learning potential MACE [2]_, using the ``medium-0b2`` pre-trained foundation model with ``D3(0)`` dispersion correction. 
-
-.. warning:: This model is used here just as an example, you should look carefully into the mace documentation to undestand how the potential work and which one is the best for your specific case.
-
-The script below will run the simulation at 298 K (25°C) and 1 bar. 
 
 
 References

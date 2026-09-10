@@ -37,6 +37,7 @@ The script below will run the simulation at 298 K (25°C) and 1 bar.
     from ase.io import read
     from mace.calculators import mace_mp
 
+    from flames.adsorbate import Adsorbate
     from flames.gcmc import GCMC
 
     warnings.filterwarnings("ignore", category=UserWarning)
@@ -55,14 +56,15 @@ The script below will run the simulation at 298 K (25°C) and 1 bar.
         device=device,
     )
 
-    FrameworkPath = "mg-mof-74.cif"
-    AdsorbatePath = "co2.xyz"
-
     # Load the framework structure
-    framework: ase.Atoms = read(FrameworkPath)  # type: ignore
+    framework = read("mg-mof-74.cif")  # type: ignore
 
-    # Load the adsorbate structure
-    adsorbate: ase.Atoms = read(AdsorbatePath)  # type: ignore
+    adsorbate = Adsorbate(
+        name="CO2",
+        structure="co2.xyz",
+        eos={"criticalTemperature": 304.1282, "criticalPressure": 7377300.0, "acentricFactor": 0.22394},
+        move_weights={"insertion": 0.5, "deletion": 0.5, "translation": 0.5, "rotation": 0.5}
+    )
 
     TTemperature = 298.0  # in Kelvin
     pressure = 100_000  # in Pa = 1 bar
@@ -71,18 +73,15 @@ The script below will run the simulation at 298 K (25°C) and 1 bar.
     gcmc = GCMC(
         model=model,
         framework_atoms=framework,
-        adsorbate_atoms=adsorbate,
+        adsorbates=adsorbate,
         temperature=Temperature,
         pressure=pressure,
         device=device,
         vdw_radii=vdw_radii,
         vdw_factor=0.6,
         save_frequency=1,
-        debug=False,
+        debug=True,
         output_to_file=True,
-        criticalTemperature=304.1282,
-        criticalPressure=7377300.0,
-        acentricFactor=0.22394,
         random_seed=42,
         cutoff_radius=6.0,
         automatic_supercell=True,
@@ -100,6 +99,15 @@ Breaking down the input script
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 The first block of the code is similar to the one used in the Widom insertion tutorial, where we import the necessary libraries, set up the device, load the model and read the framework and adsorbate structures.
 
+
+Reading the structure
+---------------------
+
+Note here that the ``Adsorbate`` object now has two additional parameters: ``eos`` and ``move_weights``.
+The ``eos`` parameter is a dictionary that contains the critical temperature, critical pressure, and acentric factor of the adsorbate for calculating the fugacity coefficient using the Peng Robinsion equation. Aditionally, it is possible to pass a custom EOS object.
+
+The ``move_weights`` parameter is a dictionary that contains the weights for each type of move in the GCMC simulation. The weights are normalized so that the sum of all weights is equal to 1.
+
 Running the simulation
 ----------------------
 
@@ -112,18 +120,15 @@ Running the simulation
     gcmc = GCMC(
         model=model,
         framework_atoms=framework,
-        adsorbate_atoms=adsorbate,
+        adsorbates=adsorbate,
         temperature=Temperature,
         pressure=pressure,
         device=device,
         vdw_radii=vdw_radii,
         vdw_factor=0.6,
         save_frequency=1,
-        debug=False,
+        debug=True,
         output_to_file=True,
-        criticalTemperature=304.1282,
-        criticalPressure=7377300.0,
-        acentricFactor=0.22394,
         random_seed=42,
         cutoff_radius=6.0,
         automatic_supercell=True,
@@ -145,9 +150,6 @@ This block defines the ``gcmc`` simulator and runs the code. You can define the 
 You should change the ``cutoff_radius`` according to your system and potential used, usually 6.0 Å is a good starting point but check carefully the cutoff of your potential.
 
 The ``automatic_supercell`` option will create a supercell big enough to fit twice the cutoff radius.
-
-The ``criticalTemperature``, ``criticalPressure``, and ``acentricFactor`` are used to calculate the fugacity coefficient, which is used to convert the pressure to fugacity, that is the correct thermodynamic variable to be used in GCMC simulations. If no value is provided, the code will assume ideal gas behavior and use the pressure as fugacity, which is a good approximation at low pressures but can lead to significant errors at high pressures.
-
 
 Analyzing the output
 ~~~~~~~~~~~~~~~~~~~~

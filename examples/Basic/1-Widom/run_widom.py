@@ -36,7 +36,6 @@ model = mace_mp(
     device=device,
 )
 
-
 Temperature = 298.0
 
 NSteps = 3000

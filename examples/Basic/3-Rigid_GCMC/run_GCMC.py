@@ -26,6 +26,7 @@ adsorbate = Adsorbate(
     name="CO2",
     structure="co2.xyz",
     eos={"criticalTemperature": 304.1282, "criticalPressure": 7377300.0, "acentricFactor": 0.22394},
+    move_weights={"insertion": 0.5, "deletion": 0.5, "translation": 0.5, "rotation": 0.5}
 )
 
 model = mace_mp(

@@ -42,8 +42,6 @@ tutorials/basic/isotherm
 
 tutorials/calculators/lennard_jones
 tutorials/calculators/ewald
-tutorials/calculators/combining
-tutorials/calculators/cp2k
 
 ```
 
