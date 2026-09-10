@@ -10,12 +10,12 @@ readme = "README.md"
 classifiers = [
     "Intended Audience :: Science/Research",
     "Development Status :: 3 - Alpha",
-    "License :: OSI Approved :: Apache Software License",
+    "License :: OSI Approved :: MIT Software License",
     "Programming Language :: Python :: 3",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 authors = [
-    {name = "Felipe Lopes de Oliveira", email = "felipe.lopes@nano.ufrj.br"}
+    {name = "Felipe Lopes de Oliveira", email = "felipe.lopes-de-oliveira@umontpellier.fr"}
 ]
 requires-python = ">=3.10"
 dependencies = [
@@ -30,7 +30,9 @@ dependencies = [
   "gemmi",
   "simplejson",
   "torch-dftd",
-  "pymser"
+  "pymser",
+  "vesin",
+  "numba"
 ]
 license = {file = "LICENSE"}
 
@@ -38,7 +40,7 @@ license = {file = "LICENSE"}
 Homepage = "https://github.com/lipelopesoliveira/flames"
 Repository = "https://github.com/lipelopesoliveira/flames"
 Changelog = "https://github.com/lipelopesoliveira/flames/blob/main/CHANGELOG.md"
-# Documentation = "https://flames.readthedocs.io/"
+# Documentation = "https://lipelopesoliveira.github.io/flames/docs/_build/html/index.html"
 
 [project.optional-dependencies]
 dev = [
@@ -60,7 +62,8 @@ dev = [
     "sphinx-copybutton",
     "sphinx-autobuild",
     "sphinx-autodoc-typehints==3.0.1",
-    "packaging"
+    "packaging",
+    "vesin"
 ]
 
 [tool.setuptools.packages.find]

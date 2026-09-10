@@ -1,0 +1,807 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="../../">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="../../genindex.html"><link rel="search" title="Search" href="../../search.html"><link rel="next" title="Mixed calculators for GCMC/MD simulations" href="../advanced/hybrid_gcmc_md_mixed_calc.html"><link rel="prev" title="Lennard-Jones Potential" href="lennard_jones.html">
+        <link rel="prefetch" href="../../_static/logo-light-mode.png" as="image">
+        <link rel="prefetch" href="../../_static/logo-dark-mode.png" as="image">
+
+    <link rel="shortcut icon" href="../../_static/favicon.ico"><!-- Generated with Sphinx 8.1.3 and Furo 2025.12.19 -->
+        <title>Ewald Sum for Electrostatic Interactions - FLAMES v0.4.9</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo-extensions.css?v=8dab3a3b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../../index.html"><div class="brand">FLAMES v0.4.9</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../../index.html">
+  <div class="sidebar-logo-container">
+    <img class="sidebar-logo only-light" src="../../_static/logo-light-mode.png" alt="Light Logo"/>
+    <img class="sidebar-logo only-dark" src="../../_static/logo-dark-mode.png" alt="Dark Logo"/>
+  </div>
+  
+  
+</a><form class="sidebar-search-container" method="get" action="../../search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installing FLAMES</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../overview.html">Overview</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Tutorials: Basic</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../basic/widom.html">Widom insertion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../basic/gcmc.html">GCMC Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../basic/restart.html">Restarting Simulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../basic/isotherm.html">GCMC Adsorption Isotherm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../basic/multiple_ads.html">Multi-component GCMC Simulation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Tutorials: Intermediate</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../intermediate/hybrid_gcmc_md.html">Hybrid GCMC/MD Simulation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Tutorials: Calculators</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="lennard_jones.html">Lennard-Jones Potential</a></li>
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Ewald Sum for Electrostatic Interactions</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Tutorials: Advanced</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../advanced/hybrid_gcmc_md_mixed_calc.html">Mixed calculators for GCMC/MD simulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../advanced/hybrid_tmmc_md.html">Hybrid TMMC/MD Simulation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Theoretical Background</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../theoretical_background/widom.html">Widom test particle insertion method</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../theoretical_background/gcmc.html">Grand-Canonical Monte Carlo (GCMC) Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../theoretical_background/tmmc.html">Transition Matrix Monte Carlo (TMMC) Simulation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Simulator Description</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../input_description/base_simulator.html">BaseSimulator Class</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../input_description/gcmc.html">GCMC Class</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../input_description/widom.html">Widom Class</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../input_description/tmmc.html">TMMC Class</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../CHANGELOG.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../CONTRIBUTING.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://raw.githubusercontent.com/lipelopesoliveira/flames/main/LICENSE">License</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/lipelopesoliveira/flames">GitHub Repository</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="../../_sources/tutorials/calculators/ewald.rst.txt" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div>
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section id="ewald-sum-for-electrostatic-interactions">
+<h1>Ewald Sum for Electrostatic Interactions<a class="headerlink" href="#ewald-sum-for-electrostatic-interactions" title="Link to this heading">¶</a></h1>
+<section id="brief-introduction-about-the-ewald-sum-method">
+<h2>Brief introduction about the Ewald sum method<a class="headerlink" href="#brief-introduction-about-the-ewald-sum-method" title="Link to this heading">¶</a></h2>
+<p>The Ewald sum is a method for computing long-range electrostatic interactions in periodic systems. The Ewald sum decomposes the electrostatic potential into two parts: a short-range part that converges rapidly in real space and a long-range part that converges in reciprocal space.
+This decomposition allows for efficient computation of the electrostatic interactions while maintaining accuracy.</p>
+</section>
+<hr class="docutils" />
+<section id="setting-the-stage">
+<h2>Setting the stage<a class="headerlink" href="#setting-the-stage" title="Link to this heading">¶</a></h2>
+<p>In this example we will evaluate the Mg-MOF-74, a material well-known for having adsorption of CO <sub>2</sub> on Open-Metal sites.</p>
+<p>On the <code class="docutils literal notranslate"><span class="pre">flames/examples/Calculators/ClassicalFF</span></code> folder you will find the <code class="docutils literal notranslate"><span class="pre">cif</span></code> file for the Mg-MOF-74 <a class="footnote-reference brackets" href="#id2" id="id1" role="doc-noteref"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></a>. contaning the charges calculated with the DDEC method.</p>
+<p>Note that the partial charges informations are stored in the <code class="docutils literal notranslate"><span class="pre">_atom_site_charge</span></code> tag of the cif file, and the atom types are stored in the <code class="docutils literal notranslate"><span class="pre">_atom_site_label</span></code> tag. The calculator will use these informations to calculate the electrostatic interactions and the Lennard-Jones interactions, using the parameters from the json file.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>data_MgMOF-74_DDEC
+_chemical_name_common                  'MgMOF-74_DDEC'
+_cell_length_a                              6.870000000
+_cell_length_b                             15.112181400
+_cell_length_c                             15.112181400
+_cell_angle_alpha                         117.746240480
+_cell_angle_beta                           98.715798920
+_cell_angle_gamma                          98.715798920
+
+_symmetry_cell_setting          triclinic
+_symmetry_space_group_name_Hall 'P 1'
+_symmetry_space_group_name_H-M  'P 1'
+_symmetry_Int_Tables_number     1
+
+_symmetry_equiv_pos_as_xyz 'x,y,z'
+
+loop_
+_atom_site_type_symbol
+_atom_site_label
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+_atom_site_charge
+Mg    Mg         0.5186500000      0.4093400000      0.7319800000    1.4148400
+Mg    Mg         0.4814500000      0.5907400000      0.2681800000    1.4152260
+Mg    Mg         0.7867500000      0.2681200000      0.6775000000    1.4150490
+Mg    Mg         0.2133500000      0.7319200000      0.3227000000    1.4149810
+Mg    Mg         0.1093700000      0.3226800000      0.5908000000    1.4152670
+Mg    Mg         0.8907700000      0.6774800000      0.4094000000    1.4153640
+H     H          0.1869650000      0.5308500000      0.5511000000    0.1423580
+H     H          0.8131650000      0.4692500000      0.4491000000    0.1422210
+H     H          0.6359650000      0.4490200000      0.9799300000    0.1428330
+H     H          0.3641650000      0.5510200000      0.0203300000    0.1425470
+H     H          0.6561950000      0.0203100000      0.4693300000    0.1427900
+H     H          0.3439950000      0.9799100000      0.5309300000    0.1426060
+C     C          0.7398300000      0.3850400000      0.5624800000    0.6837900
+C     C          0.2604300000      0.6150400000      0.4376800000    0.6836320
+C     C          0.1774300000      0.4376200000      0.8227000000    0.6838090
+C     C          0.8228300000      0.5624200000      0.1775000000    0.6836940
+C     C          0.3548500000      0.1774800000      0.6151000000    0.6839840
+C     C          0.6454500000      0.8226800000      0.3851000000    0.6829560
+C     C          0.6148300000      0.4491400000      0.5376800000   -0.1773490
+C     C          0.3854300000      0.5509400000      0.4624800000   -0.1773120
+C     C          0.0772300000      0.4624300000      0.9115900000   -0.1770960
+C     C         0.9230300000      0.5376300000      0.0885900000   -0.1775100
+C     C         0.1657400000      0.0885600000      0.5509900000   -0.1772920
+C     C         0.8345400000      0.9115600000      0.4491900000   -0.1770670
+C     C         0.4378500000      0.4679400000      0.5698800000    0.3282120
+C     C         0.5622500000      0.5321400000      0.4302800000    0.3285260
+C     C         0.8680500000      0.4302200000      0.8982000000    0.3283210
+C     C         0.1320500000      0.5698200000      0.1020000000    0.3288670
+C     C         0.9699700000      0.1019800000      0.5322000000    0.3285720
+C     C         0.0301700000      0.8981800000      0.4680000000    0.3290870
+C     C         0.3255300000      0.5227400000      0.5351800000   -0.2087990
+C     C         0.6747300000      0.4773400000      0.4649800000   -0.2086970
+C     C         0.7904300000      0.4649200000      0.9877000000   -0.2092150
+C     C         0.2098300000      0.5351200000      0.0125000000   -0.2099140
+C     C         0.8028500000      0.0124800000      0.4774000000   -0.2096940
+C     C         0.1974500000      0.9876800000      0.5228000000   -0.2095000
+O     O          0.6872510000      0.3548400000      0.6208800000   -0.7387460
+O     O          0.3128510000      0.6452400000      0.3792800000   -0.7387570
+O     O          0.0664510000      0.3792200000      0.7341000000   -0.7387300
+O     O          0.9336510000      0.6208200000      0.2661000000   -0.7387400
+O     O          0.3324710000      0.2660800000      0.6453000000   -0.7390080
+O     O          0.6676710000      0.7340800000      0.3549000000   -0.7383650
+O     O          0.9004500000      0.3768400000      0.5316800000   -0.6324900
+O     O          0.0996500000      0.6232400000      0.4684800000   -0.6328050
+O     O          0.3688500000      0.4684200000      0.8453000000   -0.6325900
+O     O         0.6312500000      0.5316200000      0.1549000000   -0.6327200
+O     O         0.5236700000      0.1548800000      0.6233000000   -0.6323300
+O     O         0.4764700000      0.8452800000      0.3769000000   -0.6322220
+O     O         0.3562530000      0.4334400000      0.6283800000   -0.8119520
+O     O         0.6438530000      0.5666400000      0.3717800000   -0.8121590
+O     O         0.7279530000      0.3717200000      0.8052000000   -0.8116690
+O     O         0.2721530000      0.6283200000      0.1950000000   -0.8122470
+O     O         0.9228730000      0.1949800000      0.5667000000   -0.8121360
+O     O         0.0772730000      0.8051800000      0.4335000000   -0.8124180
+</pre></div>
+</div>
+<p>For the Lennard Jones interactions, the parameters are taken from the UFF force field, and are stored in the <code class="docutils literal notranslate"><span class="pre">UFF_lj_params.json</span></code> file. The calculator will use the atom types from the <code class="docutils literal notranslate"><span class="pre">_atom_site_label</span></code> tag to assign the parameters to the atoms in the structure.</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">    </span><span class="nt">"O"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">3.03315</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"epsilon"</span><span class="p">:</span><span class="w"> </span><span class="mf">48.1581</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">"N"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">3.26256</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"epsilon"</span><span class="p">:</span><span class="w"> </span><span class="mf">38.9492</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">"C"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">3.47299</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"epsilon"</span><span class="p">:</span><span class="w"> </span><span class="mf">47.8562</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">"F"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">3.0932</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"epsilon"</span><span class="p">:</span><span class="w"> </span><span class="mf">36.4834</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">"B"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">3.58141</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"epsilon"</span><span class="p">:</span><span class="w"> </span><span class="mf">47.8058</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">"I"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">4.01</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"epsilon"</span><span class="p">:</span><span class="w"> </span><span class="mf">170.57</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">"P"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">3.69723</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"epsilon"</span><span class="p">:</span><span class="w"> </span><span class="mf">161.03</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">"S"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">3.59032</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"epsilon"</span><span class="p">:</span><span class="w"> </span><span class="mf">173.107</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">"W"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">2.73</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"epsilon"</span><span class="p">:</span><span class="w"> </span><span class="mf">33.71</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">"Y"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">2.98</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"epsilon"</span><span class="p">:</span><span class="w"> </span><span class="mf">36.23</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">"K"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">3.4</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"epsilon"</span><span class="p">:</span><span class="w"> </span><span class="mf">17.61</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">"Cl"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">3.51932</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"epsilon"</span><span class="p">:</span><span class="w"> </span><span class="mf">142.562</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">"Br"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">3.51905</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"epsilon"</span><span class="p">:</span><span class="w"> </span><span class="mf">186.191</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">"H"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">2.84642</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"epsilon"</span><span class="p">:</span><span class="w"> </span><span class="mf">7.64893</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">"Zn"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">2.46155</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"epsilon"</span><span class="p">:</span><span class="w"> </span><span class="mf">62.3992</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">"Be"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">2.44552</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"epsilon"</span><span class="p">:</span><span class="w"> </span><span class="mf">42.7736</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">"Ca"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">3.02816</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"epsilon"</span><span class="p">:</span><span class="w"> </span><span class="mf">119.766</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">"Cr"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">2.69319</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"epsilon"</span><span class="p">:</span><span class="w"> </span><span class="mf">7.54829</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">"Fe"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">2.5943</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"epsilon"</span><span class="p">:</span><span class="w"> </span><span class="mf">6.54185</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">"Mn"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">2.63795</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"epsilon"</span><span class="p">:</span><span class="w"> </span><span class="mf">6.54185</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">"Cu"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">3.11369</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"epsilon"</span><span class="p">:</span><span class="w"> </span><span class="mf">2.5161</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">"Co"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">2.55866</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"epsilon"</span><span class="p">:</span><span class="w"> </span><span class="mf">7.04507</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">"Ga"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">3.90481</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"epsilon"</span><span class="p">:</span><span class="w"> </span><span class="mf">208.836</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">"Ti"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">2.8286</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"epsilon"</span><span class="p">:</span><span class="w"> </span><span class="mf">8.55473</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">"Sc"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">2.93551</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"epsilon"</span><span class="p">:</span><span class="w"> </span><span class="mf">9.56117</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">"V"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">2.80099</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"epsilon"</span><span class="p">:</span><span class="w"> </span><span class="mf">8.05151</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">"Ni"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">2.52481</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"epsilon"</span><span class="p">:</span><span class="w"> </span><span class="mf">7.54829</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">"Zr"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">2.78317</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"epsilon"</span><span class="p">:</span><span class="w"> </span><span class="mf">34.7221</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">"Mg"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">2.69141</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"epsilon"</span><span class="p">:</span><span class="w"> </span><span class="mf">55.8574</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">"Ne"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">2.88918</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"epsilon"</span><span class="p">:</span><span class="w"> </span><span class="mf">21.1352</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">"Ag"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">2.80455</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"epsilon"</span><span class="p">:</span><span class="w"> </span><span class="mf">18.1159</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">"In"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">3.97608</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"epsilon"</span><span class="p">:</span><span class="w"> </span><span class="mf">301.428</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">"Cd"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">2.53728</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"epsilon"</span><span class="p">:</span><span class="w"> </span><span class="mf">114.734</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">"Sb"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">3.93777</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"epsilon"</span><span class="p">:</span><span class="w"> </span><span class="mf">225.946</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">"Te"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">3.98232</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"epsilon"</span><span class="p">:</span><span class="w"> </span><span class="mf">200.281</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">"Al"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">3.91105</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"epsilon"</span><span class="p">:</span><span class="w"> </span><span class="mf">155.998</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">"Si"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">3.80414</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"epsilon"</span><span class="p">:</span><span class="w"> </span><span class="mf">155.998</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">"As"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">3.77</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"epsilon"</span><span class="p">:</span><span class="w"> </span><span class="mf">155.47</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">"La"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">3.14</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"epsilon"</span><span class="p">:</span><span class="w"> </span><span class="mf">8.55</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">"Ar"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">3.34</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"epsilon"</span><span class="p">:</span><span class="w"> </span><span class="mf">119.8</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">"Au"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">2.93</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"epsilon"</span><span class="p">:</span><span class="w"> </span><span class="mf">19.62</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">"Rh"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">2.61</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"epsilon"</span><span class="p">:</span><span class="w"> </span><span class="mf">26.67</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">"Li"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">2.18</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"epsilon"</span><span class="p">:</span><span class="w"> </span><span class="mf">12.58</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">"Ba"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">3.3</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"epsilon"</span><span class="p">:</span><span class="w"> </span><span class="mf">183.15</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">"Sr"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">3.24</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"epsilon"</span><span class="p">:</span><span class="w"> </span><span class="mf">118.24</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">"Pd"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">2.58</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"epsilon"</span><span class="p">:</span><span class="w"> </span><span class="mf">24.15</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">"Mo"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">2.72</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"epsilon"</span><span class="p">:</span><span class="w"> </span><span class="mf">28.18</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">"Na"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">2.66</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"epsilon"</span><span class="p">:</span><span class="w"> </span><span class="mf">15.09</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">"Kr"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">3.636</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"epsilon"</span><span class="p">:</span><span class="w"> </span><span class="mf">166.4</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">"Xe"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">4.1</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"epsilon"</span><span class="p">:</span><span class="w"> </span><span class="mf">221.0</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">"Gd"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">3.0</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"epsilon"</span><span class="p">:</span><span class="w"> </span><span class="mf">4.53</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">"Er"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">3.02</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"epsilon"</span><span class="p">:</span><span class="w"> </span><span class="mf">3.52</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">"Dy"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">3.05</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"epsilon"</span><span class="p">:</span><span class="w"> </span><span class="mf">3.52</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">"U"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">3.02</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"epsilon"</span><span class="p">:</span><span class="w"> </span><span class="mf">11.07</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">"Tm"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">3.01</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"epsilon"</span><span class="p">:</span><span class="w"> </span><span class="mf">3.02</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">"Lu"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">3.24</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"epsilon"</span><span class="p">:</span><span class="w"> </span><span class="mf">20.63</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">"Th"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">3.03</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"epsilon"</span><span class="p">:</span><span class="w"> </span><span class="mf">13.08</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">"He"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">2.64</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"epsilon"</span><span class="p">:</span><span class="w"> </span><span class="mf">10.9</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">"Pt"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">2.45</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"epsilon"</span><span class="p">:</span><span class="w"> </span><span class="mf">40.25</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">"X"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">3.73</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"epsilon"</span><span class="p">:</span><span class="w"> </span><span class="mf">148.0</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">"Cs"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">2.80</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"epsilon"</span><span class="p">:</span><span class="w"> </span><span class="mf">27.0</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">"Os"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">3.05</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"epsilon"</span><span class="p">:</span><span class="w"> </span><span class="mf">79.0</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">"At"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">89.633</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"epsilon"</span><span class="p">:</span><span class="w"> </span><span class="mf">3.097</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">"Fr"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.0</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"epsilon"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.0</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">"Pa"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"sigma"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.0</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"epsilon"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.0</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">ase.calculators.mixing.SumCalculator</span></code> will be used to combine the Lennard-Jones and Ewald calculators, and the resulting calculator will be used to run the GCMC simulation.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">ase</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ase.calculators</span><span class="w"> </span><span class="kn">import</span> <span class="n">mixing</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ase.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">vdw_radii</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numba</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_num_threads</span><span class="p">,</span> <span class="n">set_num_threads</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">flames.adsorbate</span><span class="w"> </span><span class="kn">import</span> <span class="n">Adsorbate</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">flames.calculators.ewald</span><span class="w"> </span><span class="kn">import</span> <span class="n">CustomEwald</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">flames.calculators.lennard_jones</span><span class="w"> </span><span class="kn">import</span> <span class="n">CustomLennardJones</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">flames.utilities</span><span class="w"> </span><span class="kn">import</span> <span class="n">read_cif</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">flames.widom</span><span class="w"> </span><span class="kn">import</span> <span class="n">Widom</span>
+
+<span class="n">NUM_THREADS_TO_USE</span> <span class="o">=</span> <span class="mi">25</span>
+<span class="n">set_num_threads</span><span class="p">(</span><span class="n">NUM_THREADS_TO_USE</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">get_num_threads</span><span class="p">())</span>
+
+
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">"/home/felipe/PRs/flames/flames/data/UFF_lj_params.json"</span><span class="p">,</span> <span class="s2">"r"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="n">uff_lj_params</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
+
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">"/home/felipe/PRs/flames/flames/data/TraPPE_lj_params.json"</span><span class="p">,</span> <span class="s2">"r"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="n">trappe_lj_params</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
+
+<span class="n">FrameworkPath</span> <span class="o">=</span> <span class="s2">"MgMOF-74_DDEC.cif"</span>
+<span class="n">AdsorbatePath</span> <span class="o">=</span> <span class="s2">"co2_labels.xyz"</span>
+
+<span class="n">ewald</span> <span class="o">=</span> <span class="n">CustomEwald</span><span class="p">(</span><span class="n">cutoff</span><span class="o">=</span><span class="mf">12.0</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">)</span>
+<span class="n">lj</span> <span class="o">=</span> <span class="n">CustomLennardJones</span><span class="p">({</span><span class="o">**</span><span class="n">uff_lj_params</span><span class="p">,</span> <span class="o">**</span><span class="n">trappe_lj_params</span><span class="p">},</span> <span class="n">vdw_cutoff</span><span class="o">=</span><span class="mf">12.5</span><span class="p">)</span>
+
+<span class="n">calc</span> <span class="o">=</span> <span class="n">mixing</span><span class="o">.</span><span class="n">SumCalculator</span><span class="p">([</span><span class="n">lj</span><span class="p">,</span> <span class="n">ewald</span><span class="p">])</span>
+
+<span class="c1"># Load the framework structure</span>
+<span class="n">framework</span> <span class="o">=</span> <span class="n">read_cif</span><span class="p">(</span><span class="n">FrameworkPath</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
+
+<span class="c1"># Load the adsorbate structure</span>
+<span class="n">adsorbate</span> <span class="o">=</span> <span class="n">Adsorbate</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">"CO2"</span><span class="p">,</span>
+    <span class="n">structure</span><span class="o">=</span><span class="s2">"co2_labels.xyz"</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">Temperature</span> <span class="o">=</span> <span class="mf">298.0</span>
+
+<span class="n">NSteps</span> <span class="o">=</span> <span class="mi">30000</span>
+
+<span class="n">widom</span> <span class="o">=</span> <span class="n">Widom</span><span class="p">(</span>
+    <span class="n">model</span><span class="o">=</span><span class="n">calc</span><span class="p">,</span>  <span class="c1"># type: ignore</span>
+    <span class="n">framework_atoms</span><span class="o">=</span><span class="n">framework</span><span class="p">,</span>
+    <span class="n">adsorbate_atoms</span><span class="o">=</span><span class="n">adsorbate</span><span class="p">,</span>
+    <span class="n">temperature</span><span class="o">=</span><span class="n">Temperature</span><span class="p">,</span>
+    <span class="n">device</span><span class="o">=</span><span class="s2">"cpu"</span><span class="p">,</span>
+    <span class="n">vdw_radii</span><span class="o">=</span><span class="n">vdw_radii</span><span class="p">,</span>
+    <span class="n">debug</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">output_to_file</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">random_seed</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span>
+    <span class="n">cutoff_radius</span><span class="o">=</span><span class="mf">12.5</span><span class="p">,</span>
+    <span class="n">automatic_supercell</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">widom</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">print_header</span><span class="p">()</span>
+
+<span class="n">widom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">NSteps</span><span class="p">)</span>
+<span class="n">widom</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">print_summary</span><span class="p">()</span>
+<span class="n">widom</span><span class="o">.</span><span class="n">save_results</span><span class="p">()</span>
+</pre></div>
+</div>
+<hr class="docutils" />
+<p>The rest of the simulation proceeds as in the previous examples.</p>
+</section>
+<section id="references">
+<h2>References<a class="headerlink" href="#references" title="Link to this heading">¶</a></h2>
+<aside class="footnote-list brackets">
+<aside class="footnote brackets" id="id2" role="doc-footnote">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id1">1</a><span class="fn-bracket">]</span></span>
+<p>Mason, J.A., Sumida, K., Herm, Z.R., Krishna, R. and Long, J.R., 2011. Evaluating metal-organic frameworks for post-combustion carbon dioxide capture via temperature swing adsorption. Energy &amp; Environmental Science, 4(8), pp.3030-3040. <a class="reference external" href="https://pubs.rsc.org/en/content/articlelanding/2011/ee/c1ee01720a">https://pubs.rsc.org/en/content/articlelanding/2011/ee/c1ee01720a</a></p>
+</aside>
+</aside>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="../advanced/hybrid_gcmc_md_mixed_calc.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">Mixed calculators for GCMC/MD simulations</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="lennard_jones.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">Lennard-Jones Potential</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2026, Felipe Lopes de Oliveira
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            <div class="icons">
+              <a class="muted-link " href="https://github.com/lipelopesoliveira/flames" aria-label="GitHub">
+                <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"></path>
+                </svg>
+            </a>
+              
+            </div>
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Ewald Sum for Electrostatic Interactions</a><ul>
+<li><a class="reference internal" href="#brief-introduction-about-the-ewald-sum-method">Brief introduction about the Ewald sum method</a></li>
+<li><a class="reference internal" href="#setting-the-stage">Setting the stage</a></li>
+<li><a class="reference internal" href="#references">References</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="../../_static/documentation_options.js?v=ebe9904d"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/scripts/furo.js?v=46bd48cc"></script>
+    <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../_static/copybutton.js?v=f281be69"></script>
+    </body>
+</html>

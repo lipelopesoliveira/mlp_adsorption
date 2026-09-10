@@ -22,16 +22,29 @@ overview
 :hidden:
 :caption: Tutorials: Basic
 
-tutorials/basic_widom
-tutorials/basic_gcmc
-tutorials/basic_restart
-tutorials/basic_isotherm
+tutorials/basic/widom
+tutorials/basic/gcmc
+tutorials/basic/restart
+tutorials/basic/isotherm
+tutorials/basic/multiple_ads
 ```
 
 ```{toctree}
 :maxdepth: 2
 :hidden:
 :caption: Tutorials: Intermediate
+
+tutorials/intermediate/hybrid_gcmc_md
+
+```
+
+```{toctree}
+:maxdepth: 2
+:hidden:
+:caption: Tutorials: Calculators
+
+tutorials/calculators/lennard_jones
+tutorials/calculators/ewald
 
 ```
 
@@ -40,8 +53,8 @@ tutorials/basic_isotherm
 :hidden:
 :caption: Tutorials: Advanced
 
-tutorials/advanced_hybrid_gcmc_md_mixed_calc
-tutorials/advanced_hybrid_tmmc_md
+tutorials/advanced/hybrid_gcmc_md_mixed_calc
+tutorials/advanced/hybrid_tmmc_md
 ```
 
 ```{toctree}
@@ -94,4 +107,22 @@ The tutorials section contains step-by-step guides on how to use FLAMES for diff
 
 ### Basic
 
-- [Widom Insertion Method](tutorials/basic_widom): A tutorial on how to perform Widom insertion simulations using FLAMES.
+- [Widom Insertion Method](tutorials/basic/widom): A tutorial on how to perform Widom insertion simulations using FLAMES.
+- [Grand Canonical Monte Carlo (GCMC)](tutorials/basic/gcmc): A tutorial on how to perform GCMC simulations using FLAMES.
+- [Restarting Simulations](tutorials/basic/restart): A tutorial on how to restart simulations from a previous run.
+- [Isotherm Calculations](tutorials/basic/isotherm): A tutorial on how to calculate adsorption isotherms using FLAMES.
+- [Multiple Adsorbates](tutorials/basic/multiple_ads): A tutorial on how to simulate systems with multiple adsorbates.
+
+### Intermediate
+
+- [Hybrid GCMC/MD Simulations](tutorials/intermediate/hybrid_gcmc_md): A tutorial on how to perform hybrid GCMC/MD simulations using FLAMES.
+
+### Calculators
+
+- [Lennard-Jones Calculator](tutorials/calculators/lennard_jones): A tutorial on how to use the Lennard-Jones calculator in FLAMES.
+- [Ewald Summation Calculator](tutorials/calculators/ewald): A tutorial on how to use the Ewald summation calculator in FLAMES.
+
+### Advanced
+
+- [Hybrid GCMC/MD with Mixed Calculators](tutorials/advanced/hybrid_gcmc_md_mixed_calc): A tutorial on how to perform hybrid GCMC/MD simulations with mixed calculators in FLAMES.
+- [Hybrid TMMC/MD Simulations](tutorials/advanced/hybrid_tmmc_md): A tutorial on how to perform hybrid TMMC/MD simulations using FLAMES.
