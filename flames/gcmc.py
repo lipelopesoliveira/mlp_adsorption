@@ -801,6 +801,7 @@ class GCMC(BaseSimulator):
             for tag in adsorbate_tags
         ]
 
+
         N_a = self.n_adsorbates[ads_names[0]] if ads_names[0] else 0
         N_b = self.n_adsorbates[ads_names[1]] if ads_names[1] else 0
 
@@ -1454,7 +1455,9 @@ class GCMC(BaseSimulator):
                 [len(ads.structure) * self.n_adsorbates[ads.name] for ads in self.adsorbates]
             )
 
-            self.set_framework(self.current_system[:-n_adsorbate_atoms])  # type: ignore
+            n_framework_atoms = len(self.current_system) - n_adsorbate_atoms
+
+            self.set_framework(self.current_system[:n_framework_atoms])  # type: ignore
 
             with Trajectory(os.path.join(self.out_folder, "nvemd_temp.traj"), "r") as accepted_traj:  # type: ignore
                 for frame in accepted_traj[1:]:  # type: ignore
@@ -1495,12 +1498,15 @@ class GCMC(BaseSimulator):
         if self._nvtmd_acceptance(deltaE=atoms_trial.get_potential_energy() - self.current_total_energy):  # type: ignore
             self.current_system = atoms_trial.copy()  # type: ignore
             self.current_total_energy = atoms_trial.get_potential_energy()  # type: ignore
+            self.V = atoms_trial.get_volume()
 
             n_adsorbate_atoms = sum(
                 [len(ads.structure) * self.n_adsorbates[ads.name] for ads in self.adsorbates]
             )
 
-            self.set_framework(self.current_system[:-n_adsorbate_atoms])  # type: ignore
+            n_framework_atoms = len(self.current_system) - n_adsorbate_atoms
+
+            self.set_framework(self.current_system[:n_framework_atoms])  # type: ignore
 
             with Trajectory(os.path.join(self.out_folder, "nvtmd_temp.traj"), "r") as accepted_traj:  # type: ignore
                 for frame in accepted_traj[1:]:  # type: ignore
@@ -1554,7 +1560,9 @@ class GCMC(BaseSimulator):
                 [len(ads.structure) * self.n_adsorbates[ads.name] for ads in self.adsorbates]
             )
 
-            self.set_framework(self.current_system[:-n_adsorbate_atoms])  # type: ignore
+            n_framework_atoms = len(self.current_system) - n_adsorbate_atoms
+
+            self.set_framework(self.current_system[:n_framework_atoms])  # type: ignore
 
             with Trajectory(os.path.join(self.out_folder, "nptmd_temp.traj"), "r") as accepted_traj:  # type: ignore
                 for frame in accepted_traj[1:]:  # type: ignore
