@@ -452,27 +452,34 @@ class TMMCLogger(BaseLogger):
 Starting TMMC simulation
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-Iteration  |  Number of  |    Tot En.   | Del. Energy  | Ins. Energy  |  Time
-     -     |  Molecules  |     [eV]     |     [eV]     |     [eV]     |   [s]
----------- | ----------- | ------------ | ------------ | ------------ | -------"""
+Iteration  | Adsorbate  | Molecules |    Tot En.   | Del. Energy  | Ins. Energy  |  Time
+     -     |     -      |     -     |     [eV]     |     [eV]     |     [eV]     |   [s]
+---------- | ---------- | --------- | ------------ | ------------ | ------------ | -------"""
         self._print(header)
 
-    def print_step_info(self, step, del_energy, ins_energy, step_time) -> None:
-        """Prints info on one TMMC step."""
-        line_str = "{:^11}|{:^13}|{:>13.4f} |{:>13.4f} |{:>13.4f} |{:7.2f}"
-        self._print(
-            line_str.format(
-                step,
-                self.sim.n_adsorbates,
-                self.sim.current_total_energy,
-                del_energy,
-                ins_energy,
-                step_time,
+    def print_step_info(self, step, del_energy: dict, ins_energy: dict, step_time) -> None:
+        """Prints info on one TMMC step, iterating through all adsorbates."""
+        line_str = "{:^11}| {:^9} |{:^11}|{:>13.4f} |{:>13.4f} |{:>13.4f} |{:7.2f}"
+
+        # TMMC probes all species at each step, so we print a row for each adsorbate
+        for ads in self.sim.adsorbates:
+            self._print(
+                line_str.format(
+                    step,
+                    ads.name,
+                    self.sim.n_adsorbates[ads.name],
+                    self.sim.current_total_energy,
+                    del_energy[ads.name],
+                    ins_energy[ads.name],
+                    step_time,
+                )
             )
-        )
 
     def print_load_state_info(self, n_atoms):
         """Prints information about the loading state."""
+        # Format the dictionary of adsorbates into a clean string (e.g., "CO2: 5, H2O: 2")
+        n_ads_str = ", ".join([f"{k}: {v}" for k, v in self.sim.n_adsorbates.items()])
+
         self._print(f"""
 ===========================================================================
 
@@ -481,7 +488,7 @@ Restarting TMMC simulation from previous configuration...
 Loaded state with {n_atoms} total atoms.
 
 Current total energy: {self.sim.current_total_energy:.3f} eV
-Current number of adsorbates: {self.sim.n_adsorbates}
+Current macrostate: {n_ads_str}
 
 Current steps are: {self.sim.base_iteration}
 
@@ -491,13 +498,15 @@ Current steps are: {self.sim.base_iteration}
     def print_restart_info(self) -> None:
         """Prints information when a simulation is restarted."""
         state = self.sim.current_system
+        n_ads_str = ", ".join([f"{k}: {v}" for k, v in self.sim.n_adsorbates.items()])
+
         self._print(f"Restarting simulation from step {self.sim.base_iteration}...")
         self._print(f"""
 ===========================================================================
 Restart file requested.
 Loaded state with {len(state)} total atoms.
 Current total energy: {self.sim.current_total_energy:.3f} eV
-Current number of adsorbates: {self.sim.n_adsorbates}
+Current macrostate: {n_ads_str}
 ===========================================================================""")
 
 
