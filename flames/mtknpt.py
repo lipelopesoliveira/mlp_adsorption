@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import ase
 import numpy as np
 from ase.atoms import Atoms
