@@ -15,8 +15,8 @@ class MoveWeights:
 
     insertion: float = 1.0
     deletion: float = 1.0
-    translation: float = 0.0
-    rotation: float = 0.0
+    translation: float = 1.0
+    rotation: float = 1.0
     reinsertion: float = 0.0
     identity_swap: float = 0.0
     nve_md: float = 0.0
