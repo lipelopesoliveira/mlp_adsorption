@@ -53,8 +53,8 @@ tutorials/calculators/ewald
 :hidden:
 :caption: Tutorials: Advanced
 
-tutorials/advanced/hybrid_gcmc_md_mixed_calc
-tutorials/advanced/hybrid_tmmc_md
+tutorials/advanced_hybrid_gcmc_md_mixed_calc
+tutorials/advanced_hybrid_tmmc_md
 ```
 
 ```{toctree}
@@ -107,4 +107,4 @@ The tutorials section contains step-by-step guides on how to use FLAMES for diff
 
 ### Basic
 
-- [Widom Insertion Method](tutorials/basic/widom): A tutorial on how to perform Widom insertion simulations using FLAMES.
+- [Widom Insertion Method](tutorials/basic_widom): A tutorial on how to perform Widom insertion simulations using FLAMES.
