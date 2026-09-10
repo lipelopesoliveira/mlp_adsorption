@@ -1338,6 +1338,9 @@ class GCMC(BaseSimulator):
             True if the swap was accepted, False otherwise.
         """
 
+        if len(self.adsorbates) < 2:
+            return False
+    
         adsorbate1_tag = adsorbate_tag
         adsorbate2_tag = self.rnd_generator.choice(
             [ads.tag for ads in self.adsorbates if ads.tag != adsorbate1_tag]
@@ -1497,7 +1500,7 @@ class GCMC(BaseSimulator):
         if self._nvtmd_acceptance(deltaE=atoms_trial.get_potential_energy() - self.current_total_energy):  # type: ignore
             self.current_system = atoms_trial.copy()  # type: ignore
             self.current_total_energy = atoms_trial.get_potential_energy()  # type: ignore
-            self.V = atoms_trial.get_volume()
+            self.V = atoms_trial.get_volume()  # type: ignore
 
             n_adsorbate_atoms = sum(
                 [len(ads.structure) * self.n_adsorbates[ads.name] for ads in self.adsorbates]

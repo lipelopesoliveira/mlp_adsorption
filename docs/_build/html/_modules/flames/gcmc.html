@@ -275,7 +275,9 @@
         </div>
         <article role="main" id="furo-main-content">
           <h1>Source code for flames.gcmc</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">datetime</span>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">datetime</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 
@@ -1653,6 +1655,9 @@
 <span class="sd">            True if the swap was accepted, False otherwise.</span>
 <span class="sd">        """</span>
 
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">adsorbates</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+    
         <span class="n">adsorbate1_tag</span> <span class="o">=</span> <span class="n">adsorbate_tag</span>
         <span class="n">adsorbate2_tag</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rnd_generator</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span>
             <span class="p">[</span><span class="n">ads</span><span class="o">.</span><span class="n">tag</span> <span class="k">for</span> <span class="n">ads</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">adsorbates</span> <span class="k">if</span> <span class="n">ads</span><span class="o">.</span><span class="n">tag</span> <span class="o">!=</span> <span class="n">adsorbate1_tag</span><span class="p">]</span>
@@ -1772,7 +1777,9 @@
                 <span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">ads</span><span class="o">.</span><span class="n">structure</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_adsorbates</span><span class="p">[</span><span class="n">ads</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="k">for</span> <span class="n">ads</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">adsorbates</span><span class="p">]</span>
             <span class="p">)</span>
 
-            <span class="bp">self</span><span class="o">.</span><span class="n">set_framework</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_system</span><span class="p">[:</span><span class="o">-</span><span class="n">n_adsorbate_atoms</span><span class="p">])</span>  <span class="c1"># type: ignore</span>
+            <span class="n">n_framework_atoms</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_system</span><span class="p">)</span> <span class="o">-</span> <span class="n">n_adsorbate_atoms</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_framework</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_system</span><span class="p">[:</span><span class="n">n_framework_atoms</span><span class="p">])</span>  <span class="c1"># type: ignore</span>
 
             <span class="k">with</span> <span class="n">Trajectory</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">out_folder</span><span class="p">,</span> <span class="s2">"nvemd_temp.traj"</span><span class="p">),</span> <span class="s2">"r"</span><span class="p">)</span> <span class="k">as</span> <span class="n">accepted_traj</span><span class="p">:</span>  <span class="c1"># type: ignore</span>
                 <span class="k">for</span> <span class="n">frame</span> <span class="ow">in</span> <span class="n">accepted_traj</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>  <span class="c1"># type: ignore</span>
@@ -1816,12 +1823,15 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nvtmd_acceptance</span><span class="p">(</span><span class="n">deltaE</span><span class="o">=</span><span class="n">atoms_trial</span><span class="o">.</span><span class="n">get_potential_energy</span><span class="p">()</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_total_energy</span><span class="p">):</span>  <span class="c1"># type: ignore</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">current_system</span> <span class="o">=</span> <span class="n">atoms_trial</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>  <span class="c1"># type: ignore</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">current_total_energy</span> <span class="o">=</span> <span class="n">atoms_trial</span><span class="o">.</span><span class="n">get_potential_energy</span><span class="p">()</span>  <span class="c1"># type: ignore</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">V</span> <span class="o">=</span> <span class="n">atoms_trial</span><span class="o">.</span><span class="n">get_volume</span><span class="p">()</span>  <span class="c1"># type: ignore</span>
 
             <span class="n">n_adsorbate_atoms</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span>
                 <span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">ads</span><span class="o">.</span><span class="n">structure</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_adsorbates</span><span class="p">[</span><span class="n">ads</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="k">for</span> <span class="n">ads</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">adsorbates</span><span class="p">]</span>
             <span class="p">)</span>
 
-            <span class="bp">self</span><span class="o">.</span><span class="n">set_framework</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_system</span><span class="p">[:</span><span class="o">-</span><span class="n">n_adsorbate_atoms</span><span class="p">])</span>  <span class="c1"># type: ignore</span>
+            <span class="n">n_framework_atoms</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_system</span><span class="p">)</span> <span class="o">-</span> <span class="n">n_adsorbate_atoms</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_framework</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_system</span><span class="p">[:</span><span class="n">n_framework_atoms</span><span class="p">])</span>  <span class="c1"># type: ignore</span>
 
             <span class="k">with</span> <span class="n">Trajectory</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">out_folder</span><span class="p">,</span> <span class="s2">"nvtmd_temp.traj"</span><span class="p">),</span> <span class="s2">"r"</span><span class="p">)</span> <span class="k">as</span> <span class="n">accepted_traj</span><span class="p">:</span>  <span class="c1"># type: ignore</span>
                 <span class="k">for</span> <span class="n">frame</span> <span class="ow">in</span> <span class="n">accepted_traj</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>  <span class="c1"># type: ignore</span>
@@ -1878,7 +1888,9 @@
                 <span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">ads</span><span class="o">.</span><span class="n">structure</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_adsorbates</span><span class="p">[</span><span class="n">ads</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="k">for</span> <span class="n">ads</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">adsorbates</span><span class="p">]</span>
             <span class="p">)</span>
 
-            <span class="bp">self</span><span class="o">.</span><span class="n">set_framework</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_system</span><span class="p">[:</span><span class="o">-</span><span class="n">n_adsorbate_atoms</span><span class="p">])</span>  <span class="c1"># type: ignore</span>
+            <span class="n">n_framework_atoms</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_system</span><span class="p">)</span> <span class="o">-</span> <span class="n">n_adsorbate_atoms</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_framework</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_system</span><span class="p">[:</span><span class="n">n_framework_atoms</span><span class="p">])</span>  <span class="c1"># type: ignore</span>
 
             <span class="k">with</span> <span class="n">Trajectory</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">out_folder</span><span class="p">,</span> <span class="s2">"nptmd_temp.traj"</span><span class="p">),</span> <span class="s2">"r"</span><span class="p">)</span> <span class="k">as</span> <span class="n">accepted_traj</span><span class="p">:</span>  <span class="c1"># type: ignore</span>
                 <span class="k">for</span> <span class="n">frame</span> <span class="ow">in</span> <span class="n">accepted_traj</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>  <span class="c1"># type: ignore</span>
