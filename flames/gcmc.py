@@ -801,7 +801,6 @@ class GCMC(BaseSimulator):
             for tag in adsorbate_tags
         ]
 
-
         N_a = self.n_adsorbates[ads_names[0]] if ads_names[0] else 0
         N_b = self.n_adsorbates[ads_names[1]] if ads_names[1] else 0
 
